@@ -1,0 +1,13 @@
+Package: enrichMiR
+Type: Package
+Title: miRNA target enrichment analysis
+Version: 1.2
+Date: 2018-09-26
+Author: Pierre-Luc Germain
+Maintainer: <pl.germain@gmail.com>
+Depends: data.table
+Suggests: knitr, rmarkdown, fgsea, goseq, MASS, aggregation
+Description: miRNA target enrichment analysis
+License: GPL
+VignetteBuilder: knitr
+RoxygenNote: 6.1.0

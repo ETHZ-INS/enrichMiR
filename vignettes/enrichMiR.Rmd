@@ -1,0 +1,152 @@
+---
+title: "enrichMiR"
+author: "Pierre-Luc Germain"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{enrichMiR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Installing and loading the package
+
+You can install the package using:
+```{r, eval=FALSE}
+install.packages("path/to/enrichMiR.tar.gz",type="source")
+```
+
+Alternatively, once decompressed you can load or install with devtools:
+```{r, eval=FALSE}
+devtools::load_all("path/to/packageFolder")
+# or
+devtools::install("path/to/packageFolder")
+```
+
+Once (if) installed, load the package using:
+```{r}
+library("enrichMiR")
+```
+
+<br/><br/>
+
+## Preparing the data
+
+(You can look at the different files - the data here is what you've given me, except that I exported as csv format)
+
+### Preparing the differential expression data
+
+```{r, eval=FALSE}
+dea <- read.delim("GSE81437_polyA_differential_gene_expression.txt",header=T)
+# since this is a weird cuffdiff results table, we need to filter out genes and clean up the foldchanges
+dea <- dea[which(dea$status=="OK"),]
+dea$log2.fold_change. <- as.numeric(as.character(dea$log2.fold_change.))
+dea <- aggregate(dea[,c("log2.fold_change.","p_value","q_value")],by=list(gene=dea$gene),FUN=mean)
+row.names(dea) <- dea[,1]
+dea <- dea[-1,-1]
+colnames(dea) <- c("logFC","PValue","FDR")
+# we set infinite logFC to the maximum non-infinite logFCs:
+w <- which(is.infinite(dea$logFC)); dea$logFC[w] <- max(abs(dea$logFC[setdiff(which(dea$FDR<0.5),w)]))*sign(dea$logFC[w])
+```
+
+<br/><br/>
+
+### Preparing miRNA expression levels
+
+```{r, eval=FALSE}
+m <- read.csv("DIV20 enrich Neuron HC miRNA.csv",header=T,stringsAsFactors=F)
+# we transform it into a named vector of logCPM values:
+mirexpr <- m$logCPM
+names(mirexpr) <- m$Gene.name
+# optionally, we can eventually restrict to take, say, only the 50% most expressed miRNAs:
+mirexpr <- mirexpr[which(mirexpr>=median(mirexpr))]
+```
+
+<br/><br/>
+
+### Preparing the targetScan data
+
+```{r, eval=FALSE}
+TS <- loadTargetScan("miRNA conserved sites rat all Transc.csv")
+```
+
+```{r, include=FALSE}
+data("enrichmir_sampleData")
+```
+
+<br/><br/>
+
+## Running the enrichment analysis
+
+```{r}
+e <- enrichMiR(DEA=dea, TS=TS, miRNA.expression = mirexpr, cleanNames=T)
+```
+
+The `mirexpr` is not mandatory. Here, since we're dealing with mouse annotation and rat data, we use `cleanNames=T` to remove the prefix (e.g. `mmu-`) of miRNA names. By default, all the different tests will be performed, but the `tests` parameter can be used to specify which tests to run.
+
+<br/><br/>
+
+### Exploring the results
+
+```{r}
+e
+```
+
+This gives an overview (top rows, not many details) of the different analyses performed. The main analyses are:
+
+* EN.up: classical enrichment analysis (Fisher's test) on upregulated genes
+* EN.down: classical enrichment analysis (Fisher's test) on downregulated genes
+* wEN.up / wEN.down: weighted enrichment analysis on, respectively, upregulated or downregulated genes (accounts for UTR length bias)
+* michael.up / michael.down : Michael's binding sites method on, respectively, upregulated or downregulated genes
+* MW: A Mann-Whitney test comparing the foldchanges of targets vs non-target
+* KS: A Kolmogorov-Smirnov test comparing the foldchanges of targets vs non-target
+* KS2: An application of one-sided Kolmogorov-Smirnov test for respectively upregulated and downregulated genes
+* GSEA: An application of GSEA using foldchange as ranking
+
+The detailed results of each analysis can be accessed using, for example:
+```{r, eval=FALSE}
+enrichMiR.results(e,test="EN.down")
+```
+
+or simply:
+
+```{r}
+res <- e$EN.down
+head(res)
+```
+
+
+A merged table of multiple tests can be obtained with:
+
+```{r, eval=FALSE}
+enrichMiR.results(e,test=c("EN.down","michael.down"))
+```
+
+If `test` is ommitted, all tests will be merged (might not be an easy table to read if all tests were used).
+
+<br/><br/>
+
+## Plots
+
+### Enrichment plot
+
+For the purpose of trying the enrichment plot, we will use the results of the classical enrichment test for downregulated genes:
+```{r, fig.width=8, fig.height=8}
+res <- e$EN.down
+enrichPlot(res)
+```
+
+Many graphical parameters can be adjusted -- see `?enrichPlot`.
+
+<br/><br/>
+
+### Foldchange cumulative distribution plots
+
+We can plot the cumulate foldchange distribution for any miRNA family using:
+
+```{r}
+CDplot(e,"ACAUUCA")
+```
+
+<br/><br/>
+
