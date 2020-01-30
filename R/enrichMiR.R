@@ -76,7 +76,7 @@ enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logF
   colnames(m) <- gsub(".x",".down",colnames(m),fixed=T)
   colnames(m) <- gsub(".y",".up",colnames(m),fixed=T)
   m$enrichment <- apply(m[,c("enrichment.down","enrichment.up")],1,FUN=function(x){ 
-    x <- log2(x+0.05); mean(c(-x[1],x[2]),na.rm=T)
+    mean(c(-x[1],x[2]),na.rm=T)
   })
   m$overlap <- rowSums(m[,grep("overlap",colnames(m))])
   m$comb.pvalue <- suppressWarnings(apply(m[,c("enrichment",colnames(m)[grep("pvalue",colnames(m))])],1,FUN=function(x){ 

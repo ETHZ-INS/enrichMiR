@@ -26,7 +26,7 @@ EA <- function(tested,significant,TS, minSize=5, testOnlyAnnotated=FALSE){
            annotated=length(set2),
            overlap=length(ov),
            expected=round(expected,2),
-           enrichment=round(length(ov)/expected,2),
+           enrichment=round(log2(length(ov)/expected),2),
            under.pvalue=.overlap.prob(set1,set2,universe,lower=T),
            over.pvalue=.overlap.prob(set1,set2,universe),
            features=paste(ov,collapse=", ")
@@ -120,7 +120,7 @@ wEA <- function(tested,significant,TS, minSize=5, testOnlyAnnotated=FALSE, metho
   colnames(res) <- c("family","over.pvalue","under.pvalue","overlap","numInCat")
 
   # TEMPORARY enrichment value
-  res$enrichment <- round(res$overlap/(length(significant)*(res$numInCat/length(tested))),2)
+  res$enrichment <- round(log2(res$overlap/(length(significant)*(res$numInCat/length(tested)))),2)
   
   res$FDR <- p.adjust(res$over.pvalue, method="fdr")
   colnames(res)[5] <- "annotated"
@@ -167,7 +167,7 @@ michael <- function(tested, significant, TS, minSize=3, testOnlyAnnotated=FALSE)
             BS.in=xin,
             otherBS.in=bs.sig-xin,
             BS.inBG=xout,
-            enrichment=(xin/(bs.sig-xin))/(xout/(bs.bg-xout)),
+            enrichment=log2((xin/(bs.sig-xin))/(xout/(bs.bg-xout))),
             otherBS.inBG=bs.bg-xout,
             under.pvalue=p2,
             over.pvalue=p1
