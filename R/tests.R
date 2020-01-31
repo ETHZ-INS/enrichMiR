@@ -381,10 +381,6 @@ geneBasedTest <- function(features, TS){
 }
 
 
-
-
-
-
 .overlap.prob <- function (set1, set2, universe, lower = F){
   set1 <- as.character(set1)
   set2 <- as.character(set2)
@@ -399,3 +395,55 @@ geneBasedTest <- function(features, TS){
   phyper(max(0, ov - 1), length(set1), universe - length(set1), 
          length(set2), lower.tail = lower)
 }
+
+
+
+.censorScore <- function(x){
+  x <- -x + 0.1
+  w <- which(x>0.9)
+  x[w] <- 0.9+ecdf(x[w])(x[w])/10
+  x
+}
+
+TS2regulon <- function(x, likelihood="score"){
+  if(likelihood=="score"){
+    x$likelihood <- censorScore(x[[likelihood]])
+  }else{
+    x$likelihood <- x[[likelihood]]
+  }
+  lapply(split(x,x$family), FUN=function(x){
+    y <- list(  tfmode=rep(-1,nrow(x)),
+                likelihood=x$likelihood )
+    lapply(y, FUN=function(a){
+      names(a) <- x$feature
+      a
+    })	
+  })
+}
+
+#' aREAmir
+#'
+#' analytic Rank-based Enrichment Analysis using a conversion of targetScan 
+#' scores as weights.
+#'
+#' @param DEA A data.frame of the results of a differential expression analysis, with features (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`
+#' @param TS A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.
+#' @param minSize The minimum number of elements in a set to be tested (default 5).
+#' @param maxSize The maximum number of elements in a set to be tested (default 500). If the test takes too long to run, consider setting this.
+#' @param fdr.thres The FDR threshold below which genes are considered; default 0.2.
+#' @param nperm The number of permutations, default 2000. The more permutations, the more precise the p-values, in particular for small p-values.
+#'
+#' @return a data.frame.
+#'
+#' @export
+aREAmir <- function(dea, TS, minSize=5, pleiotropy=FALSE){
+  sig <- -log10(dea$FDR)*sign(dea$logFC)
+  names(sig) <- row.names(dea)
+  vi <- viper::msviper(sig, regulon=TS2regulon(TS), minsize=minSize, pleiotropy=pleiotropy)
+  vi2 <- as.data.frame(vi$es[c("nes","size","p.value","nes.bt")])
+  vi2$FDR <- p.adjust(vi2$p.value)
+  vi2 <- vi2[order(vi2$p.value),]
+  vi2$miRNAs <- sapply(row.names(vi2), fam=metadata(TS)$families, FUN=function(x, fam) names(fam)[which(fam==x)])
+  vi2
+}
+
