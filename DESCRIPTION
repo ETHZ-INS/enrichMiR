@@ -6,8 +6,8 @@ Date: 2018-09-26
 Author: Pierre-Luc Germain
 Maintainer: <pl.germain@gmail.com>
 Depends: data.table
-Suggests: knitr, rmarkdown, fgsea, goseq, MASS, aggregation
+Suggests: knitr, rmarkdown, fgsea, goseq, MASS, aggregation, viper
 Description: miRNA target enrichment analysis
 License: GPL
 VignetteBuilder: knitr
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
