@@ -60,6 +60,7 @@ enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logF
     if(is.null(tests) || "ks" %in% tests) o@res$KS=KS(DEA, TS, minSize)
     if(is.null(tests) || "ks2" %in% tests) o@res$KS2=KS2(DEA, TS, minSize)
     if(is.null(tests) || "gsea" %in% tests) o@res$GSEA=gsea(DEA, TS, minSize, maxSize=gsea.maxSize, nperm=gsea.permutations, fdr.thres=gsea.fdr.thres)
+    if(is.null(tests) || "gseamod" %in% tests) o@res$GSEAmodified=gseaMod(DEA, TS, minSize, maxSize=gsea.maxSize, nperm=gsea.permutations, fdr.thres=gsea.fdr.thres)
     if(is.null(tests) || "modsites" %in% tests) o@res$modSites=plMod(DEA, TS, minSize, var="sites", correctForLength=T)
     if(is.null(tests) || "modscore" %in% tests) o@res$modScore=plMod(DEA, TS, minSize, var="score", correctForLength=F)
     return(o)

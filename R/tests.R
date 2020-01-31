@@ -311,7 +311,36 @@ gsea <- function(DEA, TS, minSize=5, maxSize=300, fdr.thres=0.5, nperm=2000){
 }
 
 
-
+#' gsea
+#'
+#' miRNA target enrichment analysis among differentially-expressed genes using GSEA.
+#'
+#' @param DEA A data.frame of the results of a differential expression analysis, with features (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`
+#' @param TS A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.
+#' @param minSize The minimum number of elements in a set to be tested (default 5).
+#' @param maxSize The maximum number of elements in a set to be tested (default 500). If the test takes too long to run, consider setting this.
+#' @param fdr.thres The FDR threshold below which genes are considered; default 0.2.
+#' @param nperm The number of permutations, default 2000. The more permutations, the more precise the p-values, in particular for small p-values.
+#'
+#' @return a data.frame.
+#'
+#' @export
+gseaMod <- function(DEA, TS, minSize=5, maxSize=300, fdr.thres=0.5, nperm=2000){
+  library(fgsea)
+  DEA <- DEA[which(DEA$FDR<=fdr.thres & !is.na(DEA$logFC)),]
+  w <- which(is.infinite(DEA$logFC))
+  if(length(w)>0) DEA$logFC[w] <- max(abs(DEA$logFC[-w]))*sign(DEA$logFC[w])
+  score <- DEA$logFC * DEA$logCPM
+  names(score) <- row.names(DEA)
+  sets <- lapply(split(TS$feature,TS$family),tested=names(score),
+                 FUN=function(x,tested){ intersect(unique(x),tested) })
+  sets <- sets[which(sapply(sets,length)>=minSize)]
+  res <- fgsea(sets, score, nperm, minSize=minSize, maxSize=maxSize)
+  res <- res[order(res$padj,res$pval),]
+  colnames(res)[1:5] <- c("family","pvalue","FDR","ES","normalizedEnrichment")
+  res$leadingEdge <- sapply(res$leadingEdge, FUN=function(x){ paste(x,collapse=", ") })
+  return(as.data.frame(res))
+}
 
 
 #' geneBasedTest
