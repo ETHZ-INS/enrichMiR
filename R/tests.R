@@ -399,19 +399,20 @@ geneBasedTest <- function(features, TS){
 
 
 .censorScore <- function(x){
-  x <- -x + 0.1
+  x <- 0.1-x
   w <- which(x>0.9)
   x[w] <- 0.9+ecdf(x[w])(x[w])/10
   x
 }
 
 TS2regulon <- function(x, likelihood="score"){
+  x <- as.data.frame(x)
   if(likelihood=="score"){
-    x$likelihood <- censorScore(x[[likelihood]])
+    x$likelihood <- .censorScore(x[[likelihood]])
   }else{
     x$likelihood <- x[[likelihood]]
   }
-  lapply(split(x,x$family), FUN=function(x){
+  lapply(split(x,x$family, drop=TRUE), FUN=function(x){
     y <- list(  tfmode=rep(-1,nrow(x)),
                 likelihood=x$likelihood )
     lapply(y, FUN=function(a){

@@ -44,14 +44,12 @@ enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logF
         miRNA.expression <- list(family=fam.expr, miRNA=miRNA.expression)
     }else{
         miRNA.expression <- list(family=NULL, miRNA=NULL)
-    }
+   } 
     # if 'DFrame' TS is supplied extract metadata if available & convert to 'data.frame' (for aREAmir test)
-    if(class(TS)=="DFrame"){
-      TSmeta <- metadata(TS)
-      TS <- as.data.frame(TS)
-    }
     TS <- TS[which(as.character(TS$family) %in% families),]
     o <- new("enrichMiR", DEA=DEA, TS=as.data.frame(TS), families=families, miRNA.expression=miRNA.expression, info=list(call=match.call()))
+    if(is.null(tests) || "areamir" %in% tests) o@res$aREAmir=aREAmir(DEA, TS, minSize)
+    TS <- as.data.frame(TS)
     if(is.null(tests) || "overlap" %in% tests) o@res$EN.up <- EA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC>th.abs.logFC)], TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "overlap" %in% tests) o@res$EN.down <- EA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC<(-th.abs.logFC))], TS, minSize, testOnlyAnnotated)
     #if(is.null(tests) || "overlap" %in% tests) o@res$EN.combined <- .combTests(o@res$EN.up, o@res$EN.down)    
@@ -68,7 +66,6 @@ enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logF
     if(is.null(tests) || "gseamod" %in% tests) o@res$GSEAmodified=gseaMod(DEA, TS, minSize, maxSize=gsea.maxSize, nperm=gsea.permutations, fdr.thres=gsea.fdr.thres)
     if(is.null(tests) || "modsites" %in% tests) o@res$modSites=plMod(DEA, TS, minSize, var="sites", correctForLength=T)
     if(is.null(tests) || "modscore" %in% tests) o@res$modScore=plMod(DEA, TS, minSize, var="score", correctForLength=F)
-    if(is.null(tests) || "areamir" %in% tests) o@res$aREAmir=aREAmir(DEA, TS, TSmeta, minSize, pleiotropy)
     return(o)
 }
 
