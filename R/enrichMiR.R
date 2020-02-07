@@ -26,8 +26,8 @@
 #' @return an enrichMiR object.
 #'
 #' @export
-enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logFC=0, th.FDR=0.05, minSize=5, gsea.maxSize=300, gsea.permutations=2000, gsea.fdr.thres=0.2, testOnlyAnnotated=FALSE, tests=NULL, cleanNames=FALSE){
-    if(!is.null(tests)) tests <- match.arg(tolower(tests), choices=c("overlap","michael","wo","mw","ks","ks2","gsea","modscore","modsites"), several.ok = T)
+enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logFC=0, th.FDR=0.05, minSize=5, gsea.maxSize=300, gsea.permutations=2000, gsea.fdr.thres=0.2, testOnlyAnnotated=FALSE, tests=NULL, cleanNames=FALSE, pleiotropy=FALSE){
+    if(!is.null(tests)) tests <- match.arg(tolower(tests), choices=c("overlap","michael","wo","mw","ks","ks2","gsea","gseamod","modscore","modsites","areamir"), several.ok = T)
     if(is.null(families)){
         data("miR_families")
         families <- miR_families
@@ -45,17 +45,22 @@ enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logF
     }else{
         miRNA.expression <- list(family=NULL, miRNA=NULL)
     }
+    # if 'DFrame' TS is supplied extract metadata if available & convert to 'data.frame' (for aREAmir test)
+    if(class(TS)=="DFrame"){
+      TSmeta <- metadata(TS)
+      TS <- as.data.frame(TS)
+    }
     TS <- TS[which(as.character(TS$family) %in% families),]
-    o <- new("enrichMiR", DEA=DEA, TS=TS, families=families, miRNA.expression=miRNA.expression, info=list(call=match.call()))
+    o <- new("enrichMiR", DEA=DEA, TS=as.data.frame(TS), families=families, miRNA.expression=miRNA.expression, info=list(call=match.call()))
     if(is.null(tests) || "overlap" %in% tests) o@res$EN.up <- EA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC>th.abs.logFC)], TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "overlap" %in% tests) o@res$EN.down <- EA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC<(-th.abs.logFC))], TS, minSize, testOnlyAnnotated)
-    if(is.null(tests) || "overlap" %in% tests) o@res$EN.combined <- .combTests(o@res$EN.up, o@res$EN.down)    
+    #if(is.null(tests) || "overlap" %in% tests) o@res$EN.combined <- .combTests(o@res$EN.up, o@res$EN.down)    
     if(is.null(tests) || "wo" %in% tests) o@res$wEN.up <- wEA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC>th.abs.logFC)], TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "wo" %in% tests) o@res$wEN.down <- wEA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC<(-th.abs.logFC))], TS, minSize, testOnlyAnnotated)
-    if(is.null(tests) || "wo" %in% tests) o@res$wEN.combined <- .combTests(o@res$wEN.up, o@res$wEN.down)
+    #if(is.null(tests) || "wo" %in% tests) o@res$wEN.combined <- .combTests(o@res$wEN.up, o@res$wEN.down)
     if(is.null(tests) || "michael" %in% tests) o@res$michael.up <- michael(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC>th.abs.logFC)], TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "michael" %in% tests) o@res$michael.down <- michael(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC<(-th.abs.logFC))], TS, minSize, testOnlyAnnotated)
-    if(is.null(tests) || "michael" %in% tests) o@res$michael.combined <- .combTests(o@res$michael.up, o@res$michael.down)
+    #if(is.null(tests) || "michael" %in% tests) o@res$michael.combined <- .combTests(o@res$michael.up, o@res$michael.down)
     if(is.null(tests) || "mw" %in% tests) o@res$MW=MW(DEA, TS, minSize)
     if(is.null(tests) || "ks" %in% tests) o@res$KS=KS(DEA, TS, minSize)
     if(is.null(tests) || "ks2" %in% tests) o@res$KS2=KS2(DEA, TS, minSize)
@@ -63,6 +68,7 @@ enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logF
     if(is.null(tests) || "gseamod" %in% tests) o@res$GSEAmodified=gseaMod(DEA, TS, minSize, maxSize=gsea.maxSize, nperm=gsea.permutations, fdr.thres=gsea.fdr.thres)
     if(is.null(tests) || "modsites" %in% tests) o@res$modSites=plMod(DEA, TS, minSize, var="sites", correctForLength=T)
     if(is.null(tests) || "modscore" %in% tests) o@res$modScore=plMod(DEA, TS, minSize, var="score", correctForLength=F)
+    if(is.null(tests) || "areamir" %in% tests) o@res$aREAmir=aREAmir(DEA, TS, TSmeta, minSize, pleiotropy)
     return(o)
 }
 
