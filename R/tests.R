@@ -26,7 +26,7 @@ EA <- function(tested,significant,TS, minSize=5, testOnlyAnnotated=FALSE){
            annotated=length(set2),
            overlap=length(ov),
            expected=round(expected,2),
-           enrichment=round(log2(length(ov)/expected),2),
+           enrichment=round(log2((length(ov)+0.1)/expected),2),
            under.pvalue=.overlap.prob(set1,set2,universe,lower=T),
            over.pvalue=.overlap.prob(set1,set2,universe),
            features=paste(ov,collapse=", ")
@@ -440,7 +440,7 @@ TS2regulon <- function(x, likelihood="score"){
 aREAmir <- function(dea, TS, minSize=5, pleiotropy=FALSE){
   sig <- -log10(dea$FDR)*sign(dea$logFC)
   names(sig) <- row.names(dea)
-  vi <- viper::msviper(sig, regulon=TS2regulon(TS), minsize=minSize, pleiotropy=pleiotropy)
+  vi <- viper::msviper(sig, regulon=TS2regulon(as.data.frame(TS)), minsize=minSize, pleiotropy=pleiotropy, verbose=FALSE)
   vi2 <- as.data.frame(vi$es[c("nes","size","p.value","nes.bt")])
   vi2$FDR <- p.adjust(vi2$p.value)
   vi2 <- vi2[order(vi2$p.value),]

@@ -45,20 +45,20 @@ enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logF
     }else{
         miRNA.expression <- list(family=NULL, miRNA=NULL)
    } 
-    # if 'DFrame' TS is supplied extract metadata if available & convert to 'data.frame' (for aREAmir test)
+
     TS <- TS[which(as.character(TS$family) %in% families),]
     o <- new("enrichMiR", DEA=DEA, TS=as.data.frame(TS), families=families, miRNA.expression=miRNA.expression, info=list(call=match.call()))
     if(is.null(tests) || "areamir" %in% tests) o@res$aREAmir=aREAmir(DEA, TS, minSize)
     TS <- as.data.frame(TS)
     if(is.null(tests) || "overlap" %in% tests) o@res$EN.up <- EA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC>th.abs.logFC)], TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "overlap" %in% tests) o@res$EN.down <- EA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC<(-th.abs.logFC))], TS, minSize, testOnlyAnnotated)
-    #if(is.null(tests) || "overlap" %in% tests) o@res$EN.combined <- .combTests(o@res$EN.up, o@res$EN.down)    
+    if(is.null(tests) || "overlap" %in% tests) o@res$EN.combined <- .combTests(o@res$EN.up, o@res$EN.down)    
     if(is.null(tests) || "wo" %in% tests) o@res$wEN.up <- wEA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC>th.abs.logFC)], TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "wo" %in% tests) o@res$wEN.down <- wEA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC<(-th.abs.logFC))], TS, minSize, testOnlyAnnotated)
-    #if(is.null(tests) || "wo" %in% tests) o@res$wEN.combined <- .combTests(o@res$wEN.up, o@res$wEN.down)
+    if(is.null(tests) || "wo" %in% tests) o@res$wEN.combined <- .combTests(o@res$wEN.up, o@res$wEN.down)
     if(is.null(tests) || "michael" %in% tests) o@res$michael.up <- michael(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC>th.abs.logFC)], TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "michael" %in% tests) o@res$michael.down <- michael(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC<(-th.abs.logFC))], TS, minSize, testOnlyAnnotated)
-    #if(is.null(tests) || "michael" %in% tests) o@res$michael.combined <- .combTests(o@res$michael.up, o@res$michael.down)
+    if(is.null(tests) || "michael" %in% tests) o@res$michael.combined <- .combTests(o@res$michael.up, o@res$michael.down)
     if(is.null(tests) || "mw" %in% tests) o@res$MW=MW(DEA, TS, minSize)
     if(is.null(tests) || "ks" %in% tests) o@res$KS=KS(DEA, TS, minSize)
     if(is.null(tests) || "ks2" %in% tests) o@res$KS2=KS2(DEA, TS, minSize)
@@ -76,11 +76,11 @@ enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logF
   }
   ff <- intersect(c("overlap","enrichment","over.pvalue","under.pvalue","features"),colnames(up))
   m <- merge( down[,c("family","annotated",ff)], 
-              up[,c("family",ff)], by="family", all=T)
-  colnames(m) <- gsub(".x",".down",colnames(m),fixed=T)
-  colnames(m) <- gsub(".y",".up",colnames(m),fixed=T)
+              up[,c("family",ff)], by="family", all=T, suffixes=c(".down",".up"))
   m$enrichment <- apply(m[,c("enrichment.down","enrichment.up")],1,FUN=function(x){ 
-    mean(c(-x[1],x[2]),na.rm=T)
+    x <- mean(c(-x[1],x[2]),na.rm=T)
+    if(is.na(x)) return(0)
+    x
   })
   m$overlap <- rowSums(m[,grep("overlap",colnames(m))])
   m$comb.pvalue <- suppressWarnings(apply(m[,c("enrichment",colnames(m)[grep("pvalue",colnames(m))])],1,FUN=function(x){ 
