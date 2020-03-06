@@ -4,18 +4,15 @@
 \alias{characterizeSeedMatches}
 \title{characterizeSeedMatches}
 \usage{
-characterizeSeedMatches(x, seed, iScore = c(`8mer` = 2.5, `7mer-m8` =
-  1.8, `7mer-A1` = 1.5, `6mer` = 1))
+characterizeSeedMatches(x, seed = NULL, kd.model = NULL)
 }
 \arguments{
 \item{x}{A factor or character vector of matches, or a data.frame or GRanges
 containing a `sequence` column.}
 
-\item{seed}{The seed which sequences of `x` match.}
+\item{seed}{The seed which sequences of `x` should match.}
 
-\item{iScore}{The base scores attributed to different types of matches,
-before considering dinucleotides. Should be a numeric vector with the
-following names: "8mer", "7mer-m8", "7mer-A1", "6mer"}
+\item{mod}{An optional object of class 'KdModel'.}
 }
 \value{
 A data.frame, or a `GRanges` if `x` is a `GRanges`

@@ -13,7 +13,8 @@ complemented before matching.}
 
 \item{seeds}{A character vector of 7-nt seeds to look for. If RNA, will be 
 reversed and complemented before matching. If DNA, they are assumed to be
-the target sequence to look for.}
+the target sequence to look for. Alternatively, a list of objects of class
+`KdModel` can be given.}
 
 \item{shadow}{Integer giving the shadow, i.e. the number of nucleotides
 hidden at the beginning of the sequence (default 0)}
