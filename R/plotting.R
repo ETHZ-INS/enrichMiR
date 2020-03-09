@@ -147,7 +147,7 @@ enrichPlot <- function( res,
     if("BS.in" %in% colnames(res)) lab <- paste0(lab, "\n", res$BS.in, " binding sites")
     
     if(length(w)>0){
-        if(length(w)>10) w <- w[1:10]
+        if(length(w)>maxLabels) w <- w[seq_len(maxLabels)]
         if(label.field=="family" | label.field=="row.names"){
           lab2 <- row.names(res)[w]
         }else{
