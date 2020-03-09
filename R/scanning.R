@@ -27,7 +27,7 @@
 #' names(seqs) <- paste0("seq",1:length(seqs))
 #' seeds <- c("AAACCAC", "AAACCUU")
 #' m <- findSeedMatches(seqs, seeds)
-findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE,
+  findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE,
                              seedtype=c("auto", "RNA","DNA"), BP=NULL){
   library(GenomicRanges)
   library(stringr)
@@ -188,7 +188,7 @@ getKdModel <- function(kd){
     kd <- prep12mers(kd)
   fields <- c(fields, "log_kd")
   if(!all(fields %in% colnames(kd))) stop("Malformed `kd` data.frame.")
-  mod <- lm( log_kd~sr*A+fl, data=kd, model=FALSE, weights=(-kd2$log_kd)^2, 
+  mod <- lm( log_kd~sr*A+fl, data=kd, model=FALSE, weights=(-kd$log_kd)^2, 
              x=FALSE, y=FALSE )
   mod$residuals <- NULL
   mod$fitted.values <- NULL
@@ -289,7 +289,7 @@ plotKdModel <- function(mod, what=c("both","seeds","logo")){
     co <- data.frame(seed=factor(names(co), names(co)), log_kd=as.numeric(co))
     co$type <- sapply(as.character(co$seed), seed=mod$canonical.seed, .getMatchType)
     return( ggplot(co, aes(seed, log_kd, fill=type)) + geom_col() + 
-              coord_flip() + xlab("-log_kd") )
+              coord_flip() + ylab("-log_kd") )
   }
   if(what=="logo") return(seqLogo::seqLogo(mod$pwm))
   library(cowplot)
