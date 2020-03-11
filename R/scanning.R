@@ -175,7 +175,7 @@ getKdModel <- function(kd){
   if("mirseq" %in% colnames(kd)){
     mirseq <- as.character(kd$mirseq[1])
     #seed <- substr(mirseq, 2,8)
-    seed <- as.character(complement(DNAString(substr(mirseq, 2,8))))
+    seed <- as.character(reverseComplement(DNAString(substr(mirseq, 2,8))))
     kd <- kd[,c("X12mer","log_kd")]
   }else{
     mirseq <- seed <- NULL
