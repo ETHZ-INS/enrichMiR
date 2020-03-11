@@ -179,7 +179,7 @@ getKdModel <- function(kd){
   }else{
     mirseq <- seed <- NULL
   }
-  kd <- kd[grep("X",x$X12mer,invert=TRUE),]
+  kd <- kd[grep("X",kd$X12mer,invert=TRUE),]
   pwm <- Biostrings::consensusMatrix(
     as.character(rep(kd$X12mer, floor( (10^(-kd$log_kd))/10 ))),
     as.prob=TRUE
