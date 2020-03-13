@@ -49,7 +49,7 @@ enrichMiR <- function(DEA, TS, miRNA.expression=NULL, families=NULL, th.abs.logF
     TS <- TS[which(as.character(TS$family) %in% families),]
     o <- new("enrichMiR", DEA=DEA, TS=as.data.frame(TS), families=families, miRNA.expression=miRNA.expression, info=list(call=match.call()))
     if(is.null(tests) || "areamir" %in% tests) o@res$aREAmir=aREAmir(DEA, TS, minSize)
-    if(is.null(tests) || "areamir2" %in% tests) o@res$aREAmir=aREAmir(DEA, TS, minSize, pleiotropy=TRUE)
+    if(is.null(tests) || "areamir2" %in% tests) o@res$aREAmir2=aREAmir(DEA, TS, minSize, pleiotropy=TRUE)
     TS <- as.data.frame(TS)
     if(is.null(tests) || "overlap" %in% tests) o@res$EN.up <- EA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC>th.abs.logFC)], TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "overlap" %in% tests) o@res$EN.down <- EA(row.names(DEA), row.names(DEA)[which(DEA$FDR<th.FDR & DEA$logFC<(-th.abs.logFC))], TS, minSize, testOnlyAnnotated)
