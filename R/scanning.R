@@ -285,11 +285,25 @@ plotKdModel <- function(mod, what=c("both","seeds","logo")){
   library(ggplot2)
   what <- match.arg(what)
   if(what=="seeds"){
-    co <- -coefficients(mod)[paste0("sr",mod$xlevels$sr[-1])]
+    coe <- coefficients(mod)
+    medfl <- median(coe[grep("^fl",names(coe),value=TRUE)],na.rm=TRUE)
+    co <- -coe["(Intercept)"]-coe[paste0("sr",mod$xlevels$sr[-1])]-medfl
     names(co) <- gsub("^sr","",names(co))
     co <- sort(co)
     co <- data.frame(seed=factor(names(co), names(co)), log_kd=as.numeric(co))
     co$type <- sapply(as.character(co$seed), seed=mod$canonical.seed, .getMatchType)
+    coA <- co
+    aint <- coe[paste0("sr",coA$seed,":ATRUE")]
+    aint[is.na(aint)] <- 0
+    coA$log_kd <- coA$log_kd - coe["ATRUE"] - aint
+    coA$type <- "+A"
+    co <- rbind(co,coA)
+    co$type <- factor(co$type, c("+A","7mer-m8","6mer","non-canonical"))
+    # mer8 <- co[nrow(co),,drop=FALSE]
+    # mer8$log_kd <- mer8$log_kd-coe[paste0("sr",mer8$seed,":ATRUE")]-coe["ATRUE"]
+    # mer8$type="8mer"
+    # co <- rbind(co, mer8)
+    # co$type <- factor(co$type, c("8mer","7mer-m8","6mer","non-canonical"))
     return( ggplot(co, aes(seed, log_kd, fill=type)) + geom_col() + 
               coord_flip() + ylab("-log_kd") )
   }
