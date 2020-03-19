@@ -166,12 +166,17 @@ characterizeSeedMatches <- function(x, seed=NULL, kd.model=NULL){
 #' 
 #' Summarizes the binding affinity of 12-mers using linear models.
 #'
-#' @param kd A data.frame with at least the columns "X12mer" and "log_kd"
+#' @param kd A data.frame with at least the columns "X12mer" and "log_kd", or the path to
+#' such a data.frame
+#' @param name The optional name of the miRNA
 #'
 #' @return A linear model of class `KdModel`
 #' @export
-getKdModel <- function(kd){
-  if(is.character(kd) && length(kd)==1) kd <- read.delim(kd, header=TRUE)
+getKdModel <- function(kd, name=NULL){
+  if(is.character(kd) && length(kd)==1){
+    if(is.null(name)) name <- gsub("\\.rds$","",basename(kd),ignore.case=TRUE)
+    kd <- read.delim(kd, header=TRUE)
+  }
   if("mirseq" %in% colnames(kd)){
     mirseq <- as.character(kd$mirseq[1])
     #seed <- substr(mirseq, 2,8)
@@ -198,6 +203,7 @@ getKdModel <- function(kd){
   mod$assign <- NULL
   mod$effects <- NULL
   mod$qr <- list(pivot=mod$qr$pivot)
+  mod$name <- name
   mod$mirseq <- mirseq
   mod$canonical.seed <- seed
   mod$pwm <- pwm
@@ -304,8 +310,10 @@ plotKdModel <- function(mod, what=c("both","seeds","logo")){
     # mer8$type="8mer"
     # co <- rbind(co, mer8)
     # co$type <- factor(co$type, c("8mer","7mer-m8","6mer","non-canonical"))
-    return( ggplot(co, aes(seed, log_kd, fill=type)) + geom_col() + 
-              coord_flip() + ylab("-log_kd") )
+    p <- ggplot(co, aes(seed, log_kd, fill=type)) + geom_col() + 
+      coord_flip() + ylab("-log_kd")
+    if(!is.null(mod$name)) p <- p + ggtitle(mod$name)
+    return( p )
   }
   if(what=="logo") return(seqLogo::seqLogo(mod$pwm))
   library(cowplot)
