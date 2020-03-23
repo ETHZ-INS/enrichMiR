@@ -27,7 +27,7 @@
 #' names(seqs) <- paste0("seq",1:length(seqs))
 #' seeds <- c("AAACCAC", "AAACCUU")
 #' m <- findSeedMatches(seqs, seeds)
-  findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE,
+findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE,
                              seedtype=c("auto", "RNA","DNA"), BP=NULL){
   library(GenomicRanges)
   library(stringr)
@@ -66,10 +66,12 @@ sequences should be in DNA format.")
     mod <- NULL
     if(is(seed,"KdModel")){
       mod <- seed
-      seed <- substring(seed$xlevels$sr,2)
+      seed2 <- seed <- substring(seed$xlevels$sr,2)
+    }else{
+      seed2 <- substr(seed,2,7)
     }
     #seed <- paste0(".?.?.?",substr(setdiff(seed,"ther"),2,7),".?.?.?")
-    seed <- paste(paste0(".?.?.?",unique(substr(setdiff(seed,"ther"),2,7)),".?.?.?"),collapse="|")
+    seed <- paste(paste0(".?.?.?",unique(setdiff(seed,"other")),".?.?.?"),collapse="|")
     pos <- stringr::str_locate_all(seqs, seed)
     if(sum(sapply(pos,nrow))==0) return(GRanges())
     y <- GRanges( rep(names(seqs), sapply(pos,nrow)), 
@@ -182,7 +184,6 @@ getKdModel <- function(kd, name=NULL){
   }
   if("mirseq" %in% colnames(kd)){
     mirseq <- as.character(kd$mirseq[1])
-    #seed <- substr(mirseq, 2,8)
     seed <- as.character(reverseComplement(DNAString(substr(mirseq, 2,8))))
     kd <- kd[,c("X12mer","log_kd")]
   }else{
