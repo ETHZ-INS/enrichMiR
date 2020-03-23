@@ -72,7 +72,7 @@ sequences should be in DNA format.")
     seed <- paste(paste0(".?.?.?",unique(substr(setdiff(seed,"ther"),2,7)),".?.?.?"),collapse="|")
     pos <- stringr::str_locate_all(seqs, seed)
     if(sum(sapply(pos,nrow))==0) return(GRanges())
-    y <- GRanges( rep(names(seqs), sapply(pos,nrow)), 
+    y <- GRanges( rep(names(seqs), sum(sapply(pos,nrow))), 
                   IRanges( start=unlist(lapply(pos,FUN=function(x) x[,1])),
                            end=unlist(lapply(pos,FUN=function(x) x[,2])) ) )
     y$sequence <- factor(unlist(mapply(x=seqs, pos=pos, FUN=function(x,pos){
