@@ -68,8 +68,8 @@ sequences should be in DNA format.")
       mod <- seed
       seed <- substring(seed$xlevels$sr,2)
     }
-    seed <- paste0(".?.?.?",substr(setdiff(seed,"ther"),2,7),".?.?.?")
-    #seed <- paste(paste0(".?.?.?",unique(substr(setdiff(seed,"ther"),2,7)),".?.?.?"),collapse="|")
+    #seed <- paste0(".?.?.?",substr(setdiff(seed,"ther"),2,7),".?.?.?")
+    seed <- paste(paste0(".?.?.?",unique(substr(setdiff(seed,"ther"),2,7)),".?.?.?"),collapse="|")
     pos <- stringr::str_locate_all(seqs, seed)
     if(sum(sapply(pos,nrow))==0) return(GRanges())
     y <- GRanges( rep(names(seqs), sapply(pos,nrow)), 
