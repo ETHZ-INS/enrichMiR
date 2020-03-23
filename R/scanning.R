@@ -45,20 +45,20 @@ sequences should be in DNA format.")
   }else{
     if(is.null(names(seeds))) names(seeds) <- seeds
     if(seedtype=="auto") seedtype <- .guessSeqType(seeds)
+    n <- names(seeds)
+    if(seedtype=="RNA"){
+      message("Matching reverse complements of the seeds...")
+      seeds <- as.character(reverseComplement(RNAStringSet(seeds)))
+    }else{
+      message("Matching the given seeds directly...")
+    }
+    if(seqtype=="RNA"){
+      seeds <- gsub("T", "U", seeds)
+    }else{
+      seeds <- gsub("U", "T", seeds)
+    }
+    names(seeds) <- n
   }
-  n <- names(seeds)
-  if(seedtype=="RNA"){
-    message("Matching reverse complements of the seeds...")
-    seeds <- as.character(reverseComplement(RNAStringSet(seeds)))
-  }else{
-    message("Matching the given seeds directly...")
-  }
-  if(seqtype=="RNA"){
-    seeds <- gsub("T", "U", seeds)
-  }else{
-    seeds <- gsub("U", "T", seeds)
-  }
-  names(seeds) <- n
   if(is.null(BP)) BP <- SerialParam()
   if(shadow>0) seqs <- substr(seqs, shadow+1, sapply(seqs, nchr))
   seqs <- seqs[sapply(seqs,nchar)>=min(sapply(seeds,nchar))]
@@ -68,7 +68,8 @@ sequences should be in DNA format.")
       mod <- seed
       seed <- substring(seed$xlevels$sr,2)
     }
-    seed <- paste0(".?.?.?",substr(seed,2,7),".?.?.?")
+    seed <- paste0(".?.?.?",substr(setdiff(seed,"ther"),2,7),".?.?.?")
+    #seed <- paste(paste0(".?.?.?",unique(substr(setdiff(seed,"ther"),2,7)),".?.?.?"),collapse="|")
     pos <- stringr::str_locate_all(seqs, seed)
     if(sum(sapply(pos,nrow))==0) return(GRanges())
     y <- GRanges( rep(names(seqs), sapply(pos,nrow)), 
@@ -83,7 +84,9 @@ sequences should be in DNA format.")
     if(!keepMatchSeq) y$sequence <- NULL
     y
   })
-  for(s in names(seeds)) m[[s]]$seed <- s
+  for(s in names(m)){
+    if(length(m[[s]])>0) m[[s]]$seed <- s
+  }
   m <- sort(unlist(GRangesList(m)))
   m$seed <- factor(m$seed)
   m$type <- factor(m$type)
