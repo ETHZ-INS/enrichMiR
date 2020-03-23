@@ -62,7 +62,7 @@ sequences should be in DNA format.")
   if(is.null(BP)) BP <- SerialParam()
   if(shadow>0) seqs <- substr(seqs, shadow+1, sapply(seqs, nchr))
   seqs <- seqs[sapply(seqs,nchar)>=min(sapply(seeds,nchar))]
-  m <- lapply(seeds, seqs=seqs, FUN=function(seed,seqs){
+  m <- bplapply(seeds, seqs=seqs, BPPARAM=BP, FUN=function(seed,seqs){
     mod <- NULL
     if(is(seed,"KdModel")){
       mod <- seed
@@ -86,11 +86,9 @@ sequences should be in DNA format.")
     if(!keepMatchSeq) y$sequence <- NULL
     y
   })
-  for(s in names(m)){
-    if(length(m[[s]])>0) m[[s]]$seed <- s
-  }
+  mseed <- factor(rep(names(m),sapply(m,length)))
   m <- sort(unlist(GRangesList(m)))
-  m$seed <- factor(m$seed)
+  m$seed <- mseed
   m$type <- factor(m$type)
   if(shadow>0){
     end(m) <- end(m)+shadow
