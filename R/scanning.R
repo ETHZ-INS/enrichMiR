@@ -208,7 +208,7 @@ getKdModel <- function(kd, name=NULL){
   mod$assign <- NULL
   mod$effects <- NULL
   mod$qr <- list(pivot=mod$qr$pivot)
-  mod$name <- name
+  mod$name <- as.character(kd$mir[1])
   mod$mirseq <- mirseq
   mod$canonical.seed <- seed
   mod$pwm <- pwm
