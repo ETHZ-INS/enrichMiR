@@ -197,8 +197,11 @@ getKdModel <- function(kd, name=NULL){
     kd <- prep12mers(kd)
   fields <- c(fields, "log_kd")
   if(!all(fields %in% colnames(kd))) stop("Malformed `kd` data.frame.")
-  mod <- lm( log_kd~sr*A+fl, data=kd, model=FALSE, weights=(-kd$log_kd)^2, 
-             x=FALSE, y=FALSE )
+  w <- (1-kd$log_kd)^2
+  w[which(w<0.5)] <- 0.5
+  mod <- lm( log_kd~sr*A+fl, data=kd, model=FALSE, weights=w, x=FALSE, y=FALSE )
+  mod$cor.with.cnn <- cor(mod$fitted.values, kd$log_kd)
+  mod$mae.with.cnn <- median(abs(mod$fitted.values-kd$log_kd))
   mod$residuals <- NULL
   mod$fitted.values <- NULL
   mod$weights <- NULL
