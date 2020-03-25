@@ -60,7 +60,7 @@ sequences should be in DNA format.")
     names(seeds) <- n
   }
   if(is.null(BP)) BP <- SerialParam()
-  if(shadow>0) seqs <- substr(seqs, shadow+1, sapply(seqs, nchr))
+  if(shadow>0) seqs <- substr(seqs, shadow+1, sapply(seqs, nchar))
   seqs <- seqs[sapply(seqs,nchar)>=min(sapply(seeds,nchar))]
   m <- bplapply(seeds, seqs=seqs, BPPARAM=BP, FUN=function(seed,seqs){
     mod <- NULL
@@ -308,7 +308,7 @@ plotKdModel <- function(mod, what=c("both","seeds","logo")){
     coA <- co
     aint <- coe[paste0("sr",coA$seed,":ATRUE")]
     aint[is.na(aint)] <- 0
-    coA$log_kd <- coe["ATRUE"] - aint
+    coA$log_kd <- - coe["ATRUE"] - aint
     coA$type <- "+A"
     co <- rbind(co,coA)
     co$type <- factor(co$type, c("+A","7mer-m8","6mer","offset 6mer","non-canonical"))
