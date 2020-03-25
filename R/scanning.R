@@ -183,6 +183,7 @@ getKdModel <- function(kd, name=NULL){
   if("mirseq" %in% colnames(kd)){
     mirseq <- as.character(kd$mirseq[1])
     seed <- as.character(reverseComplement(DNAString(substr(mirseq, 2,8))))
+    name <- as.character(kd$mir[1])
     kd <- kd[,c("X12mer","log_kd")]
   }else{
     mirseq <- seed <- NULL
@@ -208,7 +209,7 @@ getKdModel <- function(kd, name=NULL){
   mod$assign <- NULL
   mod$effects <- NULL
   mod$qr <- list(pivot=mod$qr$pivot)
-  mod$name <- as.character(kd$mir[1])
+  mod$name <- name
   mod$mirseq <- mirseq
   mod$canonical.seed <- seed
   mod$pwm <- pwm
