@@ -308,10 +308,10 @@ plotKdModel <- function(mod, what=c("both","seeds","logo")){
     coA <- co
     aint <- coe[paste0("sr",coA$seed,":ATRUE")]
     aint[is.na(aint)] <- 0
-    coA$log_kd <- coA$log_kd - coe["ATRUE"] - aint
+    coA$log_kd <- coe["ATRUE"] - aint
     coA$type <- "+A"
     co <- rbind(co,coA)
-    co$type <- factor(co$type, c("+A","7mer-m8","6mer","non-canonical"))
+    co$type <- factor(co$type, c("+A","7mer-m8","6mer","offset 6mer","non-canonical"))
     # mer8 <- co[nrow(co),,drop=FALSE]
     # mer8$log_kd <- mer8$log_kd-coe[paste0("sr",mer8$seed,":ATRUE")]-coe["ATRUE"]
     # mer8$type="8mer"
