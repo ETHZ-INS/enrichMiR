@@ -159,8 +159,9 @@ characterizeSeedMatches <- function(x, seed=NULL, kd.model=NULL){
   if(grepl(paste0(seed,"A"),x,fixed=TRUE)) return("8mer")
   if(grepl(seed,x,fixed=TRUE)) return("7mer-m8")
   seed6 <- substr(seed,2,7)
-  if(grepl(paste0(seed6,"A"),x,fixed=TRUE)) return("7mer-A1")
-  if(grepl(seed6,x,fixed=TRUE)) return("6mer")
+  if(grepl(paste0(".",seed6,"A"),x,fixed=TRUE)) return("7mer-A1")
+  if(grepl(paste0(".",seed6),x,fixed=TRUE)) return("6mer")
+  if(grepl(seed6,x,fixed=TRUE)) return("offset 6mer")
   "non-canonical"
 }
 
