@@ -62,39 +62,75 @@ sequences should be in DNA format.")
   if(is.null(BP)) BP <- SerialParam()
   if(shadow>0) seqs <- substr(seqs, shadow+1, sapply(seqs, nchar))
   seqs <- seqs[sapply(seqs,nchar)>=min(sapply(seeds,nchar))]
+  seqnms <- factor(names(seqs), names(seqs))
   m <- bplapply(seeds, seqs=seqs, BPPARAM=BP, FUN=function(seed,seqs){
-    mod <- NULL
     if(is(seed,"KdModel")){
-      mod <- seed
-      seed2 <- seed <- substring(seed$xlevels$sr,2)
+      seed <- substring(seed$xlevels$sr,2)
+      seed2 <- setdiff(seed,"other")
     }else{
       seed2 <- substr(seed,2,7)
     }
-    #seed <- paste0(".?.?.?",substr(setdiff(seed,"ther"),2,7),".?.?.?")
-    seed <- paste(paste0(".?.?.?",unique(setdiff(seed,"other")),".?.?.?"),collapse="|")
-    pos <- stringr::str_locate_all(seqs, seed)
-    if(sum(sapply(pos,nrow))==0) return(GRanges())
-    y <- GRanges( rep(names(seqs), sapply(pos,nrow)), 
-                  IRanges( start=unlist(lapply(pos,FUN=function(x) x[,1])),
-                           end=unlist(lapply(pos,FUN=function(x) x[,2])) ) )
-    y$sequence <- factor(unlist(mapply(x=seqs, pos=pos, FUN=function(x,pos){
-      stringr::str_sub(x, pos[,1], pos[,2])
-    })))
-    y <- characterizeSeedMatches( y,
-                                  ifelse(is.null(mod),seed,mod$canonical.seed),
-                                  mod )
-    if(!keepMatchSeq) y$sequence <- NULL
-    y
+    # look-around matching to get overlapping seeds
+    pos <- gregexpr( paste0("(?=",paste(unique(seed2),collapse="|"),")"),
+                     seqs, perl=TRUE )
+    if(sum(sapply(pos,length))==0) return(NULL)
+    GRanges( rep(seqnms, sapply(pos,length)), 
+             IRanges( start=unlist(lapply(pos,as.numeric)), width=3 ) )
   })
+  m <- m[!sapply(m,is.null)]
   mseed <- factor(rep(names(m),sapply(m,length)))
-  m <- sort(unlist(GRangesList(m)))
+  m <- unlist(GRangesList(m))
   m$seed <- mseed
+  m <- unlist(lapply(split(m,seqnames(m)), FUN=function(r){
+    st <- start(r)-3
+    st[st<1] <- 1
+    r$sequence <- str_sub(seqs[[seqnames(r)[[1]]]], st, end(r)+3)
+    r
+  }))
+  # track extension negatives
+  leftoff <- start(m)-4
+  w <- leftoff<0
+  m$sequence[w] <- paste0(sapply(-leftoff[w], FUN=function(x){
+    paste0(rep("x",x),collapse="")
+  }), m$sequence[w])
+  txlen <- sapply(seqs, nchar)
+  rightoff <- txlen[seqnames(m)]-end(m)
+  w <- rightoff < 0
+  m$sequence[w] <- paste0(m$sequence[w],
+                          sapply(-rightoff[w], FUN=function(x){
+                            paste0(rep("x",x),collapse="")
+                          }))
+  m <- unlist(lapply(split(m, m$seed), FUN=function(x){
+    seed <- seeds[[as.character(x$seed[1])]]
+    mod <- NULL
+    if(is(seed,"KdModel")){
+      mod <- seed
+      seed <- seed$canonical.seed
+    }
+    x <- characterizeSeedMatches( x, seed, mod)
+    # for overlapping seeds, keep only the best one
+    x <- x[order(x$log_kd),]
+    .removeOverlapping(x)
+  }))
+  if(!keepMatchSeq) m$sequence <- NULL
+  m <- sort(m)
   m$type <- factor(m$type)
   if(shadow>0){
     end(m) <- end(m)+shadow
     start(m) <- start(m)+shadow
   }
   m
+}
+
+# keeps the first
+.removeOverlapping <- function(x){
+  red <- reduce(x, with.revmap=TRUE)
+  red <- red[lengths(red$revmap)>1]
+  if(length(red)==0) return(x)
+  il <- lengths(red$revmap)
+  red <- unlist(red$revmap)
+  toKeep <- red[cumsum(il)-il+1]
+  x[-setdiff(red, toKeep)]
 }
 
 .guessSeqType <- function(x, use.subset=TRUE){
