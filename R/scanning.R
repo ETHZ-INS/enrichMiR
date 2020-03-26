@@ -90,7 +90,7 @@ sequences should be in DNA format.")
   })))
   row.names(m) <- NULL
   start(m) <- start(m)-3
-  end(m) <- end(m)+3
+  end(m) <- end(m)-3
   m <- unlist(GRangesList(bplapply(split(m, m$seed), BPPARAM=BP, FUN=function(x){
     seed <- seeds[[as.character(x$seed[1])]]
     mod <- NULL
