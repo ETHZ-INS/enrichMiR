@@ -61,6 +61,7 @@ sequences should be in DNA format.")
   }
   if(is.null(BP)) BP <- SerialParam()
   if(shadow>0) seqs <- substr(seqs, shadow+1, sapply(seqs, nchar))
+  seqs <- paste0("xxx",seqs,"xxx")
   seqs <- seqs[sapply(seqs,nchar)>=min(sapply(seeds,nchar))]
   seqnms <- factor(names(seqs), names(seqs))
   m <- bplapply(seeds, seqs=seqs, BPPARAM=BP, FUN=function(seed,seqs){
@@ -82,27 +83,13 @@ sequences should be in DNA format.")
   m <- unlist(GRangesList(m))
   m$seed <- mseed
   m <- unlist(GRangesList(lapply(split(m,seqnames(m)), FUN=function(r){
-    st <- start(r)-3
-    st[st<1] <- 1
-    r$sequence <- str_sub(seqs[[as.numeric(seqnames(r[1]))]], st, end(r)+3)
+    r$sequence <- stringr::str_sub( seqs[[as.numeric(seqnames(r[1]))]], 
+                                    start(r)-3, end(r)+3 )
     r
   })))
   row.names(m) <- NULL
-  # track extension negatives
-  leftoff <- start(m)-4
-  if(length(w <- leftoff<0)>0){
-    m$sequence[w] <- paste0(sapply(-leftoff[w], FUN=function(x){
-      paste0(rep("x",x),collapse="")
-    }), m$sequence[w])
-  }
-  txlen <- sapply(seqs, nchar)
-  rightoff <- txlen[as.numeric(seqnames(m))]-end(m)
-  if(length(w <- rightoff < 0)){
-    m$sequence[w] <- paste0(m$sequence[w],
-                            sapply(-rightoff[w], FUN=function(x){
-                              paste0(rep("x",x),collapse="")
-                            }))
-  }
+  start(m) <- start(m)-3
+  end(m) <- end(m)+3
   m <- unlist(GRangesList(bplapply(split(m, m$seed), BPPARAM=BP, FUN=function(x){
     seed <- seeds[[as.character(x$seed[1])]]
     mod <- NULL
