@@ -277,8 +277,12 @@ prep12mers <- function(x, mod=NULL, maxSeedMedian=-1.2){
   }
   sr <- factor(sr, sr.lvls)
   fl <- sapply(x, FUN=function(x) paste0(substr(x, 1, 2),substr(x, 11, 12)))
-  data.frame(sr=sr, A=sapply(x, FUN=function(x) substr(x, 10, 10)=="A"),
-             fl=factor(fl, levels=getKmers(4)), row.names=NULL)
+  d <- data.frame( sr=sr, A=sapply(x, FUN=function(x) substr(x, 10, 10)=="A"),
+                   fl=factor(fl, levels=getKmers(4)), row.names=NULL )
+  d$A[is.na(d$A)] <- FALSE
+  fl <- sort(coef(mod)[grep("fl",names(coef(mod)))])
+  d$fl[is.na(d$fl)] <- names(fl)[floor(length(fl)/2)]
+  d
 }
 
 #' getKmers
