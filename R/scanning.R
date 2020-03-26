@@ -61,9 +61,10 @@ sequences should be in DNA format.")
   }
   if(is.null(BP)) BP <- SerialParam()
   if(shadow>0) seqs <- substr(seqs, shadow+1, sapply(seqs, nchar))
-  seqs <- paste0("xxx",seqs,"xxx")
   seqs <- seqs[sapply(seqs,nchar)>=min(sapply(seeds,nchar))]
   seqnms <- factor(names(seqs), names(seqs))
+  seqs <- paste0("xxx",seqs,"xxx")
+  names(seqs) <- levels(seqnms)
   m <- bplapply(seeds, seqs=seqs, BPPARAM=BP, FUN=function(seed,seqs){
     if(is(seed,"KdModel")){
       seed2 <- substring(seed$xlevels$sr[-1],2)
@@ -73,10 +74,10 @@ sequences should be in DNA format.")
     # look-around matching to get overlapping seeds
     pos <- gregexpr( paste0("(?=",paste(unique(seed2),collapse="|"),")"),
                      seqs, perl=TRUE )
-    pos <- lapply(pos, y=-1, setdiff)
+    pos <- lapply(lapply(pos, as.numeric), y=-1, setdiff)
     if(sum(sapply(pos,length))==0) return(NULL)
     GRanges( rep(seqnms, sapply(pos,length)), 
-             IRanges( start=unlist(lapply(pos,as.numeric)), width=6 ) )
+             IRanges( start=unlist(pos), width=6 ) )
   })
   m <- m[!sapply(m,is.null)]
   mseed <- factor(rep(names(m),sapply(m,length)))
