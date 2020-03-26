@@ -65,42 +65,45 @@ sequences should be in DNA format.")
   seqnms <- factor(names(seqs), names(seqs))
   m <- bplapply(seeds, seqs=seqs, BPPARAM=BP, FUN=function(seed,seqs){
     if(is(seed,"KdModel")){
-      seed <- substring(seed$xlevels$sr,2)
-      seed2 <- setdiff(seed,"other")
+      seed2 <- substring(seed$xlevels$sr[-1],2)
     }else{
       seed2 <- substr(seed,2,7)
     }
     # look-around matching to get overlapping seeds
     pos <- gregexpr( paste0("(?=",paste(unique(seed2),collapse="|"),")"),
                      seqs, perl=TRUE )
+    pos <- lapply(pos, y=-1, setdiff)
     if(sum(sapply(pos,length))==0) return(NULL)
     GRanges( rep(seqnms, sapply(pos,length)), 
-             IRanges( start=unlist(lapply(pos,as.numeric)), width=3 ) )
+             IRanges( start=unlist(lapply(pos,as.numeric)), width=6 ) )
   })
   m <- m[!sapply(m,is.null)]
   mseed <- factor(rep(names(m),sapply(m,length)))
   m <- unlist(GRangesList(m))
   m$seed <- mseed
-  m <- unlist(lapply(split(m,seqnames(m)), FUN=function(r){
+  m <- unlist(GRangesList(lapply(split(m,seqnames(m)), FUN=function(r){
     st <- start(r)-3
     st[st<1] <- 1
-    r$sequence <- str_sub(seqs[[seqnames(r)[[1]]]], st, end(r)+3)
+    r$sequence <- str_sub(seqs[[as.numeric(seqnames(r[1]))]], st, end(r)+3)
     r
-  }))
+  })))
+  row.names(m) <- NULL
   # track extension negatives
   leftoff <- start(m)-4
-  w <- leftoff<0
-  m$sequence[w] <- paste0(sapply(-leftoff[w], FUN=function(x){
-    paste0(rep("x",x),collapse="")
-  }), m$sequence[w])
+  if(length(w <- leftoff<0)>0){
+    m$sequence[w] <- paste0(sapply(-leftoff[w], FUN=function(x){
+      paste0(rep("x",x),collapse="")
+    }), m$sequence[w])
+  }
   txlen <- sapply(seqs, nchar)
-  rightoff <- txlen[seqnames(m)]-end(m)
-  w <- rightoff < 0
-  m$sequence[w] <- paste0(m$sequence[w],
-                          sapply(-rightoff[w], FUN=function(x){
-                            paste0(rep("x",x),collapse="")
-                          }))
-  m <- unlist(lapply(split(m, m$seed), FUN=function(x){
+  rightoff <- txlen[as.numeric(seqnames(m))]-end(m)
+  if(length(w <- rightoff < 0)){
+    m$sequence[w] <- paste0(m$sequence[w],
+                            sapply(-rightoff[w], FUN=function(x){
+                              paste0(rep("x",x),collapse="")
+                            }))
+  }
+  m <- unlist(GRangesList(bplapply(split(m, m$seed), BPPARAM=BP, FUN=function(x){
     seed <- seeds[[as.character(x$seed[1])]]
     mod <- NULL
     if(is(seed,"KdModel")){
@@ -111,7 +114,7 @@ sequences should be in DNA format.")
     # for overlapping seeds, keep only the best one
     x <- x[order(x$log_kd),]
     .removeOverlapping(x)
-  }))
+  })))
   if(!keepMatchSeq) m$sequence <- NULL
   m <- sort(m)
   m$type <- factor(m$type)
