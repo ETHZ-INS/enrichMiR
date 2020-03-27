@@ -10,6 +10,8 @@
 #'  hidden at the beginning of the sequence (default 0)
 #' @param keepMatchSeq Logical; whether to keep the sequence (including flanking
 #' dinucleotides) for each seed match (default FALSE).
+#' @param minDist Integer specifying the minimum distance between matches of the same 
+#' miRNA (default 1). Closer matches will be reduced to the highest-affinity of the two.
 #' @param seedtype Either RNA, DNA or 'auto' (default)
 #' @param BP Pass `BiocParallel::MulticoreParam(ncores)` to enable 
 #' multithreading.
@@ -27,7 +29,7 @@
 #' names(seqs) <- paste0("seq",1:length(seqs))
 #' seeds <- c("AAACCAC", "AAACCUU")
 #' m <- findSeedMatches(seqs, seeds)
-findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE,
+findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE, minDist=1,
                              seedtype=c("auto", "RNA","DNA"), BP=NULL){
   library(GenomicRanges)
   library(stringr)
@@ -93,15 +95,15 @@ sequences should be in DNA format.")
   end(m) <- end(m)-3
   m <- unlist(GRangesList(bplapply(split(m, m$seed), BPPARAM=BP, FUN=function(x){
     seed <- seeds[[as.character(x$seed[1])]]
-    mod <- NULL
     if(is(seed,"KdModel")){
-      mod <- seed
-      seed <- seed$canonical.seed
+      x <- characterizeSeedMatches( x, seed$canonical.seed, seed)
+      x <- x[order(x$log_kd),]
+    }else{
+      x <- characterizeSeedMatches( x, seed)
+      x <- x[order(x$type),]
     }
-    x <- characterizeSeedMatches( x, seed, mod)
     # for overlapping seeds, keep only the best one
-    x <- x[order(x$log_kd),]
-    .removeOverlapping(x)
+    .removeOverlapping(x, minDist=minDist)
   })))
   if(!keepMatchSeq) m$sequence <- NULL
   m <- sort(m)
@@ -114,8 +116,8 @@ sequences should be in DNA format.")
 }
 
 # keeps the first
-.removeOverlapping <- function(x){
-  red <- reduce(x, with.revmap=TRUE)
+.removeOverlapping <- function(x, minDist=1L){
+  red <- reduce(x, with.revmap=TRUE, min.gapwidth=minDist)
   red <- red[lengths(red$revmap)>1]
   if(length(red)==0) return(x)
   il <- lengths(red$revmap)
@@ -178,6 +180,8 @@ characterizeSeedMatches <- function(x, seed=NULL, kd.model=NULL){
   }
   d <- data.frame( row.names=x, 
                    type=sapply(as.character(x), seed=seed, FUN=.getMatchType) )
+  d$type <- factor(d$type, 
+                   c("8mer","7mer-m8","7mer-A1","6mer","offset 6mer","non-canonical"))
   if(!is.null(kd.model)) d$log_kd <- predictKD(row.names(d), kd.model)
   d
 }
