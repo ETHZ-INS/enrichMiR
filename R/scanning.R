@@ -5,7 +5,7 @@
 #' @param seeds A character vector of 7-nt seeds to look for. If RNA, will be 
 #' reversed and complemented before matching. If DNA, they are assumed to be
 #' the target sequence to look for. Alternatively, a list of objects of class
-#' `KdModel` can be given.
+#' `KdModel` or an object of class `CompressedKdModelList` can be given.
 #' @param shadow Integer giving the shadow, i.e. the number of nucleotides
 #'  hidden at the beginning of the sequence (default 0)
 #' @param keepMatchSeq Logical; whether to keep the sequence (including flanking
@@ -38,6 +38,7 @@ findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE, minDist=
   if(is.null(names(seqs))) names(seqs) <- paste0("seq",seq_along(seqs)) 
   seedtype <- match.arg(seedtype)
   seqtype <- .guessSeqType(seqs)
+  if(is(seeds, "CompressedKdModelList")) seeds <- decompressKdModList(seeds)
   if(is.list(seeds) && all(sapply(seeds, FUN=function(x) is(x,"KdModel")))){
     if(is.null(names(seeds)))
       stop("If `seeds` is a list of kd models, it should be named.")
