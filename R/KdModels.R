@@ -87,7 +87,7 @@ prep12mers <- function(x, mod=NULL, maxSeedMedian=-1.2){
                    fl=factor(fl, levels=getKmers(4)), row.names=NULL )
   d$A[is.na(d$A)] <- FALSE
   fl <- sort(coef(mod)[grep("fl",names(coef(mod)))])
-  d$fl[is.na(d$fl)] <- names(fl)[floor(length(fl)/2)]
+  d$fl[is.na(d$fl)] <- gsub("^fl","",names(fl)[floor(length(fl)/2)])
   d
 }
 
