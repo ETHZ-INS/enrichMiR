@@ -87,8 +87,9 @@ sequences should be in DNA format.")
   m <- unlist(GRangesList(m))
   m$seed <- mseed
   m <- unlist(GRangesList(lapply(split(m,seqnames(m)), FUN=function(r){
-    r$sequence <- stringr::str_sub( seqs[[as.numeric(seqnames(r[1]))]], 
-                                    start(r)-3, end(r)+3 )
+    if(length(r)>0)
+      r$sequence <- stringr::str_sub( seqs[[as.numeric(seqnames(r[1]))]], 
+                                      start(r)-3, end(r)+3 )
     r
   })))
   row.names(m) <- NULL
@@ -113,6 +114,8 @@ sequences should be in DNA format.")
     end(m) <- end(m)+shadow
     start(m) <- start(m)+shadow
   }
+  names(m) <- NULL
+  m$log_kd <- round(m$log_kd, 3)
   m
 }
 
