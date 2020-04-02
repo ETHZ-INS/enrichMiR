@@ -86,7 +86,7 @@ sequences should be in DNA format.")
   mseed <- factor(rep(names(m),sapply(m,length)))
   m <- unlist(GRangesList(m))
   m$seed <- mseed
-  m <- unlist(GRangesList(lapply(split(m,seqnames(m)), FUN=function(r){
+  m <- unlist(GRangesList(lapply(split(m,seqnames(m),drop=TRUE), FUN=function(r){
     if(length(r)>0)
       r$sequence <- stringr::str_sub( seqs[[as.numeric(seqnames(r[1]))]], 
                                       start(r)-3, end(r)+3 )
