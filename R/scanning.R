@@ -29,7 +29,7 @@
 #' names(seqs) <- paste0("seq",1:length(seqs))
 #' seeds <- c("AAACCAC", "AAACCUU")
 #' m <- findSeedMatches(seqs, seeds)
-findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE, minDist=1,
+findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE, minDist=1, mem.opt = FALSE,
                              seedtype=c("auto", "RNA","DNA"), BP=NULL){
   library(GenomicRanges)
   library(stringr)
@@ -82,24 +82,37 @@ sequences should be in DNA format.")
     GRanges( rep(seqnms, sapply(pos,length)), 
              IRanges( start=unlist(pos), width=6 ) )
   })
+  
+  if(mem.opt) gc(verbose = FALSE, full = TRUE)
+  
   m <- m[!sapply(m,is.null)]
   mseed <- factor(rep(names(m),sapply(m,length)))
   m <- unlist(GRangesList(m))
   m$seed <- mseed
+  
+  if(mem.opt) gc(verbose = FALSE, full = TRUE)
+  
   m <- unlist(GRangesList(bplapply( split(m,seqnames(m),drop=TRUE), 
-                                    BPPARAM=BP, FUN=function(r){
+                                    BPPARAM=SerialParam(), FUN=function(r){
     if(length(r)>0)
       r$sequence <- stringr::str_sub( seqs[[as.numeric(seqnames(r[1]))]], 
                                       start(r)-3, end(r)+3 )
     r
   })))
+  
+  if(mem.opt) gc(verbose = FALSE, full = TRUE)
+  
   row.names(m) <- NULL
   start(m) <- start(m)-3
   end(m) <- end(m)-3
+  
+  if(mem.opt) gc(verbose = FALSE, full = TRUE)
+  
   m <- unlist(GRangesList(bplapply(split(m, m$seed), BPPARAM=BP, FUN=function(x){
     seed <- seeds[[as.character(x$seed[1])]]
     if(is(seed,"KdModel")){
       x <- characterizeSeedMatches( x, seed$canonical.seed, seed)
+      if(mem.opt) gc(verbose = FALSE, full = FALSE)
       x <- x[order(x$log_kd),]
     }else{
       x <- characterizeSeedMatches( x, seed)
@@ -108,6 +121,9 @@ sequences should be in DNA format.")
     # for overlapping seeds, keep only the best one
     .removeOverlapping(x, minDist=minDist)
   })))
+  
+  if(mem.opt) gc(verbose = FALSE, full = TRUE)
+  
   if(!keepMatchSeq) m$sequence <- NULL
   m <- sort(m)
   m$type <- factor(m$type)
@@ -117,18 +133,17 @@ sequences should be in DNA format.")
   }
   names(m) <- NULL
   m$log_kd <- round(m$log_kd, 3)
+  if(mem.opt) gc(verbose = FALSE, full = TRUE)
   m
 }
 
-# keeps the first
+
 .removeOverlapping <- function(x, minDist=1L){
-  red <- reduce(x, with.revmap=TRUE, min.gapwidth=minDist)
+  red <- GenomicRanges::reduce(x, with.revmap=TRUE, min.gapwidth=minDist)
   red <- red[lengths(red$revmap)>1]
   if(length(red)==0) return(x)
-  il <- lengths(red$revmap)
-  red <- unlist(red$revmap)
-  toKeep <- red[cumsum(il)-il+1]
-  x[-setdiff(red, toKeep)]
+  toRemove <- unlist(lapply(red$revmap, FUN=function(x) x[-which.min(x)]))
+  x[-toRemove]
 }
 
 .guessSeqType <- function(x, use.subset=TRUE){
