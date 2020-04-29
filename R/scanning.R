@@ -139,10 +139,23 @@ sequences should be in DNA format.")
 
 
 .removeOverlapping <- function(x, minDist=1L){
-  red <- GenomicRanges::reduce(x, with.revmap=TRUE, min.gapwidth=minDist)
-  red <- red[lengths(red$revmap)>1]
+  red <- GenomicRanges::reduce(x, with.revmap=TRUE, min.gapwidth=minDist)$revmap
+  red <- red[lengths(red)>1]
   if(length(red)==0) return(x)
-  toRemove <- unlist(lapply(red$revmap, FUN=function(x) x[-which.min(x)]))
+  toRemove <- unlist(lapply(red[lengths(red)==2], FUN=function(x) x[-which.min(x)]))
+  toRemove <- c(toRemove, unlist(lapply(red[lengths(red)>2], FUN=function(i){
+    w <- j <- i <- sort(i)
+    y <- x[i]
+    while(length(y)>1 && length(w)>0){
+      # remove anything overlappnig the top one
+      w <- 1+which(as.logical(countOverlaps(y[-1], y[1], maxgap=minDist)))
+      if(length(w)>0){
+        j <- j[-w]
+        y <- y[-w]
+      }
+    }
+    return(setdiff(i,j))
+  })))
   x[-toRemove]
 }
 
