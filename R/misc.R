@@ -61,3 +61,23 @@ recapitalizeMiRs <- function(x){
   }
   return(f)
 }
+
+
+.dea2binary <- function( dea, th=0.05, th.alfc=0, min.at.th=20, alt.top=50, 
+                         restrictSign=NULL, verbose=TRUE ){
+  if(!is.null(restrictSign)){
+    if(!(restrictSign %in% c(-1,1)))
+      stop("`restrictSign`, if given, should be -1 or 1.")
+    dea$FDR[sign(dea$logFC)!=restrictSign] <- 1
+  }
+  dea <- dea[order(dea$FDR, dea$PValue),]
+  if(sum(bi <- (dea$FDR<=th & abs(dea$logFC)>=th.alfc)) < min.at.th){
+    if(verbose) message("Insufficient genes passing the defined FDR; will use",
+                        "the top ", alt.top, " genes.")
+    x <- rep(c(TRUE,FALSE), c(alt.top,nrow(dea)-alt.top))
+  }else{
+    x <- bi
+  }
+  names(x) <- row.names(dea)
+  x
+}

@@ -4,13 +4,11 @@
 \alias{wEA}
 \title{wEA}
 \usage{
-wEA(tested, significant, TS, minSize = 5, testOnlyAnnotated = FALSE,
+wEA(signal, TS, minSize = 5, testOnlyAnnotated = FALSE,
   method = "Wallenius")
 }
 \arguments{
-\item{tested}{The set of tested features (e.g. genes)}
-
-\item{significant}{The set of differentially-expressed features.}
+\item{signal}{A named logical vector indicating which features are differentially-expressed}
 
 \item{TS}{A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.}
 
