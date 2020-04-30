@@ -5,7 +5,8 @@
 \title{findSeedMatches}
 \usage{
 findSeedMatches(seqs, seeds, shadow = 0, keepMatchSeq = FALSE,
-  seedtype = c("auto", "RNA", "DNA"), BP = NULL)
+  minDist = 1, mem.opt = FALSE, seedtype = c("auto", "RNA", "DNA"),
+  BP = NULL)
 }
 \arguments{
 \item{seqs}{A character vector of sequences in which to look. If DNA, will be
@@ -14,13 +15,16 @@ complemented before matching.}
 \item{seeds}{A character vector of 7-nt seeds to look for. If RNA, will be 
 reversed and complemented before matching. If DNA, they are assumed to be
 the target sequence to look for. Alternatively, a list of objects of class
-`KdModel` can be given.}
+`KdModel` or an object of class `CompressedKdModelList` can be given.}
 
 \item{shadow}{Integer giving the shadow, i.e. the number of nucleotides
 hidden at the beginning of the sequence (default 0)}
 
 \item{keepMatchSeq}{Logical; whether to keep the sequence (including flanking
 dinucleotides) for each seed match (default FALSE).}
+
+\item{minDist}{Integer specifying the minimum distance between matches of the same 
+miRNA (default 1). Closer matches will be reduced to the highest-affinity of the two.}
 
 \item{seedtype}{Either RNA, DNA or 'auto' (default)}
 
