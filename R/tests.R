@@ -17,7 +17,7 @@ EA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE){
   if(testOnlyAnnotated) tested <- intersect(tested,unique(as.character(TS$feature)))
   significant <- intersect(significant,tested)
   sets <- split(TS,TS$family)
-  sets <- sets[lengths(sets)>=minSize]
+  sets <- sets[sapply(sets,nrow)>=minSize]
   res <- lapply(sets, set1=significant, universe=tested, FUN=function(x,set1,universe){
     set2 <- unique(as.character(x$feature))
     set2 <- intersect(set2,universe)
@@ -68,6 +68,7 @@ plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites
   }else{
     cfl <- NULL
   }
+  TS$family <- as.character(TS$family)
   res <- t(sapply(split(TS,TS$family,drop=F), fcs=fcs, minSize=minSize, cfl=cfl, FUN=function(x,fcs, minSize, cfl){
     r <- c(x$family[1],x$rep.miRNA[1],NA,NA)
     if(nrow(x)<minSize) return(r)
@@ -122,6 +123,12 @@ wEA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE, method="Wallenius
   # TEMPORARY enrichment value
   significant <- names(signal)[signal]
   res$enrichment <- round(log2(res$overlap/(length(significant)*(res$numInCat/length(signal)))),2)
+  
+  # temporary fix of pvalues >1 or <0
+  res$over.pvalue[res$over.pvalue > 1] <- 1
+  res$under.pvalue[res$under.pvalue > 1] <- 1
+  res$over.pvalue[res$over.pvalue < 0] <- 0
+  res$under.pvalue[res$under.pvalue < 0] <- 0
   
   res$FDR <- p.adjust(res$over.pvalue, method="fdr")
   colnames(res)[5] <- "annotated"
@@ -500,8 +507,13 @@ regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercep
   res <- DataFrame(res[order(res[,4]),,drop=FALSE])
   colnames(res) <- c("beta","stderr",ifelse(isLogistic,"z","t"),"pvalue")
   # we adjust using all features as number of comparisons
-  res$FDR <- p.adjust(res$pvalue, n=ncol(bm))
-  res$features <- CharacterList(lapply(split(TS$feature, TS$family)[row.names(res)], 
+  if(nrow(res)>0){
+    res$FDR <- p.adjust(res$pvalue, n=ncol(bm))
+    res$features <- CharacterList(lapply(split(TS$feature, TS$family)[row.names(res)], 
                                     y=names(signal)[signal], FUN=intersect))
-  res
+  }
+  # add all miRNA families not included in res
+  add <- unique(TS$family[!(TS$family %in% rownames(res$regmirb.down))])
+  res <- rbind(res, DataFrame(beta=rep(NA,length(add)),stderr=rep(NA,length(add)),z=rep(NA,length(add)),
+                              pvalue=rep(1,length(add)),FDR=rep(1,length(add)),features=rep(NA,length(add)), row.names=add))
 }
