@@ -71,10 +71,10 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL,
     if(is.null(tests) || "gsea" %in% tests) o@res$GSEA=gsea(DEA, TS, minSize, maxSize=gsea.maxSize, nperm=gsea.permutations, fdr.thres=gsea.fdr.thres)
     if(is.null(tests) || "modsites" %in% tests) o@res$modSites=plMod(DEA, TS, minSize, var="sites", correctForLength=T)
     if(is.null(tests) || "modscore" %in% tests) o@res$modScore=plMod(DEA, TS, minSize, var="score", correctForLength=F)
-    if(is.null(tests) || "regmir" %in% tests) o@res$regmir.down=regmir(down, TS, binary=FALSE)
-    if(is.null(tests) || "regmir" %in% tests) o@res$regmir.up=regmir(up, TS, binary=FALSE)
-    if(is.null(tests) || "regmirb" %in% tests) o@res$regmirb.down=regmir(down, TS, binary=TRUE)
-    if(is.null(tests) || "regmirb" %in% tests) o@res$regmirb.up=regmir(up, TS, binary=TRUE)
+    if(is.null(tests) || "regmir" %in% tests) o@res$regmir.down=regmir(down, TS, binary=FALSE, keepAll=TRUE)
+    if(is.null(tests) || "regmir" %in% tests) o@res$regmir.up=regmir(up, TS, binary=FALSE, keepAll=TRUE)
+    if(is.null(tests) || "regmirb" %in% tests) o@res$regmirb.down=regmir(down, TS, binary=TRUE, keepAll=TRUE)
+    if(is.null(tests) || "regmirb" %in% tests) o@res$regmirb.up=regmir(up, TS, binary=TRUE, keepAll=TRUE)
     return(o)
 }
 
