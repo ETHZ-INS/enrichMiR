@@ -447,12 +447,14 @@ aREAmir <- function(dea, TS, minSize=5, pleiotropy=FALSE){
 #' @param alpha elastic net mixing param (0=ridge, 1=lasso)
 #' @param do.plot Logical, whether to plot coefficients against lambda
 #' @param use.intercept Logical, whether to use an intercept in the model.
+#' @param keepAll Logical, whether to return all families (default FALSE)
 #'
 #' @return A DataFrame.
 #' @importFrom IRanges CharacterList
 #' @import glmnet zetadiv S4Vectors 
 #' @export
-regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercept=FALSE){
+regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercept=FALSE,
+                   keepAll=FALSE){
   if(is.null(names(signal))) stop("`signal` should be a named vector!")
   
   # prepare the target matrix
@@ -502,18 +504,31 @@ regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercep
   
   # we extract the coefficients and p-values, and reorganize the output:
   res <- coef(summary(mod))
+  res <- res[order(res[,4]),,drop=FALSE]
+  colnames(res) <- c("beta","stderr",ifelse(isLogistic,"z","t"),"pvalue")
   res <- res[grep("^\\(Intercept\\)$|FALSE$", row.names(res), invert=TRUE),,drop=FALSE]
   row.names(res) <- gsub("TRUE","",row.names(res))
-  res <- DataFrame(res[order(res[,4]),,drop=FALSE])
-  colnames(res) <- c("beta","stderr",ifelse(isLogistic,"z","t"),"pvalue")
+  
+  if(keepAll){
+    co2 <- sort(apply(fits$glmnet.fit$beta,1,FUN=function(x){
+      if(!any(x!=0)) return(Inf)
+      which(x!=0)[1]
+    }))
+    co2 <- co2[grep("^\\(Intercept\\)$|FALSE$", names(co2), invert=TRUE)]
+    names(co2) <- gsub("TRUE","",names(co2))
+    co2 <- co2[setdiff(names(co2),row.names(res))]
+    co2 <- data.frame(row.names=names(co2), beta=rep(NA_real_,length(co2)),
+                      stderr=NA_real_, z=NA_real_, pvalue=1)
+    if(!isLogistic) colnames(co2)[3] <- "t"
+    res <- rbind(res,co2)
+  }
+  
+  res <- DataFrame(res)
   # we adjust using all features as number of comparisons
   if(nrow(res)>0){
     res$FDR <- p.adjust(res$pvalue, n=ncol(bm))
     res$features <- CharacterList(lapply(split(TS$feature, TS$family)[row.names(res)], 
                                     y=names(signal)[signal], FUN=intersect))
   }
-  # add all miRNA families not included in res
-  add <- unique(TS$family[!(TS$family %in% rownames(res$regmirb.down))])
-  res <- rbind(res, DataFrame(beta=rep(NA,length(add)),stderr=rep(NA,length(add)),z=rep(NA,length(add)),
-                              pvalue=rep(1,length(add)),FDR=rep(1,length(add)),features=rep(NA,length(add)), row.names=add))
+  res
 }
