@@ -69,6 +69,7 @@ plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites
     cfl <- NULL
   }
   TS$family <- as.character(TS$family)
+  TS$rep.miRNA <- as.character(TS$rep.miRNA)
   res <- t(sapply(split(TS,TS$family,drop=F), fcs=fcs, minSize=minSize, cfl=cfl, FUN=function(x,fcs, minSize, cfl){
     r <- c(x$family[1],x$rep.miRNA[1],NA,NA)
     if(nrow(x)<minSize) return(r)
