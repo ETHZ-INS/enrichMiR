@@ -54,10 +54,9 @@ EA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE){
 #' @return a data.frame
 #' @export
 plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites")){
-  library(MASS)
   fcs <- dea$logFC
   names(fcs) <- row.names(dea)
-  TS <- aggregate(TS,by=list(family=TS$family, feature=TS$feature),FUN=function(x){ if(is.numeric(x)) return(max(x,na.rm=T)); x[[1]] })
+  TS <- aggregate(TS[,c("sites","score")],by=list(family=TS$family, feature=TS$feature),FUN=function(x){ if(is.numeric(x)) return(max(x,na.rm=T)); x[[1]] })
   if(correctForLength){
     ag <- aggregate(TS$sites,by=list(feature=TS$feature),FUN=sum)
     cfl <- ag[,2]
@@ -78,9 +77,9 @@ plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites
     x2 <- x[names(fcs),var]
     x2[which(is.na(x2))] <- 0
     if(is.null(cfl)){
-      mod <- try(rlm(fcs~x2+0),silent=T)
+      mod <- try(lm(fcs~x2+0),silent=T)
     }else{
-      mod <- try(rlm(fcs~x2+cfl+0),silent=T)
+      mod <- try(lm(fcs~x2+cfl+0),silent=T)
     }
     if(!is(mod,"try-error")) r[3:4] <- c(coef(mod)["x2"], summary(aov(mod))[[1]]["x2","Pr(>F)"])
     return(r)
