@@ -56,6 +56,7 @@ EA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE){
 plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites")){
   fcs <- dea$logFC
   names(fcs) <- row.names(dea)
+  TS <- as.data.frame(TS)
   TS <- aggregate(TS[,c("sites","score")],by=list(family=TS$family, feature=TS$feature),FUN=function(x){ if(is.numeric(x)) return(max(x,na.rm=T)); x[[1]] })
   if(correctForLength){
     ag <- aggregate(TS$sites,by=list(feature=TS$feature),FUN=sum)
@@ -68,9 +69,8 @@ plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites
     cfl <- NULL
   }
   TS$family <- as.character(TS$family)
-  TS$rep.miRNA <- as.character(TS$rep.miRNA)
-  res <- t(sapply(split(TS,TS$family,drop=F), fcs=fcs, minSize=minSize, cfl=cfl, FUN=function(x,fcs, minSize, cfl){
-    r <- c(x$family[1],x$rep.miRNA[1],NA,NA)
+  res <- t(sapply(split(TS,TS$family), fcs=fcs, minSize=minSize, cfl=cfl, FUN=function(x,fcs, minSize, cfl){
+    r <- c(x$family[1],NA,NA)
     if(nrow(x)<minSize) return(r)
     x <- x[!duplicated(x),]
     row.names(x) <- x$feature
@@ -81,11 +81,11 @@ plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites
     }else{
       mod <- try(lm(fcs~x2+cfl+0),silent=T)
     }
-    if(!is(mod,"try-error")) r[3:4] <- c(coef(mod)["x2"], summary(aov(mod))[[1]]["x2","Pr(>F)"])
+    if(!is(mod,"try-error")) r[2:3] <- c(coef(mod)["x2"], summary(aov(mod))[[1]]["x2","Pr(>F)"])
     return(r)
   }))
+  colnames(res) <- c("family","logFC","pvalue")
   res <- DataFrame(res)
-  colnames(res) <- c("family","rep.miRNA","logFC","pvalue")
   res$logFC <- as.numeric(as.character(res$logFC))
   res$pvalue <- as.numeric(as.character(res$pvalue))
   res$FDR <- p.adjust(res$pvalue)
