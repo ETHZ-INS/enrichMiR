@@ -68,6 +68,9 @@ sequences should be in DNA format.")
   seqnms <- factor(names(seqs), names(seqs))
   seqs <- paste0("xxx",seqs,"xxx")
   names(seqs) <- levels(seqnms)
+  
+  message("Scanning...")
+  
   m <- bplapply(seeds, seqs=seqs, BPPARAM=BP, FUN=function(seed,seqs){
     if(is(seed,"KdModel")){
       seed2 <- substring(seed$xlevels$sr[-1],2)
@@ -92,13 +95,14 @@ sequences should be in DNA format.")
   
   if(mem.opt) gc(verbose = FALSE, full = TRUE)
   
-  m <- unlist(GRangesList(bplapply( split(m,seqnames(m),drop=TRUE), 
-                                    BPPARAM=SerialParam(), FUN=function(r){
-    if(length(r)>0)
-      r$sequence <- stringr::str_sub( seqs[[as.numeric(seqnames(r[1]))]], 
-                                      start(r)-3, end(r)+3 )
-    r
-  })))
+  message("Extracting sequences...")
+  
+  m <- m[order(seqnames(m))]
+  m$sequence <- unlist(bpmapply( r=split(ranges(m), seqnames(m)),
+                                 seq=seqs, BPPARAM=BP, FUN=function(r, seq){
+    if(length(r)==0) return(NULL)
+    str_sub( seq, start(r)-3, end(r)+3 )
+  }))
   
   if(mem.opt) gc(verbose = FALSE, full = TRUE)
   
@@ -108,8 +112,12 @@ sequences should be in DNA format.")
   
   if(mem.opt) gc(verbose = FALSE, full = TRUE)
   
-  m <- unlist(GRangesList(bplapply(split(m, m$seed), BPPARAM=BP, FUN=function(x){
-    seed <- seeds[[as.character(x$seed[1])]]
+  message("Characterizing matches and removing overlaps...")
+  
+  m$seed <- droplevels(m$seed)
+
+  m <- unlist(GRangesList(bpmapply( x=split(m, m$seed), seed=seeds[levels(m$seed)],
+                                    BPPARAM=BP, FUN=function(x, seed){
     if(is(seed,"KdModel")){
       x <- characterizeSeedMatches( x, seed$canonical.seed, seed)
       if(mem.opt) gc(verbose = FALSE, full = FALSE)
