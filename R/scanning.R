@@ -124,9 +124,9 @@ sequences should be in DNA format.")
   }
   seqnms <- names(seqs)
   if(is.character(seqs)) seqs <- DNAStringSet(seqs)
-  seqs <- seqs[lengths(seqs)>=(shadow+7)]
   names(seqs) <- seqnms
-  if(shadow>0) seqs <- substr(seqs, shadow+1)
+  seqs <- seqs[lengths(seqs)>=(shadow+7)]
+  if(shadow>0) seqs <- subseq(seqs, shadow+1)
   seqs <- padAndClip(seqs, views=IRanges(start=1-3, width=lengths(seqs)+6), 
                      Lpadding.letter = "N", Rpadding.letter = "N")
   c(ret, list(seqs=seqs))
