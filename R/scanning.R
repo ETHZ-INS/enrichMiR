@@ -132,7 +132,7 @@ sequences should be in DNA format.")
   c(ret, list(seqs=seqs))
 }
 
-.find1SeedMatches <- function( seqs, seed, keepMatchSeq=FALSE, minDist=1, verbose=FALSE ){
+.find1SeedMatches <- function(seqs, seed, keepMatchSeq=FALSE, minDist=1, verbose=FALSE){
   library(GenomicRanges)
   library(stringr)
   library(BiocParallel)
@@ -170,6 +170,7 @@ sequences should be in DNA format.")
   if(verbose) message("Characterizing matches...")
   
   mc <- characterizeSeedMatches( ms, seed )
+  mc$type <- Rle(mc$type)
   row.names(mc) <- NULL
   if(keepMatchSeq) m$sequence <- ms
   rm(ms)
