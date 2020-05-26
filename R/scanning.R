@@ -67,9 +67,9 @@ findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shado
     start(m) <- start(m)+shadow
   }
   names(m) <- NULL
-  m$log_kd <- round(m$log_kd, 3)
   m
 }
+
 
 #' removeOverlappingMatches
 #' 
@@ -286,7 +286,8 @@ characterizeSeedMatches <- function(x, seed=NULL){
     return(y)
   }
   d <- data.frame( row.names=x, 
-                   type=sapply(as.character(x), seed=sseed, FUN=.getMatchType) )
+                   type=vapply( as.character(x), seed=sseed, 
+                                FUN=.getMatchType, FUN.VALUE=character(1) ) )
   d$type <- factor(d$type, 
                    c("8mer","7mer-m8","7mer-A1","6mer","offset 6mer","non-canonical"))
   if(!is.null(kd.model)) d$log_kd <- predictKD(row.names(d), kd.model)
