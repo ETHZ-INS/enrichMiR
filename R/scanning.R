@@ -12,7 +12,8 @@
 #' @param keepMatchSeq Logical; whether to keep the sequence (including flanking
 #' dinucleotides) for each seed match (default FALSE).
 #' @param minDist Integer specifying the minimum distance between matches of the same 
-#' miRNA (default 1). Closer matches will be reduced to the highest-affinity of the two.
+#' miRNA (default 1). Closer matches will be reduced to the highest-affinity. To 
+#' disable the removal of overlapping features, use `minDist=-Inf`.
 #' @param BP Pass `BiocParallel::MulticoreParam(ncores, progressbar=TRUE)` to enable 
 #' multithreading.
 #' @param verbose Logical; whether to print additional progress messages (default on if 
@@ -46,12 +47,12 @@ findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shado
   if(is(seeds,"KdModel") || length(seeds)==1){
     if(all(class(seeds)=="list")) seeds <- seeds[[1]]
     if(is.null(verbose)) verbose <- TRUE
-    m <- .find1SeedMatches(seqs, seeds, keepMatchSeq, minDist, verbose=verbose)
+    m <- .find1SeedMatches(seqs, seeds, keepMatchSeq, minDist=minDist, verbose=verbose)
   }else{
     if(is.null(BP)) BP <- SerialParam()
     if(is.null(verbose)) verbose <- !(bpnworkers(BP)>1)
     m <- bplapply( seeds, seqs=seqs, verbose=verbose, minDist=minDist, 
-                   FUN=.find1SeedMatches, BPPARAM=BP )
+                   FUN=.find1SeedMatches, BPPARAM=BP)
     m <- unlist(GRangesList(m))
   }
 
@@ -70,18 +71,31 @@ findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shado
   m
 }
 
-# assumes that the regions are sorted in order of priority
-.removeOverlapping <- function(x, minDist=1L){
+#' removeOverlappingMatches
+#' 
+#' Removes elements from a GRanges that overlap (or are within a given distance of) other 
+#' elements higher up in the list (i.e. assumes that the ranges are sorted in order of
+#' priority). The function handles overlaps between more than two ranges by successively
+#' removing those that overlap higher-priority ones
+#'
+#' @param x A GRanges, sorted by (decreasing) importance
+#' @param minDist Minimum distance between ranges
+#'
+#' @return A filtered GRanges.
+#' @export
+#'
+#' @examples
+removeOverlappingMatches <- function(x, minDist=1L){
   red <- GenomicRanges::reduce(x, with.revmap=TRUE, min.gapwidth=minDist)$revmap
   red <- red[lengths(red)>1]
   if(length(red)==0) return(x)
   toRemove <- unlist(lapply(red[lengths(red)==2], FUN=function(x) x[-which.min(x)]))
   toRemove <- c(toRemove, unlist(lapply( red[lengths(red)>2], FUN=function(i){
     w <- j <- i <- sort(i)
-    y <- x[i]
+    y <- ranges(x)[i]
     while(length(y)>1 && length(w)>0){
       # remove anything overlappnig the top one
-      w <- 1+which(start(y[-1])>(end(y[1])+minDist) & end(y[-1])<(start(y[1])-minDist))
+      w <- 1+which(overlapsAny(y[-1],y,maxgap=minDist))
       if(length(w)>0){
         j <- j[-w]
         y <- y[-w]
@@ -89,7 +103,8 @@ findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shado
     }
     return(setdiff(i,j))
   })))
-  x[-toRemove]
+  if(length(toRemove)>0) x <- x[-toRemove]
+  x
 }
 
 
@@ -186,10 +201,10 @@ sequences should be in DNA format.")
     m$seed <- Rle(rep(as.factor(seed),length(m)))
   }
   
-  if(verbose) message("Removing overlaps...")
-  
-  # for overlapping seeds, keep only the best one
-  m <- .removeOverlapping(m, minDist=minDist)
+  if(minDist>-Inf){
+    if(verbose) message("Removing overlaps...")
+    m <- removeOverlappingMatches(m, minDist=minDist)
+  }
   
   names(m) <- NULL
   m
