@@ -4,19 +4,18 @@
 \alias{michael}
 \title{michael}
 \usage{
-michael(tested, significant, TS, minSize = 3,
-  testOnlyAnnotated = FALSE)
+michael(signal, TS, minSize = 3, testOnlyAnnotated = FALSE)
 }
 \arguments{
-\item{tested}{The set of tested features (e.g. genes)}
-
-\item{significant}{The set of differentially-expressed features.}
+\item{signal}{A named logical vector indicating which features are differentially-expressed}
 
 \item{TS}{A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.}
 
 \item{minSize}{The minimum number of targets for a miRNA family to be tested (default 5).}
 
 \item{testOnlyAnnotated}{Whether to excluded features that are bound by no miRNA (default FALSE).}
+
+\item{significant}{The set of differentially-expressed features.}
 
 \item{alternative}{Alternative tested, default "greater" overlap.}
 }

@@ -4,12 +4,10 @@
 \alias{EA}
 \title{EA}
 \usage{
-EA(tested, significant, TS, minSize = 5, testOnlyAnnotated = FALSE)
+EA(signal, TS, minSize = 5, testOnlyAnnotated = FALSE)
 }
 \arguments{
-\item{tested}{The set of tested features (e.g. genes)}
-
-\item{significant}{The set of differentially-expressed features.}
+\item{signal}{A named logical vector indicating which features are differentially-expressed}
 
 \item{TS}{A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.}
 
