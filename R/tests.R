@@ -485,9 +485,16 @@ regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercep
     plot(fits$glmnet.fit, label=TRUE)
   }
   
-  # we extract the miRNAs selected by the best glmnet fit:
-  co <- coef(fits, fits$lambda.min)
+  # we extract the miRNAs selected by the best most regularized glmnet fit:
+  co <- coef(fits, fits$lambda.1se)
   co <- row.names(co)[co[,1]!=0][-1]
+  
+  if( length(co)==0 && fits$lambda.min!=fits$lambda.1se ){
+    # if no coefficient was selected, we use the minimum lambda
+    co <- coef(fits, fits$lambda.min)
+    co <- row.names(co)[co[,1]!=0][-1]
+  }
+  
   signald <- data.frame( y=signal, bm[,co,drop=FALSE] )
   
   # new fit to get significance estimates
