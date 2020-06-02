@@ -68,7 +68,6 @@ findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shado
   }
   names(m) <- NULL
   m[order(m),]
-  m
 }
 
 
