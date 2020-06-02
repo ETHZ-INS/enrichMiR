@@ -43,6 +43,14 @@ setMethod("names", "CompressedKdModelList", function(x){
 })
 
 #' @export
+setMethod("metadata", "CompressedKdModelList", function (x) x@metadata )
+#' @export
+setMethod("metadata<-", "CompressedKdModelList", function (x, value){
+  x@metadata <- value
+  x
+})
+
+#' @export
 setMethod("[[", signature(x = "CompressedKdModelList"), function(x, i, j=NULL, ...){
   name <- names(x)[i]
   .inflateKdMod(x@frame, co=x@sr[x@sr$miRNA==name,],
@@ -111,6 +119,8 @@ compressKdModList <- function(mods){
   names(otherfields) <- otherfields <- .kdmodfields()
   other <- lapply(mods, FUN=function(x){
     y <- lapply(otherfields, FUN=function(f) x[[f]])
+    if(identical(y$qr$pivot, seq_len(length(y$qr$pivot))))
+      y$qr$pivot <- length(y$qr$pivot)
     y$srlvls <- x$xlevels$sr
     y
   })
@@ -130,6 +140,7 @@ compressKdModList <- function(mods){
 }
 .inflateKdMod <- function(mod, co, o, fl){
   for(f in .kdmodfields()) if(f %in% names(o)) mod[[f]] <- o[[f]]
+  if(length(mod$qr$pivot)==1) mod$qr$pivot <- seq_len(mod$qr$pivot)
   mod$xlevels$sr <- o$srlvls
   co2 <- c(co[,3],co[,4])/100
   names(co2) <- c(as.character(co$seed),paste0(co$seed,":ATRUE"))
