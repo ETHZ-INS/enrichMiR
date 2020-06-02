@@ -17,7 +17,7 @@ EA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE){
   if(testOnlyAnnotated) tested <- intersect(tested,unique(as.character(TS$feature)))
   significant <- intersect(significant,tested)
   sets <- split(TS,TS$family)
-  sets <- sets[lengths(sets)>=minSize]
+  sets <- sets[sapply(sets,nrow)>=minSize]
   res <- lapply(sets, set1=significant, universe=tested, FUN=function(x,set1,universe){
     set2 <- unique(as.character(x$feature))
     set2 <- intersect(set2,universe)
@@ -54,10 +54,10 @@ EA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE){
 #' @return a data.frame
 #' @export
 plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites")){
-  library(MASS)
   fcs <- dea$logFC
   names(fcs) <- row.names(dea)
-  TS <- aggregate(TS,by=list(family=TS$family, feature=TS$feature),FUN=function(x){ if(is.numeric(x)) return(max(x,na.rm=T)); x[[1]] })
+  TS <- as.data.frame(TS)
+  TS <- aggregate(TS[,c("sites","score")],by=list(family=TS$family, feature=TS$feature),FUN=function(x){ if(is.numeric(x)) return(max(x,na.rm=T)); x[[1]] })
   if(correctForLength){
     ag <- aggregate(TS$sites,by=list(feature=TS$feature),FUN=sum)
     cfl <- ag[,2]
@@ -68,23 +68,24 @@ plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites
   }else{
     cfl <- NULL
   }
-  res <- t(sapply(split(TS,TS$family,drop=F), fcs=fcs, minSize=minSize, cfl=cfl, FUN=function(x,fcs, minSize, cfl){
-    r <- c(x$family[1],x$rep.miRNA[1],NA,NA)
+  TS$family <- as.character(TS$family)
+  res <- t(sapply(split(TS,TS$family), fcs=fcs, minSize=minSize, cfl=cfl, FUN=function(x,fcs, minSize, cfl){
+    r <- c(x$family[1],NA,NA)
     if(nrow(x)<minSize) return(r)
     x <- x[!duplicated(x),]
     row.names(x) <- x$feature
     x2 <- x[names(fcs),var]
     x2[which(is.na(x2))] <- 0
     if(is.null(cfl)){
-      mod <- try(rlm(fcs~x2+0),silent=T)
+      mod <- try(lm(fcs~x2+0),silent=T)
     }else{
-      mod <- try(rlm(fcs~x2+cfl+0),silent=T)
+      mod <- try(lm(fcs~x2+cfl+0),silent=T)
     }
-    if(!is(mod,"try-error")) r[3:4] <- c(coef(mod)["x2"], summary(aov(mod))[[1]]["x2","Pr(>F)"])
+    if(!is(mod,"try-error")) r[2:3] <- c(coef(mod)["x2"], summary(aov(mod))[[1]]["x2","Pr(>F)"])
     return(r)
   }))
+  colnames(res) <- c("family","logFC","pvalue")
   res <- DataFrame(res)
-  colnames(res) <- c("family","rep.miRNA","logFC","pvalue")
   res$logFC <- as.numeric(as.character(res$logFC))
   res$pvalue <- as.numeric(as.character(res$pvalue))
   res$FDR <- p.adjust(res$pvalue)
@@ -122,6 +123,12 @@ wEA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE, method="Wallenius
   # TEMPORARY enrichment value
   significant <- names(signal)[signal]
   res$enrichment <- round(log2(res$overlap/(length(significant)*(res$numInCat/length(signal)))),2)
+  
+  # temporary fix of pvalues >1 or <0
+  res$over.pvalue[res$over.pvalue > 1] <- 1
+  res$under.pvalue[res$under.pvalue > 1] <- 1
+  res$over.pvalue[res$over.pvalue < 0] <- 0
+  res$under.pvalue[res$under.pvalue < 0] <- 0
   
   res$FDR <- p.adjust(res$over.pvalue, method="fdr")
   colnames(res)[5] <- "annotated"
@@ -440,12 +447,14 @@ aREAmir <- function(dea, TS, minSize=5, pleiotropy=FALSE){
 #' @param alpha elastic net mixing param (0=ridge, 1=lasso)
 #' @param do.plot Logical, whether to plot coefficients against lambda
 #' @param use.intercept Logical, whether to use an intercept in the model.
+#' @param keepAll Logical, whether to return all families (default FALSE)
 #'
 #' @return A DataFrame.
 #' @importFrom IRanges CharacterList
 #' @import glmnet zetadiv S4Vectors 
 #' @export
-regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercept=FALSE){
+regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercept=FALSE,
+                   keepAll=FALSE){
   if(is.null(names(signal))) stop("`signal` should be a named vector!")
   
   # prepare the target matrix
@@ -502,13 +511,31 @@ regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercep
   
   # we extract the coefficients and p-values, and reorganize the output:
   res <- coef(summary(mod))
+  res <- res[order(res[,4]),,drop=FALSE]
+  colnames(res) <- c("beta","stderr",ifelse(isLogistic,"z","t"),"pvalue")
   res <- res[grep("^\\(Intercept\\)$|FALSE$", row.names(res), invert=TRUE),,drop=FALSE]
   row.names(res) <- gsub("TRUE","",row.names(res))
-  res <- DataFrame(res[order(res[,4]),,drop=FALSE])
-  colnames(res) <- c("beta","stderr",ifelse(isLogistic,"z","t"),"pvalue")
+  
+  if(keepAll){
+    co2 <- sort(apply(fits$glmnet.fit$beta,1,FUN=function(x){
+      if(!any(x!=0)) return(Inf)
+      which(x!=0)[1]
+    }))
+    co2 <- co2[grep("^\\(Intercept\\)$|FALSE$", names(co2), invert=TRUE)]
+    names(co2) <- gsub("TRUE","",names(co2))
+    co2 <- co2[setdiff(names(co2),row.names(res))]
+    co2 <- data.frame(row.names=names(co2), beta=rep(NA_real_,length(co2)),
+                      stderr=NA_real_, z=NA_real_, pvalue=1)
+    if(!isLogistic) colnames(co2)[3] <- "t"
+    res <- rbind(res,co2)
+  }
+  
+  res <- DataFrame(res)
   # we adjust using all features as number of comparisons
-  res$FDR <- p.adjust(res$pvalue, n=ncol(bm))
-  res$features <- CharacterList(lapply(split(TS$feature, TS$family)[row.names(res)], 
+  if(nrow(res)>0){
+    res$FDR <- p.adjust(res$pvalue, n=ncol(bm))
+    res$features <- CharacterList(lapply(split(TS$feature, TS$family)[row.names(res)], 
                                     y=names(signal)[signal], FUN=intersect))
+  }
   res
 }
