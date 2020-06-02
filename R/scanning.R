@@ -6,20 +6,22 @@
 #' reversed and complemented before matching. If DNA, they are assumed to be
 #' the target sequence to look for. Alternatively, a list of objects of class
 #' `KdModel` or an object of class `CompressedKdModelList` can be given.
+#' @param seedtype Either RNA, DNA or 'auto' (default)
 #' @param shadow Integer giving the shadow, i.e. the number of nucleotides
 #'  hidden at the beginning of the sequence (default 0)
 #' @param keepMatchSeq Logical; whether to keep the sequence (including flanking
 #' dinucleotides) for each seed match (default FALSE).
 #' @param minDist Integer specifying the minimum distance between matches of the same 
-#' miRNA (default 1). Closer matches will be reduced to the highest-affinity of the two.
-#' @param seedtype Either RNA, DNA or 'auto' (default)
-#' @param BP Pass `BiocParallel::MulticoreParam(ncores)` to enable 
+#' miRNA (default 1). Closer matches will be reduced to the highest-affinity. To 
+#' disable the removal of overlapping features, use `minDist=-Inf`.
+#' @param BP Pass `BiocParallel::MulticoreParam(ncores, progressbar=TRUE)` to enable 
 #' multithreading.
+#' @param verbose Logical; whether to print additional progress messages (default on if 
+#' not multithreading)
 #'
 #' @return A GRanges of all matches
 #' 
 #' @import BiocParallel Biostrings GenomicRanges
-#' @importFrom stringr str_locate_all str_sub
 #' @export
 #'
 #' @examples
@@ -29,26 +31,98 @@
 #' names(seqs) <- paste0("seq",1:length(seqs))
 #' seeds <- c("AAACCAC", "AAACCUU")
 #' m <- findSeedMatches(seqs, seeds)
-findSeedMatches <- function( seqs, seeds, shadow=0, keepMatchSeq=FALSE, minDist=1, mem.opt = FALSE,
-                             seedtype=c("auto", "RNA","DNA"), BP=NULL){
+findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shadow=0, 
+                             keepMatchSeq=FALSE, minDist=1L, BP=NULL, verbose=NULL){
   library(GenomicRanges)
   library(stringr)
   library(BiocParallel)
   library(Biostrings)
+  if(!is.null(verbose) && verbose) message("Preparing sequences...")
+  if(is(seeds, "CompressedKdModelList")) seeds <- decompressKdModList(seeds)
+  args <- .prepSeqs(seqs, seeds, seedtype, shadow)
+  seqs <- args$seqs
+  if("seeds" %in% names(args)) seeds <- args$seeds
+  rm(args)
+
+  if(is(seeds,"KdModel") || length(seeds)==1){
+    if(all(class(seeds)=="list")) seeds <- seeds[[1]]
+    if(is.null(verbose)) verbose <- TRUE
+    m <- .find1SeedMatches(seqs, seeds, keepMatchSeq, minDist=minDist, verbose=verbose)
+  }else{
+    if(is.null(BP)) BP <- SerialParam()
+    if(is.null(verbose)) verbose <- !(bpnworkers(BP)>1)
+    m <- bplapply( seeds, seqs=seqs, verbose=verbose, minDist=minDist, 
+                   FUN=.find1SeedMatches, BPPARAM=BP)
+    m <- unlist(GRangesList(m))
+  }
+
+  gc(verbose = FALSE, full = TRUE)
+  
+  row.names(m) <- NULL
+  start(m) <- start(m)-3
+  end(m) <- end(m)-3
+  
+  if(shadow>0){
+    end(m) <- end(m)+shadow
+    start(m) <- start(m)+shadow
+  }
+  names(m) <- NULL
+  m
+}
+
+
+#' removeOverlappingMatches
+#' 
+#' Removes elements from a GRanges that overlap (or are within a given distance of) other 
+#' elements higher up in the list (i.e. assumes that the ranges are sorted in order of
+#' priority). The function handles overlaps between more than two ranges by successively
+#' removing those that overlap higher-priority ones
+#'
+#' @param x A GRanges, sorted by (decreasing) importance
+#' @param minDist Minimum distance between ranges
+#'
+#' @return A filtered GRanges.
+#' @export
+#'
+#' @examples
+removeOverlappingMatches <- function(x, minDist=1L){
+  red <- GenomicRanges::reduce(x, with.revmap=TRUE, min.gapwidth=minDist)$revmap
+  red <- red[lengths(red)>1]
+  if(length(red)==0) return(x)
+  toRemove <- unlist(lapply(red[lengths(red)==2], FUN=function(x) x[-which.min(x)]))
+  toRemove <- c(toRemove, unlist(lapply( red[lengths(red)>2], FUN=function(i){
+    w <- j <- i <- sort(i)
+    y <- ranges(x)[i]
+    while(length(y)>1 && length(w)>0){
+      # remove anything overlappnig the top one
+      w <- 1+which(overlapsAny(y[-1],y,maxgap=minDist))
+      if(length(w)>0){
+        j <- j[-w]
+        y <- y[-w]
+      }
+    }
+    return(setdiff(i,j))
+  })))
+  if(length(toRemove)>0) x <- x[-toRemove]
+  x
+}
+
+
+.prepSeqs <- function(seqs, seeds, seedtype=c("auto", "RNA","DNA"), shadow=0){
   if(is.null(names(seqs))) names(seqs) <- paste0("seq",seq_along(seqs)) 
   seedtype <- match.arg(seedtype)
   seqtype <- .guessSeqType(seqs)
-  if(is(seeds, "CompressedKdModelList")) seeds <- decompressKdModList(seeds)
-  if(is.list(seeds) && all(sapply(seeds, FUN=function(x) is(x,"KdModel")))){
+  ret <- list()
+  if( is(seeds, "KdModel") || 
+      (is.list(seeds) && all(sapply(seeds, FUN=function(x) is(x,"KdModel")))) ){
     if(is.null(names(seeds)))
       stop("If `seeds` is a list of kd models, it should be named.")
     if(seedtype=="RNA" || seqtype=="RNA") 
       stop("If `seeds` is a list of kd models, both the seeds and the target
 sequences should be in DNA format.")
   }else{
-    if(is.null(names(seeds))) names(seeds) <- seeds
+    if(is.null(names(seeds))) n <- names(seeds) <- seeds
     if(seedtype=="auto") seedtype <- .guessSeqType(seeds)
-    n <- names(seeds)
     if(seedtype=="RNA"){
       message("Matching reverse complements of the seeds...")
       seeds <- as.character(reverseComplement(RNAStringSet(seeds)))
@@ -61,90 +135,100 @@ sequences should be in DNA format.")
       seeds <- gsub("U", "T", seeds)
     }
     names(seeds) <- n
+    ret$seeds <- seeds
   }
-  if(is.null(BP)) BP <- SerialParam()
-  if(shadow>0) seqs <- substr(seqs, shadow+1, sapply(seqs, nchar))
-  seqs <- seqs[sapply(seqs,nchar)>=min(sapply(seeds,nchar))]
-  seqnms <- factor(names(seqs), names(seqs))
-  seqs <- paste0("xxx",seqs,"xxx")
-  names(seqs) <- levels(seqnms)
-  m <- bplapply(seeds, seqs=seqs, BPPARAM=BP, FUN=function(seed,seqs){
-    if(is(seed,"KdModel")){
-      seed2 <- substring(seed$xlevels$sr[-1],2)
-    }else{
-      seed2 <- substr(seed,2,7)
-    }
-    # look-around matching to get overlapping seeds
-    pos <- gregexpr( paste0("(?=",paste(unique(seed2),collapse="|"),")"),
-                     seqs, perl=TRUE )
-    pos <- lapply(lapply(pos, as.numeric), y=-1, setdiff)
-    if(sum(sapply(pos,length))==0) return(NULL)
-    GRanges( rep(seqnms, sapply(pos,length)), 
-             IRanges( start=unlist(pos), width=6 ) )
-  })
+  seqnms <- names(seqs)
+  if(is.character(seqs)) seqs <- DNAStringSet(seqs)
+  names(seqs) <- seqnms
+  seqs <- seqs[lengths(seqs)>=(shadow+7)]
+  if(shadow>0) seqs <- subseq(seqs, shadow+1)
+  seqs <- padAndClip(seqs, views=IRanges(start=1-3, width=lengths(seqs)+6), 
+                     Lpadding.letter = "N", Rpadding.letter = "N")
+  c(ret, list(seqs=seqs))
+}
+
+.find1SeedMatches <- function(seqs, seed, keepMatchSeq=FALSE, minDist=1, verbose=FALSE){
+  library(GenomicRanges)
+  library(stringr)
+  library(BiocParallel)
+  library(Biostrings)
   
-  if(mem.opt) gc(verbose = FALSE, full = TRUE)
+  if(verbose) message("Scanning...")
   
-  m <- m[!sapply(m,is.null)]
-  mseed <- factor(rep(names(m),sapply(m,length)))
-  m <- unlist(GRangesList(m))
-  m$seed <- mseed
+  m <- .scanOneSeed(seqs=seqs, seed=seed)
   
-  if(mem.opt) gc(verbose = FALSE, full = TRUE)
+  if(is.null(m)){
+    if(verbose) message("Nothing found!")
+    return(NULL)
+  }
   
-  m <- unlist(GRangesList(bplapply( split(m,seqnames(m),drop=TRUE), 
-                                    BPPARAM=SerialParam(), FUN=function(r){
-    if(length(r)>0)
-      r$sequence <- stringr::str_sub( seqs[[as.numeric(seqnames(r[1]))]], 
-                                      start(r)-3, end(r)+3 )
-    r
-  })))
+  m <- keepSeqlevels(m, seqlevelsInUse(m))
+  m <- m[order(seqnames(m))]
   
-  if(mem.opt) gc(verbose = FALSE, full = TRUE)
+  if(verbose) message("Extracting sequences...")
+  
+  seqs <- seqs[seqlevels(m)]
+
+  r <- ranges(m)
+  start(r) <- start(r)-3
+  end(r) <- end(r)+3
+
+  r <- split(r, seqnames(m))
+  names(r) <- NULL
+  
+  ms <- unlist(extractAt(seqs, r))
+  names(ms) <- NULL
+  ms <- Rle(as.factor(ms))
   
   row.names(m) <- NULL
-  start(m) <- start(m)-3
-  end(m) <- end(m)-3
   
-  if(mem.opt) gc(verbose = FALSE, full = TRUE)
+  if(verbose) message("Characterizing matches...")
   
-  m <- unlist(GRangesList(bplapply(split(m, m$seed), BPPARAM=BP, FUN=function(x){
-    seed <- seeds[[as.character(x$seed[1])]]
-    if(is(seed,"KdModel")){
-      x <- characterizeSeedMatches( x, seed$canonical.seed, seed)
-      if(mem.opt) gc(verbose = FALSE, full = FALSE)
-      x <- x[order(x$log_kd),]
-    }else{
-      x <- characterizeSeedMatches( x, seed)
-      x <- x[order(x$type),]
-    }
-    # for overlapping seeds, keep only the best one
-    .removeOverlapping(x, minDist=minDist)
-  })))
+  mc <- characterizeSeedMatches( ms, seed )
+  mc$type <- Rle(mc$type)
+  row.names(mc) <- NULL
+  if(keepMatchSeq) m$sequence <- ms
+  rm(ms)
+  mcols(m) <- cbind(mcols(m), mc)
+  rm(mc)
   
-  if(mem.opt) gc(verbose = FALSE, full = TRUE)
   
-  if(!keepMatchSeq) m$sequence <- NULL
-  m <- sort(m)
-  m$type <- factor(m$type)
-  if(shadow>0){
-    end(m) <- end(m)+shadow
-    start(m) <- start(m)+shadow
+  if(is(seed,"KdModel")){
+    m <- m[order(m$log_kd),]
+    m$seed <- Rle(rep(as.factor(seed$name),length(m)))
+  }else{
+    m <- m[order(m$type),]
+    m$seed <- Rle(rep(as.factor(seed),length(m)))
   }
+  
+  if(minDist>-Inf){
+    if(verbose) message("Removing overlaps...")
+    m <- removeOverlappingMatches(m, minDist=minDist)
+  }
+  
   names(m) <- NULL
-  m$log_kd <- round(m$log_kd, 3)
-  if(mem.opt) gc(verbose = FALSE, full = TRUE)
   m
 }
 
 
-.removeOverlapping <- function(x, minDist=1L){
-  red <- GenomicRanges::reduce(x, with.revmap=TRUE, min.gapwidth=minDist)
-  red <- red[lengths(red$revmap)>1]
-  if(length(red)==0) return(x)
-  toRemove <- unlist(lapply(red$revmap, FUN=function(x) x[-which.min(x)]))
-  x[-toRemove]
+.scanOneSeed <- function(seqs, seed){
+  seqnms <- names(seqs)
+  seqs <- as.character(seqs)
+  names(seqs) <- seqnms
+  if(is(seed,"KdModel")){
+    seed2 <- substring(seed$xlevels$sr[-1],2)
+  }else{
+    seed2 <- substr(seed,2,7)
+  }
+  # look-around matching to get overlapping seeds
+  pos <- gregexpr( paste0("(?=",paste(unique(seed2),collapse="|"),")"),
+                   seqs, perl=TRUE )
+  pos <- lapply(lapply(pos, as.numeric), y=-1, setdiff)
+  if(sum(sapply(pos,length))==0) return(NULL)
+  GRanges( rep(names(seqs), sapply(pos,length)), 
+           IRanges( start=unlist(pos), width=6 ) )
 }
+
 
 .guessSeqType <- function(x, use.subset=TRUE){
   seqs <- x[sample.int(length(x),min(length(x),10))]
@@ -161,45 +245,49 @@ sequences should be in DNA format.")
 #'
 #' @param x A factor or character vector of matches, or a data.frame or GRanges
 #' containing a `sequence` column.
-#' @param seed The seed which sequences of `x` should match.
-#' @param mod An optional object of class 'KdModel'.
+#' @param seed The seed which sequences of `x` should match, or a 'KdModel' object.
 #'
 #' @return A data.frame, or a `GRanges` if `x` is a `GRanges`
 #' @export
 #'
 #' @examples
 #' characterizeSeedMatches(c("UAAACCACCC","CGAACCACUG"), "AAACCAC")
-characterizeSeedMatches <- function(x, seed=NULL, kd.model=NULL){
-  if(is.null(seed)){
-    if(is.null(kd.model))
-      stop("At least one of `seed` or `kd.model` must be given.")
-    seed <- kd.model$canonical.seed
+characterizeSeedMatches <- function(x, seed=NULL){
+  if(is(seed, "KdModel")){
+    kd.model <- seed
+    sseed <- seed$canonical.seed
+  }else{
+    kd.model <- NULL
+    sseed <- seed
   }
-  seed <- as.character(seed)
-  if(length(seed)>1 || nchar(seed)!=7) 
+  sseed <- as.character(sseed)
+  if(length(sseed)>1 || nchar(sseed)!=7) 
     stop("`seed` must contain a single string of 7 characters.")
-  if(!is.character(x) && !is.factor(x)){
-    y <- characterizeSeedMatches(x$sequence, seed, kd.model)
+  if(!is.character(x) && !is.factor(x) && !is(x,"Rle")){
+    y <- characterizeSeedMatches(x$sequence, seed)
     if(is(x,"GRanges")){
-      x@elementMetadata <- cbind(x@elementMetadata, y)
+      mcols(x) <- cbind(mcols(x), y)
     }else{
       x <- cbind(x,y)
     }
     return(x)
   }
-  if(any(duplicated(x))){
+  if(is(x,"Rle") || any(duplicated(x))){
     # we resolve type for unique sequences
-    if(is.factor(x)){
-      y <- characterizeSeedMatches(levels(x), seed, kd.model)
+    if(!is.null(levels(x))){
+      levels(x) <- gsub("N","x",levels(x))
+      y <- characterizeSeedMatches(levels(x), seed)
     }else{
-      y <- characterizeSeedMatches(unique(x), seed, kd.model)
+      x <- gsub("N","x",x)
+      y <- characterizeSeedMatches(unique(x), seed)
     }
     y <- y[as.character(x),,drop=FALSE]
     row.names(y) <- NULL
     return(y)
   }
   d <- data.frame( row.names=x, 
-                   type=sapply(as.character(x), seed=seed, FUN=.getMatchType) )
+                   type=vapply( as.character(x), seed=sseed, 
+                                FUN=.getMatchType, FUN.VALUE=character(1) ) )
   d$type <- factor(d$type, 
                    c("8mer","7mer-m8","7mer-A1","6mer","offset 6mer","non-canonical"))
   if(!is.null(kd.model)) d$log_kd <- predictKD(row.names(d), kd.model)

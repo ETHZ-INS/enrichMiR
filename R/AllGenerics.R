@@ -35,7 +35,7 @@ setMethod("as.data.frame", "enrichMiR", function (x, row.names = NULL, optional 
 setMethod("show", "enrichMiR", function(object){
     message("An `enrichMiR` object with the following analyses:")
     print(lapply(object@res, FUN=function(x){
-        head(x[,grep("family|miRNA|pvalue|FDR|enrichment",colnames(x))])
+        head(x[,grep("miRNA|pvalue|FDR|enrichment",colnames(x)),drop=FALSE])
     }))
 })
 

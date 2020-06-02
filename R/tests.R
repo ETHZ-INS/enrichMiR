@@ -2,8 +2,7 @@
 #'
 #' Traditional overlap (Fisher test) between differentially-expressed features and miRNA targets.
 #'
-#' @param tested The set of tested features (e.g. genes)
-#' @param significant The set of differentially-expressed features.
+#' @param signal A named logical vector indicating which features are differentially-expressed
 #' @param TS A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.
 #' @param minSize The minimum number of targets for a miRNA family to be tested (default 5).
 #' @param testOnlyAnnotated Whether to excluded features that are bound by no miRNA (default FALSE).
@@ -11,13 +10,15 @@
 #' @return a data.frame.
 #'
 #' @export
-EA <- function(tested,significant,TS, minSize=5, testOnlyAnnotated=FALSE){
+EA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE){
   library(data.table)
-  tested <- as.character(tested)
-  significant <- as.character(significant)
+  tested <- names(signal)
+  significant <- names(signal)[signal]
   if(testOnlyAnnotated) tested <- intersect(tested,unique(as.character(TS$feature)))
   significant <- intersect(significant,tested)
-  res <- lapply(split(TS,TS$family), set1=significant, universe=tested, FUN=function(x,set1,universe){
+  sets <- split(TS,TS$family)
+  sets <- sets[sapply(sets,nrow)>=minSize]
+  res <- lapply(sets, set1=significant, universe=tested, FUN=function(x,set1,universe){
     set2 <- unique(as.character(x$feature))
     set2 <- intersect(set2,universe)
     ov <- intersect(set2,set1)
@@ -29,14 +30,15 @@ EA <- function(tested,significant,TS, minSize=5, testOnlyAnnotated=FALSE){
            enrichment=round(log2((length(ov)+0.1)/expected),2),
            under.pvalue=.overlap.prob(set1,set2,universe,lower=T),
            over.pvalue=.overlap.prob(set1,set2,universe),
-           features=paste(ov,collapse=", ")
+           features=ov
     )
   })
-  res <- as.data.frame(rbindlist(res))
-  res <- res[which(res[,"annotated"]>=minSize),]
+  feats <- CharacterList(lapply(res, FUN=function(x) x$features))
+  res <- DataFrame(rbindlist(lapply(res, FUN=function(x) x[-length(x)])))
   res$FDR <- p.adjust(res$over.pvalue,method="fdr")
-  res <- res[,c(1:(ncol(res)-2),ncol(res),ncol(res)-1)]
-  res[order(res$FDR,res$over.pvalue),]
+  res$features <- feats
+  row.names(res) <- res$family
+  res[order(res$FDR,res$over.pvalue),-1]
 }
 
 
@@ -52,10 +54,10 @@ EA <- function(tested,significant,TS, minSize=5, testOnlyAnnotated=FALSE){
 #' @return a data.frame
 #' @export
 plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites")){
-  library(MASS)
   fcs <- dea$logFC
   names(fcs) <- row.names(dea)
-  TS <- aggregate(TS,by=list(family=TS$family, feature=TS$feature),FUN=function(x){ if(is.numeric(x)) return(max(x,na.rm=T)); x[[1]] })
+  TS <- as.data.frame(TS)
+  TS <- aggregate(TS[,c("sites","score")],by=list(family=TS$family, feature=TS$feature),FUN=function(x){ if(is.numeric(x)) return(max(x,na.rm=T)); x[[1]] })
   if(correctForLength){
     ag <- aggregate(TS$sites,by=list(feature=TS$feature),FUN=sum)
     cfl <- ag[,2]
@@ -66,35 +68,36 @@ plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites
   }else{
     cfl <- NULL
   }
-  res <- t(sapply(split(TS,TS$family,drop=F), fcs=fcs, minSize=minSize, cfl=cfl, FUN=function(x,fcs, minSize, cfl){
-    r <- c(x$family[1],x$rep.miRNA[1],NA,NA)
+  TS$family <- as.character(TS$family)
+  res <- t(sapply(split(TS,TS$family), fcs=fcs, minSize=minSize, cfl=cfl, FUN=function(x,fcs, minSize, cfl){
+    r <- c(x$family[1],NA,NA)
     if(nrow(x)<minSize) return(r)
     x <- x[!duplicated(x),]
     row.names(x) <- x$feature
     x2 <- x[names(fcs),var]
     x2[which(is.na(x2))] <- 0
     if(is.null(cfl)){
-      mod <- try(rlm(fcs~x2+0),silent=T)
+      mod <- try(lm(fcs~x2+0),silent=T)
     }else{
-      mod <- try(rlm(fcs~x2+cfl+0),silent=T)
+      mod <- try(lm(fcs~x2+cfl+0),silent=T)
     }
-    if(!is(mod,"try-error")) r[3:4] <- c(coef(mod)["x2"], summary(aov(mod))[[1]]["x2","Pr(>F)"])
+    if(!is(mod,"try-error")) r[2:3] <- c(coef(mod)["x2"], summary(aov(mod))[[1]]["x2","Pr(>F)"])
     return(r)
   }))
-  res <- as.data.frame(res)
-  colnames(res) <- c("family","rep.miRNA","logFC","pvalue")
+  colnames(res) <- c("family","logFC","pvalue")
+  res <- DataFrame(res)
   res$logFC <- as.numeric(as.character(res$logFC))
   res$pvalue <- as.numeric(as.character(res$pvalue))
   res$FDR <- p.adjust(res$pvalue)
-  res[order(res$FDR,res$pvalue),]
+  row.names(res) <- res$family
+  res[order(res$FDR,res$pvalue),-1]
 }
 
 #' wEA
 #'
 #' Weighted hypergeometric test adjusted for total number of miRNA bindings sites. (This is done through the `goseq` package)
 #'
-#' @param tested The set of tested features (e.g. genes)
-#' @param significant The set of differentially-expressed features.
+#' @param signal A named logical vector indicating which features are differentially-expressed
 #' @param TS A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.
 #' @param minSize The minimum number of targets for a miRNA family to be tested (default 5).
 #' @param testOnlyAnnotated Whether to excluded features that are bound by no miRNA (default FALSE).
@@ -102,31 +105,41 @@ plMod <- function(dea, TS, minSize=5, var="sites", correctForLength=(var=="sites
 #'
 #' @return a data.frame.
 #'
+#' @importFrom goseq nullp goseq
 #' @export
-wEA <- function(tested,significant,TS, minSize=5, testOnlyAnnotated=FALSE, method="Wallenius"){
-  library(goseq)
+wEA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE, method="Wallenius"){
   ag <- aggregate(TS$sites,by=list(gene=TS$feature),FUN=sum)
   row.names(ag) <- ag$gene
-  if(testOnlyAnnotated) tested <- intersect(tested, ag$gene)
-  ag <- ag[tested,]
+  if(testOnlyAnnotated) signal <- signal[intersect(names(signal), ag$gene)]
+  ag <- ag[names(signal),]
   bd <- ag$x
   names(bd) <- ag$gene
-  de <- tested %in% significant
-  names(de) <- tested
-  np <- nullp(de, bias.data = bd, plot.fit=FALSE)
+  np <- nullp(signal, bias.data = bd, plot.fit=FALSE)
   g2c <- TS[,c("feature","family")]
 
   res <- goseq(np, gene2cat=g2c, method=method, use_genes_without_cat=!testOnlyAnnotated)
   colnames(res) <- c("family","over.pvalue","under.pvalue","overlap","numInCat")
 
   # TEMPORARY enrichment value
-  res$enrichment <- round(log2(res$overlap/(length(significant)*(res$numInCat/length(tested)))),2)
+  significant <- names(signal)[signal]
+  res$enrichment <- round(log2(res$overlap/(length(significant)*(res$numInCat/length(signal)))),2)
+  
+  # temporary fix of pvalues >1 or <0
+  res$over.pvalue[res$over.pvalue > 1] <- 1
+  res$under.pvalue[res$under.pvalue > 1] <- 1
+  res$over.pvalue[res$over.pvalue < 0] <- 0
+  res$under.pvalue[res$under.pvalue < 0] <- 0
   
   res$FDR <- p.adjust(res$over.pvalue, method="fdr")
   colnames(res)[5] <- "annotated"
   ll <- split(TS$feature,TS$family)
-  res$features <- sapply(ll[as.character(res$family)],y=significant,FUN=function(x,y){ paste(sort(intersect(x,y)),collapse=", ") })
-  res
+  res <- DataFrame(res)
+  res$features <- CharacterList(lapply( ll[as.character(res$family)],
+                                        y=significant, FUN=function(x,y){
+                                                            sort(intersect(x,y))
+                                                          }))
+  row.names(res) <- res$family
+  res[,-1]
 }
 
 #' michael
@@ -134,7 +147,7 @@ wEA <- function(tested,significant,TS, minSize=5, testOnlyAnnotated=FALSE, metho
 #' Applies Fisher's test to the number of miRNA binding sites among a set of features (vs all other binding sites in that set of features).
 #' Of note, this application violates the assumptions of Fisher's exact test.
 #'
-#' @param tested The set of tested features (e.g. genes)
+#' @param signal A named logical vector indicating which features are differentially-expressed
 #' @param significant The set of differentially-expressed features.
 #' @param TS A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.
 #' @param minSize The minimum number of targets for a miRNA family to be tested (default 5).
@@ -144,10 +157,10 @@ wEA <- function(tested,significant,TS, minSize=5, testOnlyAnnotated=FALSE, metho
 #' @return a data.frame.
 #'
 #' @export
-michael <- function(tested, significant, TS, minSize=3, testOnlyAnnotated=FALSE){
+michael <- function(signal, TS, minSize=3, testOnlyAnnotated=FALSE){
   library(data.table)
-  tested <- as.character(tested)
-  significant <- as.character(significant)
+  tested <- names(signal)
+  significant <- names(signal)[signal]
   if(testOnlyAnnotated) tested <- intersect(tested,unique(as.character(TS$feature)))
   TS <- TS[which(TS$feature %in% tested),]
   significant <- intersect(significant,tested)
@@ -174,14 +187,16 @@ michael <- function(tested, significant, TS, minSize=3, testOnlyAnnotated=FALSE)
     )
   })
   res <- res[which(sapply(res,length)>0)]
-  res <- as.data.frame(rbindlist(res))
+  res <- DataFrame(rbindlist(res))
   res <- res[which(res[,"annotated"]>=minSize),]
   res$fisher.pvalue <- as.numeric(unlist(res$over.pvalue))
   res$FDR <- p.adjust(res$over.pvalue,method="fdr")
-    ll <- split(TS$feature,TS$family)
-  res$features <- sapply(ll[as.character(res$family)],y=significant,FUN=function(x,y){ paste(sort(intersect(x,y)),collapse=", ") })
-  
-  res[order(res$FDR,res$over.pvalue),]
+  res$features <- CharacterList(lapply( ll[as.character(res$family)],
+                                        y=significant, FUN=function(x,y){
+                                          sort(intersect(x,y))
+                                        }))
+  row.names(res) <- res$family
+  res[order(res$FDR,res$over.pvalue),-1]
 }
 
 #' KS
@@ -206,10 +221,11 @@ KS <- function(DEA, TS, minSize=5){
          annotated=length(set),
          ks.pvalue=ks)
   })
-  res <- as.data.frame(rbindlist(res))
+  res <- DataFrame(rbindlist(res))
   res <- res[which(res[,"annotated"]>=minSize),]
   res$FDR <- p.adjust(res$ks.pvalue,method="fdr")
-  res[order(res$FDR),]
+  row.names(res) <- res$family
+  res[order(res$FDR),-1]
 }
 
 #' KS2
@@ -241,13 +257,14 @@ KS2 <- function(DEA, TS, minSize=5){
          ks.pvalue.up=ks1
     )
   })
-  res <- as.data.frame(rbindlist(res))
+  res <- DataFrame(rbindlist(res))
   if(!(nrow(res)>1)) return(res)
   res <- res[which(res[,"annotated"]>=minSize),]
   res$ks.pvalue.down <- unlist(res$ks.pvalue.down)
   res$ks.pvalue.up <- unlist(res$ks.pvalue.up)
   res$FDR <- apply(matrix(p.adjust(as.numeric(as.matrix(res[,c("ks.pvalue.down","ks.pvalue.up")])),method="fdr"),ncol=2),1,FUN=min)
-  res[order(res$FDR,apply(res[,grep("pvalue",colnames(res))],1,FUN=min)),]
+  row.names(res) <- res$family
+  res[order(res$FDR,apply(res[,grep("pvalue",colnames(res))],1,FUN=min)),-1]
 }
 
 
@@ -273,10 +290,11 @@ MW <- function(DEA, TS, minSize=5){
          annotated=length(set),
          wilcox.pvalue=mw)
   })
-  res <- as.data.frame(rbindlist(res))
+  res <- DataFrame(rbindlist(res))
   res <- res[which(res[,"annotated"]>=minSize),]
   res$FDR <- p.adjust(res$wilcox.pvalue,method="fdr")
-  res[order(res$FDR),]
+  row.names(res) <- res$family
+  res[order(res$FDR),-1]
 }
 
 
@@ -293,9 +311,9 @@ MW <- function(DEA, TS, minSize=5){
 #'
 #' @return a data.frame.
 #'
+#' @importFrom fgsea fgsea
 #' @export
 gsea <- function(DEA, TS, minSize=5, maxSize=300, fdr.thres=0.5, nperm=2000){
-  library(fgsea)
   DEA <- DEA[which(DEA$FDR<=fdr.thres & !is.na(DEA$logFC)),]
   w <- which(is.infinite(DEA$logFC))
   if(length(w)>0) DEA$logFC[w] <- max(abs(DEA$logFC[-w]))*sign(DEA$logFC[w])
@@ -304,42 +322,11 @@ gsea <- function(DEA, TS, minSize=5, maxSize=300, fdr.thres=0.5, nperm=2000){
   sets <- lapply(split(TS$feature,TS$family),tested=names(fcs),FUN=function(x,tested){ intersect(unique(x),tested) })
   sets <- sets[which(sapply(sets,length)>=minSize)]
   res <- fgsea(sets, fcs, nperm, minSize=minSize, maxSize=maxSize)
-  res <- res[order(res$padj,res$pval),]
+  res <- DataFrame(res[order(res$padj,res$pval),])
   colnames(res)[1:5] <- c("family","pvalue","FDR","ES","normalizedEnrichment")
-  res$leadingEdge <- sapply(res$leadingEdge, FUN=function(x){ paste(x,collapse=", ") })
-  return(as.data.frame(res))
-}
-
-
-#' gsea
-#'
-#' miRNA target enrichment analysis among differentially-expressed genes using GSEA.
-#'
-#' @param DEA A data.frame of the results of a differential expression analysis, with features (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`
-#' @param TS A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.
-#' @param minSize The minimum number of elements in a set to be tested (default 5).
-#' @param maxSize The maximum number of elements in a set to be tested (default 500). If the test takes too long to run, consider setting this.
-#' @param fdr.thres The FDR threshold below which genes are considered; default 0.2.
-#' @param nperm The number of permutations, default 2000. The more permutations, the more precise the p-values, in particular for small p-values.
-#'
-#' @return a data.frame.
-#'
-#' @export
-gseaMod <- function(DEA, TS, minSize=5, maxSize=300, fdr.thres=0.5, nperm=2000){
-  library(fgsea)
-  DEA <- DEA[which(DEA$FDR<=fdr.thres & !is.na(DEA$logFC)),]
-  w <- which(is.infinite(DEA$logFC))
-  if(length(w)>0) DEA$logFC[w] <- max(abs(DEA$logFC[-w]))*sign(DEA$logFC[w])
-  score <- DEA$logFC * DEA$logCPM
-  names(score) <- row.names(DEA)
-  sets <- lapply(split(TS$feature,TS$family),tested=names(score),
-                 FUN=function(x,tested){ intersect(unique(x),tested) })
-  sets <- sets[which(sapply(sets,length)>=minSize)]
-  res <- fgsea(sets, score, nperm, minSize=minSize, maxSize=maxSize)
-  res <- res[order(res$padj,res$pval),]
-  colnames(res)[1:5] <- c("family","pvalue","FDR","ES","normalizedEnrichment")
-  res$leadingEdge <- sapply(res$leadingEdge, FUN=function(x){ paste(x,collapse=", ") })
-  return(as.data.frame(res))
+  colnames(res)[8] <- "features"
+  row.names(res) <- res$family
+  return(res[,-1])
 }
 
 
@@ -352,9 +339,9 @@ gseaMod <- function(DEA, TS, minSize=5, maxSize=300, fdr.thres=0.5, nperm=2000){
 #'
 #' @return a named vector of p-values.
 #'
+#' @importFrom aggregation fisher
 #' @export
 geneBasedTest <- function(features, TS){
-  library(aggregation)
   TS$family <- as.character(TS$family)
   features <- as.character(features)[which(features %in% TS$feature)]
   tmp <- aggregate(TS$sites,by=list(family=TS$family),FUN=sum)
@@ -441,10 +428,107 @@ aREAmir <- function(dea, TS, minSize=5, pleiotropy=FALSE){
   sig <- -log10(dea$FDR)*sign(dea$logFC)
   names(sig) <- row.names(dea)
   vi <- viper::msviper(sig, regulon=TS2regulon(as.data.frame(TS)), minsize=minSize, pleiotropy=pleiotropy, verbose=FALSE)
-  vi2 <- as.data.frame(vi$es[c("nes","size","p.value","nes.bt")])
-  vi2$FDR <- p.adjust(vi2$p.value)
-  vi2 <- vi2[order(vi2$p.value),]
-  vi2$miRNAs <- sapply(row.names(vi2), fam=metadata(TS)$families, FUN=function(x, fam) names(fam)[which(fam==x)])
+  vi2 <- DataFrame(vi$es[c("nes","size","p.value","nes.bt")])
+  colnames(vi2)[3] <- "pvalue"
+  vi2$FDR <- p.adjust(vi2$pvalue)
+  vi2 <- vi2[order(vi2$pvalue),]
+  #vi2$miRNAs <- sapply(row.names(vi2), fam=metadata(TS)$families, FUN=function(x, fam) names(fam)[which(fam==x)])
   vi2
 }
 
+#' regmir
+#'
+#' miRNA enrichment analysis using regularized regression
+#'
+#' @param signal A vector of logical or numeric values, with gene symbols as names.
+#' @param TS The targetscan target predictions object
+#' @param binary Logical; whether to consider target prediction as binary (default). The
+#' alternative is to use the score.
+#' @param alpha elastic net mixing param (0=ridge, 1=lasso)
+#' @param do.plot Logical, whether to plot coefficients against lambda
+#' @param use.intercept Logical, whether to use an intercept in the model.
+#' @param keepAll Logical, whether to return all families (default FALSE)
+#'
+#' @return A DataFrame.
+#' @importFrom IRanges CharacterList
+#' @import glmnet zetadiv S4Vectors 
+#' @export
+regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercept=FALSE,
+                   keepAll=FALSE){
+  if(is.null(names(signal))) stop("`signal` should be a named vector!")
+  
+  # prepare the target matrix
+  if(binary){
+    bm <- sapply(split(TS$feature, TS$family), FUN=function(x) names(signal) %in% x)
+  }else{
+    TS2 <- aggregate(TS[,"score",drop=FALSE], by=as.data.frame(TS[,c("family","feature")]), FUN=min)
+    TS2 <- split(TS2[,c("score","feature")], TS2$family)
+    bm <- sapply(TS2, FUN=function(x){
+      row.names(x) <- x$feature
+      -1*x[names(signal),"score"]
+    })
+    bm[is.na(bm)] <- 0
+    colnames(bm) <- names(TS2)
+  }
+  bm <- bm[,colSums(bm)>0]
+  
+  # regularized regression with cross-validation
+  if(isLogistic <- is.logical(signal)){
+    fits <- cv.glmnet(bm, signal, standardize=FALSE, alpha=alpha, family="binomial", lower.limits=0 )
+  }else{
+    fits <- cv.glmnet(bm, signal, standardize=FALSE, alpha=alpha, family="gaussian")
+  }
+  
+  if(do.plot){
+    layout(matrix(1:2,nrow=1))
+    plot(fits)
+    plot(fits$glmnet.fit, label=TRUE)
+  }
+  
+  # we extract the miRNAs selected by the best glmnet fit:
+  co <- coef(fits, fits$lambda.min)
+  co <- row.names(co)[co[,1]!=0][-1]
+  signald <- data.frame( y=signal, bm[,co,drop=FALSE] )
+  
+  # new fit to get significance estimates
+  if(use.intercept){
+    form <- y~.
+  }else{
+    form <- y~0+.
+  }
+  if(isLogistic){
+    mod <- glm.cons( form, data=signald, family="binomial", cons=1, cons.inter=-1)
+  }else{
+    mod <- lm( form, data=signald )
+  }
+  
+  # we extract the coefficients and p-values, and reorganize the output:
+  res <- coef(summary(mod))
+  res <- res[order(res[,4]),,drop=FALSE]
+  colnames(res) <- c("beta","stderr",ifelse(isLogistic,"z","t"),"pvalue")
+  res <- res[grep("^\\(Intercept\\)$|FALSE$", row.names(res), invert=TRUE),,drop=FALSE]
+  row.names(res) <- gsub("TRUE","",row.names(res))
+  
+  if(keepAll){
+    co2 <- sort(apply(fits$glmnet.fit$beta,1,FUN=function(x){
+      if(!any(x!=0)) return(Inf)
+      which(x!=0)[1]
+    }))
+    co2 <- co2[grep("^\\(Intercept\\)$|FALSE$", names(co2), invert=TRUE)]
+    names(co2) <- gsub("TRUE","",names(co2))
+    co2 <- co2[setdiff(names(co2),row.names(res))]
+    co2 <- data.frame(row.names=names(co2), beta=rep(NA_real_,length(co2)),
+                      stderr=NA_real_, z=NA_real_, pvalue=1)
+    if(!isLogistic) colnames(co2)[3] <- "t"
+    res <- rbind(res,co2)
+  }
+  
+  res <- DataFrame(res)
+  # we adjust using all features as number of comparisons
+  if(nrow(res)>0){
+    res$FDR <- p.adjust(res$pvalue, n=ncol(bm))
+    res$features <- CharacterList(lapply(split(TS$feature, TS$family)[row.names(res)], 
+                                    y=names(signal)[signal], FUN=intersect))
+  }
+  res
+}
