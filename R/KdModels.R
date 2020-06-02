@@ -222,3 +222,25 @@ decompressKdModList <- function(mods){
     mod
   })
 }
+
+KdMod <- function(mods, name){
+  if(length(mods)==1 && is.character(mods)) mods <- readRDS(mods)
+  if(!is(mods,"CompressedKdModelList")) stop("`mods` is not a CompressedKdModelList")
+  if(!(name %in% names(mods$other))) stop("Model `", name, "` not found!")
+  otherfields <- c( "rank","qr","df.residual","mirseq","canonical.seed","pwm",
+                    "cor.with.cnn","mae.with.cnn","name" )
+  mod <- mods$frame
+  for(f in otherfields){
+    if(f %in% names(mods$other[[name]])) mod[[f]] <- mods$other[[name]][[f]]
+  }
+  mod$xlevels$sr <- mods$other[[name]]$srlvls
+  co <- SR[[name]]
+  co2 <- c(co[,3],co[,4])/100
+  names(co2) <- c(co$seed,paste0(co$seed,":ATRUE"))
+  names(co2)[nrow(co)+1] <- "ATRUE"
+  fl <- mods$fl[,name]/100
+  names(fl) <- row.names(mods$fl)
+  mod$coefficients <- c( co2[grep(":",names(co2),invert=TRUE)],
+                         fl, co2[grep(":",names(co2))] )
+  mod
+}
