@@ -4,10 +4,20 @@
 \alias{enrichPlot}
 \title{enrichPlot}
 \usage{
-enrichPlot(res, size.field = "overlap", col.field = NULL,
-  sig.field = "FDR", min.sig.thres = 0.2, min.enr.thres = 1,
-  label.sig.thres = 0.05, label.enr.thres = 2,
-  label.field = "family", maxLabels = 10, opacity = 0.5, main = "")
+enrichPlot(
+  res,
+  size.field = "overlap",
+  col.field = NULL,
+  sig.field = "FDR",
+  min.sig.thres = 0.2,
+  min.enr.thres = 1,
+  label.sig.thres = 0.05,
+  label.enr.thres = 2,
+  label.field = "family",
+  maxLabels = 10,
+  opacity = 0.5,
+  main = ""
+)
 }
 \arguments{
 \item{res}{The results of an enrichment analysis, as obtained by the `enrichMiR.results` function.}
