@@ -4,8 +4,15 @@
 \alias{regmir}
 \title{regmir}
 \usage{
-regmir(signal, TS, binary = TRUE, alpha = 1, do.plot = FALSE,
-  use.intercept = FALSE)
+regmir(
+  signal,
+  TS,
+  binary = TRUE,
+  alpha = 1,
+  do.plot = FALSE,
+  use.intercept = FALSE,
+  keepAll = FALSE
+)
 }
 \arguments{
 \item{signal}{A vector of logical or numeric values, with gene symbols as names.}
@@ -20,6 +27,8 @@ alternative is to use the score.}
 \item{do.plot}{Logical, whether to plot coefficients against lambda}
 
 \item{use.intercept}{Logical, whether to use an intercept in the model.}
+
+\item{keepAll}{Logical, whether to return all families (default FALSE)}
 }
 \value{
 A DataFrame.

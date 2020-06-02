@@ -4,8 +4,9 @@
 \alias{enrichMiR.results}
 \title{enrichMiR.results}
 \usage{
-enrichMiR.results(object, test = NULL, nameCleanFun = function(x) {    
-  x })
+enrichMiR.results(object, test = NULL, nameCleanFun = function(x) {
+    x
+})
 }
 \arguments{
 \item{object}{An object of class `enrichMiR`, as produced by the enrichMiR function.}
