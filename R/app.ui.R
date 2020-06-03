@@ -46,7 +46,8 @@ enrichMiR.ui <- function(){
               textAreaInput(inputId="customseq", label="Sequence (RNA or DNA)", 
                            placeholder="Paste in here a sequence in which you want to search for binding sites",
                            height = "250px"),
-              checkboxInput(inputId="circular", label="sequence is circular")
+              checkboxInput(inputId="circular", label="sequence is circular"),
+              actionButton("rndseq", "Generate random sequence")
             ),
             tabPanel(title="Transcript", value="transcript",
               selectizeInput("annotation", "Genome & Annotation", choices=c()),
@@ -79,9 +80,10 @@ enrichMiR.ui <- function(){
         tabItem(tabName="tab_hits",
           actionButton("scan", "Scan!"),
           box(width=12, title="Manhattan Plot", collapsible=TRUE, collapsed=TRUE,
-            withSpinner(plotlyOutput("manhattan")),
-            numericInput("manhattan_height", "Plot height (px)", value=300,
-                         min=200, max=1000, step=50)
+            withSpinner(plotOutput("manhattan")),
+            column(6, checkboxInput("manhattan_ordinal", "Ordinal position", value=TRUE)),
+            column(6, numericInput("manhattan_height", "Plot height (px)", value=300,
+                         min=200, max=1000, step=50))
           ),
           box(width=12, title="Table", collapsible=TRUE,
             withSpinner(DTOutput("hits_table"))
@@ -98,7 +100,7 @@ enrichMiR.ui <- function(){
           column(6, selectInput("mir_target_anno", label="Annotation", choices=c())),
           box(width=12, title="Affinity plot", collapsible=TRUE, collapsed=FALSE,
                 withSpinner(plotOutput("modplot")),
-                numericInput("modplot_height", "Plot height (px)", value=300,
+                numericInput("modplot_height", "Plot height (px)", value=400,
                              min=200, max=1000, step=50)
           ),
           tabBox(width=12, 

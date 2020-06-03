@@ -10,7 +10,7 @@ findSeedMatches(
   seedtype = c("auto", "RNA", "DNA"),
   shadow = 0,
   keepMatchSeq = FALSE,
-  minDist = 1L,
+  minDist = 7L,
   BP = NULL,
   verbose = NULL
 )
