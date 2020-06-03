@@ -4,7 +4,7 @@
 \alias{removeOverlappingMatches}
 \title{removeOverlappingMatches}
 \usage{
-removeOverlappingMatches(x, minDist = 1L)
+removeOverlappingMatches(x, minDist = 7L)
 }
 \arguments{
 \item{x}{A GRanges, sorted by (decreasing) importance}

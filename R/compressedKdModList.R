@@ -25,21 +25,28 @@ setMethod("as.list", "CompressedKdModelList", function (x){
 
 #' @export
 setMethod("show", "CompressedKdModelList", function(object){
-  message("A `CompressedKdModelList` object (v", object@classVersion, 
+  cat(paste0("A `CompressedKdModelList` object (v", object@classVersion, 
   ") containing\nbinding affinity models from ", length(object@permir), 
-  " miRNAs.")
+  " miRNAs."))
 })
 
 #' @export
 setMethod("summary", "CompressedKdModelList", function(object){
   show(object)
-  if(!is.null(object@metadata$description)) message(object@metadata$description)
-  if(!is.null(object@metadata$created)) message(object@metadata$created)
+  if(!is.null(object@metadata$description)) 
+    cat("\n",object@metadata$description)
+  if(!is.null(object@metadata$created)) 
+    cat("\n",format(object@metadata$created))
 })
 
 #' @export
 setMethod("names", "CompressedKdModelList", function(x){
   names(x@permir)
+})
+
+#' @export
+setMethod("length", "CompressedKdModelList", function(x){
+  length(x@permir)
 })
 
 #' @export
@@ -52,9 +59,28 @@ setMethod("metadata<-", "CompressedKdModelList", function (x, value){
 
 #' @export
 setMethod("[[", signature(x = "CompressedKdModelList"), function(x, i, j=NULL, ...){
-  name <- names(x)[i]
+  if(is.numeric(i)){
+    name <- names(x)[i]
+  }else{
+    name <- i
+  }
   .inflateKdMod(x@frame, co=x@sr[x@sr$miRNA==name,],
                 o=x@permir[[name]],  x@fl[,name,drop=FALSE])
+})
+
+#' @export
+setMethod("[", signature(x = "CompressedKdModelList"), function(x, i, j=NULL, ...){
+  if(is.logical(i)) i <- which(i)
+  if(is.numeric(i)){
+    name <- names(x)[i]
+  }else{
+    name <- i
+  }
+  if(!all(name %in% names(x))) stop("Undefined miRNA(s) selected")
+  x@sr <- x@sr[which(x@sr$miRNA %in% name),]
+  x@fl <- x@fl[,name,drop=FALSE]
+  x@permir <- x@permir[name]
+  x
 })
 
 #' @export
@@ -73,8 +99,8 @@ setMethod("$", "CompressedKdModelList", definition = function(x, name) {
 decompressKdModList <- function(mods){
   if(length(mods)==1 && is.character(mods)) mods <- readRDS(mods)
   if(!is(mods,"CompressedKdModelList")) stop("`mods` is not a CompressedKdModelList")
-  SR <- split(mods$sr, mods$sr$miRNA)
-  names(nn) <- nn <- names(mods$other)
+  SR <- split(mods@sr, mods@sr$miRNA)
+  names(nn) <- nn <- names(mods@permir)
   lapply(nn, FUN=function(n){
     .inflateKdMod(mods@frame, co=mods@sr[mods@sr$miRNA==n,],
                   o=mods@permir[[n]],  mods@fl[,n,drop=FALSE])
@@ -149,5 +175,5 @@ compressKdModList <- function(mods){
   names(fl2) <- row.names(fl)
   mod$coefficients <- c( co2[grep(":",names(co2),invert=TRUE)],
                          fl2, co2[grep(":",names(co2))] )
-  mod
+  new("KdModel", mod)
 }

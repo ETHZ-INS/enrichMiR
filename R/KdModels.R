@@ -15,7 +15,7 @@ setClass(
 
 #' @export
 setMethod("show", "KdModel", function(object){
-  message("A `KdModel` for ", object$name, " (", object$canonical.seed,")")
+  cat(paste0("A `KdModel` for ", object$name, " (", object$canonical.seed,")"))
 })
 
 #' @export
@@ -23,7 +23,8 @@ setMethod("summary", "KdModel", function(object){
   co <- coefficients(object)
   co <- co[grep("^sr", names(co))]
   co <- co[grep(":",names(co),invert=TRUE)]
-  sort(co, decreasing=TRUE)
+  names(co) <- gsub("^sr","",names(co))
+  sort(co)
 })
 
 
@@ -147,7 +148,7 @@ getKmers <- function(n=4, from=c("G", "C", "T", "A")){
 #' @export
 plotKdModel <- function(mod, what=c("both","seeds","logo")){
   library(ggplot2)
-  
+  what <- match.arg(what)
   if(what=="seeds"){
     coe <- coefficients(mod)
     medfl <- median(coe[grep("^fl",names(coe),value=TRUE)],na.rm=TRUE)
@@ -168,9 +169,8 @@ plotKdModel <- function(mod, what=c("both","seeds","logo")){
     if(!is.null(mod$name)) p <- p + ggtitle(mod$name)
     return( p )
   }
-  if(what=="logo") return(seqLogo::seqLogo(mod$pwm))
-  library(cowplot)
-  plot_grid( plotKdModel(mod, "seeds"),
-             grid::grid.grabExpr(plotKdModel(mod, "logo")),
-             nrow=2)
+  if(what=="logo") return(seqLogo::seqLogo(mod$pwm, xfontsize=12, yfontsize=12))
+  cowplot::plot_grid( plotKdModel(mod, "seeds"),
+                       grid::grid.grabExpr(plotKdModel(mod, "logo")),
+                       nrow=2, rel_heights=c(6,4))
 }

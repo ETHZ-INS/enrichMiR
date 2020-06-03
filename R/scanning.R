@@ -50,7 +50,7 @@ findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shado
     m <- .find1SeedMatches(seqs, seeds, keepMatchSeq, minDist=minDist, verbose=verbose)
   }else{
     if(is.null(BP)) BP <- SerialParam()
-    if(is.null(verbose)) verbose <- !(bpnworkers(BP)>1)
+    if(is.null(verbose)) verbose <- !(bpnworkers(BP)>1 | length(seeds)>5)
     m <- bplapply( seeds, seqs=seqs, verbose=verbose, minDist=minDist, 
                    FUN=.find1SeedMatches, BPPARAM=BP)
     m <- unlist(GRangesList(m))
