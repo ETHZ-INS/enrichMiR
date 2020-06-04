@@ -4,10 +4,18 @@
 \alias{enrichMiR2}
 \title{enrichMiR2}
 \usage{
-enrichMiR2(genes_in_set, allgenes, TS, categories,
-  miRNA.expression = NULL, families = NULL,
-  testOnlyAnnotated = FALSE, test = "michael", cleanNames = FALSE,
-  minSize = 5)
+enrichMiR2(
+  genes_in_set,
+  allgenes,
+  TS,
+  categories,
+  miRNA.expression = NULL,
+  families = NULL,
+  testOnlyAnnotated = FALSE,
+  test = "michael",
+  cleanNames = FALSE,
+  minSize = 5
+)
 }
 \arguments{
 \item{genes_in_set}{A vector of genes in the set of interest}

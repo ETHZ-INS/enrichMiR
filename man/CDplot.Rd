@@ -4,9 +4,17 @@
 \alias{CDplot}
 \title{CDplot}
 \usage{
-CDplot(x, family = NULL, cols = 1:8, xlim = c(-2, 2),
-  xlab = "log2(foldchange)", main = "", sub = NULL,
-  splitBy = "sites", ...)
+CDplot(
+  x,
+  family = NULL,
+  cols = 1:8,
+  xlim = c(-2, 2),
+  xlab = "log2(foldchange)",
+  main = "",
+  sub = NULL,
+  splitBy = "sites",
+  ...
+)
 }
 \arguments{
 \item{x}{Either and object of class `enrichMiR`, or a list containing vectors of foldchanges.}
