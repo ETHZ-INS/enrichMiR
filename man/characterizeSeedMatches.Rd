@@ -4,15 +4,13 @@
 \alias{characterizeSeedMatches}
 \title{characterizeSeedMatches}
 \usage{
-characterizeSeedMatches(x, seed = NULL, kd.model = NULL)
+characterizeSeedMatches(x, seed = NULL)
 }
 \arguments{
 \item{x}{A factor or character vector of matches, or a data.frame or GRanges
 containing a `sequence` column.}
 
-\item{seed}{The seed which sequences of `x` should match.}
-
-\item{mod}{An optional object of class 'KdModel'.}
+\item{seed}{The seed which sequences of `x` should match, or a 'KdModel' object.}
 }
 \value{
 A data.frame, or a `GRanges` if `x` is a `GRanges`

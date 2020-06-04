@@ -1,3 +1,33 @@
+#' @export
+setClass(
+  "KdModel",
+  contains="lm",
+  validity=function(object){
+    if(is.null(object$name) || !is.character(object$name) ||
+       length(object$name)!=1)
+      stop("The model should have a `name` slot.")
+    if(is.null(object$canonical.seed) || !is.character(object$canonical.seed) ||
+       length(object$canonical.seed)!=1)
+      stop("The model should have a `canonical.seed` slot (character).")
+  }
+)
+
+
+#' @export
+setMethod("show", "KdModel", function(object){
+  cat(paste0("A `KdModel` for ", object$name, " (", object$canonical.seed,")"))
+})
+
+#' @export
+setMethod("summary", "KdModel", function(object){
+  co <- coefficients(object)
+  co <- co[grep("^sr", names(co))]
+  co <- co[grep(":",names(co),invert=TRUE)]
+  names(co) <- gsub("^sr","",names(co))
+  sort(co)
+})
+
+
 #' getKdModel
 #' 
 #' Summarizes the binding affinity of 12-mers using linear models.
@@ -47,7 +77,7 @@ getKdModel <- function(kd, name=NULL){
   mod$canonical.seed <- seed
   mod$pwm <- pwm
   class(mod) <- c("KdModel", class(mod))
-  mod
+  new("KdModel", mod)
 }
 
 #' prep12mers
@@ -134,113 +164,13 @@ plotKdModel <- function(mod, what=c("both","seeds","logo")){
     coA$type <- "+A"
     co <- rbind(co,coA)
     co$type <- factor(co$type, c("+A","7mer-m8","6mer","offset 6mer","non-canonical"))
-    # mer8 <- co[nrow(co),,drop=FALSE]
-    # mer8$log_kd <- mer8$log_kd-coe[paste0("sr",mer8$seed,":ATRUE")]-coe["ATRUE"]
-    # mer8$type="8mer"
-    # co <- rbind(co, mer8)
-    # co$type <- factor(co$type, c("8mer","7mer-m8","6mer","non-canonical"))
     p <- ggplot(co, aes(seed, log_kd, fill=type)) + geom_col() + 
       coord_flip() + ylab("-log_kd")
     if(!is.null(mod$name)) p <- p + ggtitle(mod$name)
     return( p )
   }
-  if(what=="logo") return(seqLogo::seqLogo(mod$pwm))
-  library(cowplot)
-  plot_grid( plotKdModel(mod, "seeds"),
-             grid::grid.grabExpr(plotKdModel(mod, "logo")),
-             nrow=2)
-}
-
-
-compressKdModList <- function(mods){
-  if(length(mods)==1 && is.character(mods)) mods <- readRDS(mods)
-  if(!is.list(mods) || !all(sapply(mods, class2="KdModel", FUN=is)))
-    stop("mods should be a named list of 'KdModel's!") 
-  fl <- sapply(mods, FUN=function(x){
-    co <- x$coefficients
-    co <- co[grep("^fl",names(co))]
-    x <- as.integer(round(100*co))
-    names(x) <- names(co)
-    x
-  })
-  sr <- dplyr::bind_rows(lapply(mods, FUN=function(x){
-    co <- x$coefficients
-    co <- co[c(1,grep("^sr|^ATRUE",names(co)))]
-    col <- length(co)/2
-    if(!all( names(co)[seq.int(from=2,to=col)] ==
-             gsub(":ATRUE","",names(co)[seq.int(from=col+2,to=length(co))],fixed=TRUE)))
-       stop("Model's coefficients are not standard!")
-    #sr <- c("other",gsub("^sr","",names(co)[seq.int(2,col)]))
-    data.frame( seed=names(co)[seq_len(col)],
-                seed.coef=as.integer(round(100*co[seq_len(col)])),
-                seed.A=as.integer(round(100*co[seq.int(col+1,length(co))])),
-                stringsAsFactors = FALSE
-                )
-  }), .id="miRNA")
-  sr$miRNA <- factor(sr$miRNA)
-
-  otherfields <- c( "rank","qr","df.residual","mirseq","canonical.seed","pwm",
-                    "cor.with.cnn","mae.with.cnn","name" )
-  names(otherfields) <- otherfields
-  other <- lapply(mods, FUN=function(x){
-    y <- lapply(otherfields, FUN=function(f) x[[f]])
-    y$srlvls <- x$xlevels$sr
-    y
-  })
-  
-  modf <- mods[[1]]
-  modf$xlevels <- list(sr=c(), fl=modf$xlevels$fl)
-  for(f in otherfields) modf[[f]] <- NULL
-  
-  mods <- list(frame=modf, sr=sr, fl=fl, other=other)
-  class(mods) <- c("CompressedKdModelList", "list")
-  mods
-}
-
-
-decompressKdModList <- function(mods){
-  if(length(mods)==1 && is.character(mods)) mods <- readRDS(mods)
-  if(!is(mods,"CompressedKdModelList")) stop("`mods` is not a CompressedKdModelList")
-  otherfields <- c( "rank","qr","df.residual","mirseq","canonical.seed","pwm",
-                    "cor.with.cnn","mae.with.cnn","name" )
-  SR <- split(mods$sr, mods$sr$miRNA)
-  names(nn) <- nn <- names(mods$other)
-  lapply(nn, FUN=function(n){
-    mod <- mods$frame
-    for(f in otherfields){
-      if(f %in% names(mods$other[[n]])) mod[[f]] <- mods$other[[n]][[f]]
-    }
-    mod$xlevels$sr <- mods$other[[n]]$srlvls
-    co <- SR[[n]]
-    co2 <- c(co[,3],co[,4])/100
-    names(co2) <- c(co$seed,paste0(co$seed,":ATRUE"))
-    names(co2)[nrow(co)+1] <- "ATRUE"
-    fl <- mods$fl[,n]/100
-    names(fl) <- row.names(mods$fl)
-    mod$coefficients <- c( co2[grep(":",names(co2),invert=TRUE)],
-                           fl, co2[grep(":",names(co2))] )
-    mod
-  })
-}
-
-KdMod <- function(mods, name){
-  if(length(mods)==1 && is.character(mods)) mods <- readRDS(mods)
-  if(!is(mods,"CompressedKdModelList")) stop("`mods` is not a CompressedKdModelList")
-  if(!(name %in% names(mods$other))) stop("Model `", name, "` not found!")
-  otherfields <- c( "rank","qr","df.residual","mirseq","canonical.seed","pwm",
-                    "cor.with.cnn","mae.with.cnn","name" )
-  mod <- mods$frame
-  for(f in otherfields){
-    if(f %in% names(mods$other[[name]])) mod[[f]] <- mods$other[[name]][[f]]
-  }
-  mod$xlevels$sr <- mods$other[[name]]$srlvls
-  co <- SR[[name]]
-  co2 <- c(co[,3],co[,4])/100
-  names(co2) <- c(co$seed,paste0(co$seed,":ATRUE"))
-  names(co2)[nrow(co)+1] <- "ATRUE"
-  fl <- mods$fl[,name]/100
-  names(fl) <- row.names(mods$fl)
-  mod$coefficients <- c( co2[grep(":",names(co2),invert=TRUE)],
-                         fl, co2[grep(":",names(co2))] )
-  mod
+  if(what=="logo") return(seqLogo::seqLogo(mod$pwm, xfontsize=12, yfontsize=12))
+  cowplot::plot_grid( plotKdModel(mod, "seeds"),
+                       grid::grid.grabExpr(plotKdModel(mod, "logo")),
+                       nrow=2, rel_heights=c(6,4))
 }

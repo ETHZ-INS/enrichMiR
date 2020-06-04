@@ -31,7 +31,7 @@
 #' seeds <- c("AAACCAC", "AAACCUU")
 #' m <- findSeedMatches(seqs, seeds)
 findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shadow=0, 
-                             keepMatchSeq=FALSE, minDist=1L, BP=NULL, verbose=NULL){
+                             keepMatchSeq=FALSE, minDist=7L, BP=NULL, verbose=NULL){
   library(GenomicRanges)
   library(stringr)
   library(BiocParallel)
@@ -49,9 +49,10 @@ findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shado
     m <- .find1SeedMatches(seqs, seeds, keepMatchSeq, minDist=minDist, verbose=verbose)
   }else{
     if(is.null(BP)) BP <- SerialParam()
-    if(is.null(verbose)) verbose <- !(bpnworkers(BP)>1)
+    if(is.null(verbose)) verbose <- !(bpnworkers(BP)>1 | length(seeds)>5)
     m <- bplapply( seeds, seqs=seqs, verbose=verbose, minDist=minDist, 
                    FUN=.find1SeedMatches, BPPARAM=BP)
+    m <- m[!sapply(m,is.null)]
     m <- unlist(GRangesList(m))
   }
 
@@ -66,7 +67,7 @@ findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shado
     start(m) <- start(m)+shadow
   }
   names(m) <- NULL
-  m
+  m[order(m),]
 }
 
 
@@ -84,7 +85,7 @@ findSeedMatches <- function( seqs, seeds, seedtype=c("auto", "RNA","DNA"), shado
 #' @export
 #'
 #' @examples
-removeOverlappingMatches <- function(x, minDist=1L){
+removeOverlappingMatches <- function(x, minDist=7L){
   red <- GenomicRanges::reduce(x, with.revmap=TRUE, min.gapwidth=minDist)$revmap
   red <- red[lengths(red)>1]
   if(length(red)==0) return(x)
