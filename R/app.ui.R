@@ -78,7 +78,8 @@ enrichMiR.ui <- function(){
           box(width=6, checkboxInput("keepmatchseq", "Keep matched sequence"))
         ),
         tabItem(tabName="tab_hits",
-          actionButton("scan", "Scan!"),
+          column(2, actionButton("scan", "Scan!")),
+          column(10, tags$h5(textOutput("scan_target"))),
           box(width=12, title="Manhattan Plot", collapsible=TRUE, collapsed=TRUE,
             withSpinner(plotOutput("manhattan")),
             column(6, checkboxInput("manhattan_ordinal", "Ordinal position", value=TRUE)),

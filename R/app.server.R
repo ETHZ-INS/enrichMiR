@@ -1,10 +1,16 @@
-enrichMiR.server <- function(modlists){
+enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genomes=list()){
+  
   function(input, output, session){
     
     ##############################
-    ## select collection
+    ## initialize inputs
     
     updateSelectizeInput(session, "mirlist", choices=names(modlists))
+    updateSelectizeInput(session, "annotation", choices=names(ensdbs))
+    
+    
+    ##############################
+    ## select collection
     
     allmods <- reactive({ # all models from collection
       if(is.null(input$mirlist)) return(NULL)
@@ -20,14 +26,84 @@ enrichMiR.server <- function(modlists){
       updateSelectizeInput(session, "mirnas", choices=names(allmods()), server=TRUE)
       updateSelectizeInput(session, "mirna", choices=names(allmods()), server=TRUE)
     })
-    
+        
     ##############################    
     ## scan specific sequence
     
+    ## transcript selection
+    
+    ensdb <- reactive({ # active ensemblDB
+      if(is.null(input$annotation)) return(NULL)
+      ensdbs[[input$annotation]]
+    })
+    
+    allgenes <- reactive({
+      if(is.null(ensdb())) return(NULL)
+      g <- genes( ensdb(), columns="gene_name",
+                  return.type="data.frame")
+      paste(g[,1], g[,2])
+    })
+    
+    selgene <- reactive({ # selected gene id
+      if(is.null(ensdb()) || is.null(input$gene) ||
+         input$gene=="") return(NULL)
+      strsplit(input$gene," ")[[1]][2]
+    })
+    
+    alltxs <- reactive({ # all tx from selected gene
+      if(is.null(selgene())) return(NULL)
+      tx <- transcripts(ensdb(),
+                        columns=c("tx_id","tx_biotype"),
+                        filter=~gene_id==selgene(), return.type="data.frame")
+      paste0(tx$tx_id, " (", tx$tx_biotype,")")
+    })
+    
+    seltx <- reactive({
+      if(is.null(selgene()) || is.null(input$transcript) || 
+         input$transcript=="") return(NULL)
+      tx <- strsplit(input$transcript, " ")[[1]][[1]]
+      if(tx=="" || is.na(tx)) return(NULL)
+      tx
+    })
+    
+    observe(
+      updateSelectizeInput(session, "gene", choices=allgenes(), server=TRUE)
+    )
+    observe(updateSelectizeInput(session, "transcript", choices=alltxs()))
+    
+    seqs <- reactive({
+      if(is.null(selgene())) return(NULL)
+      if(is.null(seltx())){
+        gid <- selgene()
+        filt <- ~gene_id==gid
+      }else{
+        txid <- seltx()
+        filt <- ~tx_id==txid
+      }
+      if(input$utr_only){
+        gr <- suppressWarnings(threeUTRsByTranscript(ensdb(), filter=filt))
+      }else{
+        gr <- exonsBy(ensdb(), by="tx", filter=filt)
+      }
+      if(length(gr)==0) return(NULL)
+      seqs <- extractTranscriptSeqs(genomes[[input$annotation]], gr)
+      seqs <- seqs[lengths(seqs)>6]
+      if(length(seqs)==0) return(NULL)
+      seqs
+    })
+    
+    output$tx_overview <- renderPrint({
+      if(is.null(seqs())) return(NULL)
+      if(length(seqs())==0 || length(seqs())>1) return(seqs())
+      return(seqs()[[1]])
+    })
+    
+    ## end transcript selection
+        
     target <- reactive({ # target subject sequence
       if(input$subjet_type=="custom") return(input$customseq)
-      # TO DO: fetch and return the selected transcript's sequence
-      return(NULL)
+      if(is.null(seqs()) || length(seqs())>1) return(NULL)
+      as.character(seqs())
     })
     
     observeEvent(input$rndseq, {
@@ -46,7 +122,7 @@ enrichMiR.server <- function(modlists){
     observeEvent(input$scan, { # actual scanning
       if(is.null(selmods()) || is.null(target()) || nchar(target())==0) 
         return(NULL)
-      hits$hits <- NULL
+      hits$hits <- hits$target <- NULL
       msg <- paste0("Scanning sequence for ",length(selmods())," miRNAS")
       detail <- NULL
       hits$nsel <- length(selmods())
@@ -62,6 +138,17 @@ enrichMiR.server <- function(modlists){
           hits$hits$seed <- NULL
         }
       })
+      if(input$subjet_type=="custom"){
+        hits$target <- "custom sequence"
+      }else{
+        hits$target <- paste(input$gene, "-", seltx(),
+                             ifelse(input$utr_only, "(UTR)",""))
+      }
+    })
+    
+    output$scan_target <- renderText({
+      if(is.null(hits$target)) return(NULL)
+      paste("Scan results in: ", hits$target)
     })
     
     output$hits_table <- renderDT({
