@@ -117,7 +117,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       allmods()[input$mirnas]
     })
     
-    hits <- reactiveValues()
+    hits <- reactiveValues() # contains everything related to a scan
     
     observeEvent(input$scan, { # actual scanning
       if(is.null(selmods()) || is.null(target()) || nchar(target())==0) 
@@ -156,7 +156,10 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       h <- as.data.frame(hits$hits)
       h <- h[,setdiff(colnames(h), c("seqnames","width","strand") )]
       if(hits$nsel == 1) h$miRNA <- NULL
-      h
+      datatable( h, options=list( pageLength=25, dom = "fltBip",
+                                  buttons=c("csvHtml5","excelHtml5") ),
+                 filter="top",
+                 extensions=c("Buttons") )
     })
     
     output$manhattan <- renderPlot({
