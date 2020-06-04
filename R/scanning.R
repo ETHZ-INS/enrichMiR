@@ -1,7 +1,6 @@
 #' findSeedMatches
 #'
-#' @param seqs A character vector of sequences in which to look. If DNA, will be
-#' complemented before matching.
+#' @param seqs A character vector or `XStringSet`` of sequences in which to look.
 #' @param seeds A character vector of 7-nt seeds to look for. If RNA, will be 
 #' reversed and complemented before matching. If DNA, they are assumed to be
 #' the target sequence to look for. Alternatively, a list of objects of class
