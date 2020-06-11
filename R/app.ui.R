@@ -3,13 +3,6 @@ enrichMiR.ui <- function(){
   library(shinydashboard)
   library(shinycssloaders)
   
-  ## Should we give the minDist option in the TopTarget Search?
-  ## Name equal inputs in different Tabs equally or differently?
-  ## Do we need the Update Species Button
-  ## Include a filter KD slider? Either in Advanced Search options, or in Output Boxes?
-  
-  
-  
   ui <- dashboardPage(
     
     dashboardHeader(title = "findMirSite", titleWidth = "300px"),
@@ -73,7 +66,8 @@ enrichMiR.ui <- function(){
               sliderInput("minDist", label="Minium distance in NT between two binding sites of the same miRNA", 
                           min = 0, max = 20, value = 7, step = 1),
               sliderInput(inputId="shadow", label = "Ribosomal shadow at the beginning of the 3'UTR, recommended is 15 NT", 
-                          min = 0, max = 20, value = 15, step = 1)
+                          min = 0, max = 20, value = 15, step = 1),
+              checkboxInput("scanNonCanonical", "Search also for non-canonical sites", value=TRUE)
           ),
           box(width=6, checkboxInput("keepmatchseq", "Keep matched sequence"))
         ),
@@ -91,9 +85,14 @@ enrichMiR.ui <- function(){
           ),
           box(width=12, title="Visualization on sequence", collapsible=TRUE, 
               collapsed=TRUE
+          ),
+          box(width=12, title="Cached hits", collapsible=TRUE, collapsed=TRUE,
+              textOutput("cache.info"),
+              uiOutput("cached.results"),
+              actionButton("loadCache", "Load"),
+              actionButton("deleteCache", "Delete")
           )
         ),
-        
         
         # miRNA-based
         tabItem(tabName="tab_mirna",
@@ -104,13 +103,10 @@ enrichMiR.ui <- function(){
                 numericInput("modplot_height", "Plot height (px)", value=400,
                              min=200, max=1000, step=50)
           ),
-          tabBox(width=12, 
-            tabPanel("Target genes", DTOutput("target_genes")),
-            tabPanel("Target transcripts", DTOutput("target_transcripts"))
+          tabBox(width=12, title="Targets",
+            DTOutput("mirna_targets")
           )
         ),
-
-        
         
         tabItem(tabName = "tab_about")
   
