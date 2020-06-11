@@ -9,15 +9,18 @@ findSeedMatches(
   seeds,
   seedtype = c("auto", "RNA", "DNA"),
   shadow = 0,
+  minLogKd = 1,
+  types = NULL,
+  max.noncanonical.motifs = Inf,
   keepMatchSeq = FALSE,
   minDist = 7L,
+  fastRemoveOverlaps = FALSE,
   BP = NULL,
   verbose = NULL
 )
 }
 \arguments{
-\item{seqs}{A character vector of sequences in which to look. If DNA, will be
-complemented before matching.}
+\item{seqs}{A character vector or `XStringSet`` of sequences in which to look.}
 
 \item{seeds}{A character vector of 7-nt seeds to look for. If RNA, will be 
 reversed and complemented before matching. If DNA, they are assumed to be
@@ -29,12 +32,23 @@ the target sequence to look for. Alternatively, a list of objects of class
 \item{shadow}{Integer giving the shadow, i.e. the number of nucleotides
 hidden at the beginning of the sequence (default 0)}
 
+\item{minLogKd}{Minimum log_kd value to keep (default 1). Set to 0 to disable.}
+
+\item{types}{The type of sites to return (default all)}
+
+\item{max.noncanonical.motifs}{The maximum number of non-canonical motifs to search 
+for (default all)}
+
 \item{keepMatchSeq}{Logical; whether to keep the sequence (including flanking
 dinucleotides) for each seed match (default FALSE).}
 
 \item{minDist}{Integer specifying the minimum distance between matches of the same 
 miRNA (default 1). Closer matches will be reduced to the highest-affinity. To 
 disable the removal of overlapping features, use `minDist=-Inf`.}
+
+\item{fastRemoveOverlaps}{Whether to use the fast (rather than exact) method to remove 
+overlaps. Will improve speed, but some matching sites near stronger ones (but beyond 
+minDist) might be lost when more than two sites overlap. Not recommended.}
 
 \item{BP}{Pass `BiocParallel::MulticoreParam(ncores, progressbar=TRUE)` to enable 
 multithreading.}
@@ -54,5 +68,5 @@ seqs <- sapply(1:10, FUN=function(x) paste(sample(strsplit("ACGU", "")[[1]],
                                      1000, replace=TRUE),collapse=""))
 names(seqs) <- paste0("seq",1:length(seqs))
 seeds <- c("AAACCAC", "AAACCUU")
-m <- findSeedMatches(seqs, seeds)
+findSeedMatches(seqs, seeds)
 }
