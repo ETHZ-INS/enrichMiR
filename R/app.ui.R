@@ -105,13 +105,16 @@ enrichMiR.ui <- function(){
                              min=200, max=1000, step=50)
           ),
           box(width=12, title="Targets", collapsible=TRUE,
+            fluidRow(
+              column(6, checkboxInput("targetlist_utronly", "Counts only binding sites in UTRs", value=TRUE)),
+              column(6, checkboxInput("targetlist_gene", "Aggregate genes", value=TRUE))),
             withSpinner(DTOutput("mirna_targets"))
           )
         ),
         
-        tabItem(tabName = "tab_about"),
-        tags$head(tags$style(HTML('.content-wrapper { overflow: auto; }')))
-      )
+        tabItem(tabName = "tab_about")
+      ),
+      tags$head(tags$style(HTML('.content-wrapper { overflow: auto; }')))
     )
   )
 }

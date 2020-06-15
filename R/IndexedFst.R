@@ -185,8 +185,6 @@ setMethod("as.data.frame", "IndexedFst", definition=function(x, name) {
       f <- GRanges(seqnames=f$seqnames, IRanges(f$start, f$end), strand=f$strand,
                    f[,setdiff(colnames(f), c("seqnames","start","end","width","strand"))])
     }
-    if("log_kd" %in% colnames(f) && is.integer(f$log_kd))
-      f$log_kd <- f$log_kd/-100
   }
   f
 }
