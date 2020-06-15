@@ -1,4 +1,4 @@
-#' @export
+#' @exportClass CompressedKdModelList
 setClass(
   "CompressedKdModelList",
   slots=representation(

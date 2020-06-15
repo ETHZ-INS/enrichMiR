@@ -1,3 +1,4 @@
+#' @export
 enrichMiR.ui <- function(){
   library(shiny)
   library(shinydashboard)
@@ -29,7 +30,7 @@ enrichMiR.ui <- function(){
           tabBox(id="collection_type", width=12,
             tabPanel(title="Pre-built", value="prebuilt",
                      selectInput("mirlist", "miRNA collection", choices=c())),
-            tabPanel(title="Upload", value="upload")
+            tabPanel(title="Upload", value="upload", tags$p("Not yet implemented."))
           ),
           box(width=12, withSpinner(verbatimTextOutput("collection_summary")))
         ),
@@ -39,7 +40,7 @@ enrichMiR.ui <- function(){
               textAreaInput(inputId="customseq", label="Sequence (RNA or DNA)", 
                            placeholder="Paste in here a sequence in which you want to search for binding sites",
                            height = "250px"),
-              checkboxInput(inputId="circular", label="sequence is circular"),
+              #checkboxInput(inputId="circular", label="sequence is circular"),
               actionButton("rndseq", "Generate random sequence")
             ),
             tabPanel(title="Transcript", value="transcript",
@@ -76,7 +77,8 @@ enrichMiR.ui <- function(){
           column(10, tags$h5(textOutput("scan_target"))),
           box(width=12, title="Manhattan Plot", collapsible=TRUE, collapsed=TRUE,
             withSpinner(plotOutput("manhattan")),
-            column(6, checkboxInput("manhattan_ordinal", "Ordinal position", value=TRUE)),
+            column(6, checkboxInput("manhattan_ordinal", "Ordinal position", value=TRUE),
+                      numericInput("manhattan_n", "Max number of miRNAs", value=10, min=1, max=50)),
             column(6, numericInput("manhattan_height", "Plot height (px)", value=300,
                          min=200, max=1000, step=50))
           ),
@@ -97,19 +99,18 @@ enrichMiR.ui <- function(){
         # miRNA-based
         tabItem(tabName="tab_mirna",
           column(6, selectizeInput("mirna", "miRNA", choices=c())),
-          column(6, selectInput("mir_target_anno", label="Annotation", choices=c())),
           box(width=12, title="Affinity plot", collapsible=TRUE, collapsed=FALSE,
                 withSpinner(plotOutput("modplot")),
                 numericInput("modplot_height", "Plot height (px)", value=400,
                              min=200, max=1000, step=50)
           ),
-          tabBox(width=12, title="Targets",
-            DTOutput("mirna_targets")
+          box(width=12, title="Targets", collapsible=TRUE,
+            withSpinner(DTOutput("mirna_targets"))
           )
         ),
         
-        tabItem(tabName = "tab_about")
-  
+        tabItem(tabName = "tab_about"),
+        tags$head(tags$style(HTML('.content-wrapper { overflow: auto; }')))
       )
     )
   )
