@@ -370,7 +370,7 @@ characterizeSeedMatches <- function(x, seed=NULL){
 #' @export
 predictKD <- function(kmer, mod){
   if(!is(mod,"KdModel")) stop("`mod` should be of class `KdModel`.")
-  kd <- suppressWarnings(predict(mod, prep12mers(kmer, mod)))
+  kd <- suppressWarnings(predict(as(mod, "lm"), prep12mers(kmer, mod)))
   kd[which(kd>0)] <- 0
   kd
 }

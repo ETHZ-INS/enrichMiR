@@ -9,9 +9,18 @@
 #' @param maxCacheSize Maximum cache size in bytes.
 #'
 #' @return A shiny server function
+#' @importFrom digest digest
 #' @export
 enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genomes=list(),
-                             maxCacheSize=100*10^6){
+                             maxCacheSize=100*10^6 ){
+  library(DT)
+  
+  dtwrapper <- function(d, pageLength=25){
+    datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
+               options=list(pageLength=pageLength, dom = "fltBip", rownames=FALSE,
+                            colReorder=TRUE, 
+                            buttons=c('copy', 'csv', 'excel', 'csvHtml5') ) )
+  }
   
   function(input, output, session){
     
@@ -45,28 +54,27 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     
     ## transcript selection
     
-    ensdb <- reactive({ # active ensemblDB
-      if(is.null(input$annotation)) return(NULL)
+    sel_ensdb <- reactive({
+      if(is.null(input$annotation) || input$annotation=="" || 
+         !(input$annotation %in% names(ensdbs))) return(NULL)
       ensdbs[[input$annotation]]
     })
     
     allgenes <- reactive({
-      if(is.null(ensdb())) return(NULL)
-      g <- genes( ensdb(), columns="gene_name",
+      if(is.null(sel_ensdb())) return(NULL)
+      g <- genes( sel_ensdb(), columns="gene_name",
                   return.type="data.frame")
       paste(g[,1], g[,2])
     })
     
     selgene <- reactive({ # selected gene id
-      if(is.null(ensdb()) || is.null(input$gene) ||
-         input$gene=="") return(NULL)
+      if(is.null(input$gene) || input$gene=="") return(NULL)
       strsplit(input$gene," ")[[1]][2]
     })
     
     alltxs <- reactive({ # all tx from selected gene
       if(is.null(selgene())) return(NULL)
-      tx <- transcripts(ensdb(),
-                        columns=c("tx_id","tx_biotype"),
+      tx <- transcripts(sel_ensdb(), columns=c("tx_id","tx_biotype"),
                         filter=~gene_id==selgene(), return.type="data.frame")
       paste0(tx$tx_id, " (", tx$tx_biotype,")")
     })
@@ -79,10 +87,17 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       tx
     })
     
-    observe(
-      updateSelectizeInput(session, "gene", choices=allgenes(), server=TRUE)
-    )
+    observe(updateSelectizeInput(session, "gene", choices=allgenes(), server=TRUE))
     observe(updateSelectizeInput(session, "transcript", choices=alltxs()))
+    
+    getGenome <- function(x){
+      if(is.character(x)){
+        library(x, character.only=TRUE)
+        x <- get(x)
+      }
+      seqlevels(x) <- gsub("^chr","",seqlevels(x))
+      x
+    }
     
     seqs <- reactive({
       if(is.null(selgene())) return(NULL)
@@ -93,13 +108,16 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
         txid <- seltx()
         filt <- ~tx_id==txid
       }
+      db <- sel_ensdb()
       if(input$utr_only){
-        gr <- suppressWarnings(threeUTRsByTranscript(ensdb(), filter=filt))
+        gr <- suppressWarnings(threeUTRsByTranscript(db, filter=filt))
       }else{
-        gr <- exonsBy(ensdb(), by="tx", filter=filt)
+        gr <- exonsBy(db, by="tx", filter=filt)
       }
       if(length(gr)==0) return(NULL)
-      seqs <- extractTranscriptSeqs(genomes[[input$annotation]], gr)
+      if(is.null(genomes[[input$annotation]])) return(NULL)
+      library(x,character.only = TRUE)
+      seqs <- extractTranscriptSeqs(getGenome(genomes[[input$annotation]]), gr)
       seqs <- seqs[lengths(seqs)>6]
       if(length(seqs)==0) return(NULL)
       seqs
@@ -150,11 +168,11 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     })
     
     checksum <- reactive({
-      paste( R.cache::getChecksum(selmods()),
-             R.cache::getChecksum(list(target=target(), shadow=input$shadow,
-                                       keepMatchSeq=input$keepMatchSeq, 
-                                       minDist=input$minDist,
-                                       scanNonCanonical=input$scanNonCanonical))
+      paste( digest::digest(selmods()),
+             digest::digest(list(target=target(), shadow=input$shadow,
+                                   keepMatchSeq=input$keepMatchSeq, 
+                                   minDist=input$minDist,
+                                   scanNonCanonical=input$scanNonCanonical))
       )
     })
     
@@ -248,10 +266,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       h <- as.data.frame(hits()$hits)
       h <- h[,setdiff(colnames(h), c("seqnames","width","strand") )]
       if(hits()$nsel == 1) h$miRNA <- NULL
-      datatable( h, options=list( pageLength=25, dom = "fltBip",
-                                  buttons=c("csvHtml5","excelHtml5") ),
-                 filter="top",
-                 extensions=c("Buttons") )
+      dtwrapper(h)
     })
     
     ## end scan hits and cache 
@@ -259,6 +274,9 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     output$manhattan <- renderPlot({
       if(is.null(hits()$hits)) return(NULL)
       h <- as.data.frame(sort(hits()$hits))
+      tt <- sort(table(h$miRNA), decreasing=TRUE)
+      mirs <- names(tt)[seq_len(min(input$manhattan_n, length(tt)))]
+      h <- h[h$miRNA %in% mirs,,drop=FALSE]
       if(input$manhattan_ordinal){
         h$position <- seq_len(nrow(h))
         xlab <- "Position (ordinal)"
@@ -283,22 +301,25 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       plotKdModel(mod())
     }, height=reactive(input$modplot_height))
     
+    txs <- reactive({ # the tx to gene symbol table for the current annotation
+      if(is.null(input$mirlist) || input$mirlist=="" || 
+         !(input$mirlist %in% names(ensdbs))) return(NULL)
+      db <- ensdbs[[input$mirlist]]
+      if(is.null(db)) return(NULL)
+      tx <- mcols(transcripts(db, c("tx_id","gene_id")))
+      tx <- merge(tx,mcols(genes(db, c("gene_id","symbol"))), by="gene_id")
+      # tx <- as.data.frame(tx[,c("symbol","gene_id","tx_id","tx_biotype")])
+      as.data.frame(tx[,c("symbol","tx_id")])
+    })
+    
     output$mirna_targets <- renderDT({
       if(is.null(targetlists[[input$mirlist]]) || is.null(mod())) return(NULL)
       d <- targetlists[[input$mirlist]][[input$mirna]]
       d$log_kd <- d$log_kd/100
       d$log_kd.canonical <- d$log_kd.canonical/100
-      if(!is.null(ensdbs[[input$mirlist]])){
-        tx <- mcols(transcripts(ensdbs[[input$mirlist]], c("tx_id","gene_id","tx_biotype")))
-        tx <- merge(tx,mcols(genes(ensdbs[[input$mirlist]], c("gene_id","symbol"))),by="gene_id")
-        # tx <- as.data.frame(tx[,c("symbol","gene_id","tx_id","tx_biotype")])
-        tx <- as.data.frame(tx[,c("symbol","tx_id")])
-        d <- merge(tx, d, by.x="tx_id", by.y="transcript")
-      }
+      if(!is.null(txs())) d <- merge(txs(), d, by.x="tx_id", by.y="transcript")
       colnames(d) <- gsub("^n\\.","",colnames(d))
-      datatable( d, options=list( pageLength=25, dom = "fltBip", rownames=FALSE,
-                                  buttons=c("csvHtml5","excelHtml5") ),
-                 filter="top", extensions=c("Buttons","ColReorder") )
+      dtwrapper(d)
     })
 
   }

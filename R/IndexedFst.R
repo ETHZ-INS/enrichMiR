@@ -1,8 +1,8 @@
 #' IndexedFst
 #' 
-#' Objects of the IndexedFst classes enable fast random access to FST files. This is
-#' particularly appropriate for large data.frames which often need to be accessed 
-#' according to the value of a particular column.
+#' Objects of the IndexedFst class enable fast named random access to FST files.
+#' This is particularly appropriate for large data.frames which often need to 
+#'  be accessed according to the (e.g. factor) value of a particular column.
 #' 
 #' @examples
 #' # we first create and save an indexed FST file
@@ -24,6 +24,7 @@
 #' @export
 #' @import methods
 #' @exportClass IndexedFst
+#' @author Pierre-Luc Germain, \email{pierre-luc.germain@@hest.ethz.ch}
 #' @aliases IndexedFst-class IndexedFst
 #' @rdname IndexedFst-class
 #' @name IndexedFst-class
@@ -136,8 +137,18 @@ setMethod("[", signature("IndexedFst"), function(x, i, j=NULL, ...){
 
 #' @rdname IndexedFst-class
 #' @export
-setMethod("$", "IndexedFst", definition = function(x, name) {
+setMethod("$", "IndexedFst", definition = function(x, name){
   .fst.read.wrapper(x, match.arg(name, row.names(x@index)))
+})
+
+#' @rdname IndexedFst-class
+#' @export
+setMethod("head", "IndexedFst", definition = function(x, n=6L, ...){
+  if(!is.numeric(n) || !(n>0) || n!=as.integer(n))
+    stop("`n` should be a positive integer.")
+  w <- which(x@index[,2]>=n)
+  if(length(w)==0) return(.fst.read.wrapper(x))
+  head(x[seq_len(w[1])], n=n)
 })
 
 #' @rdname IndexedFst-class
@@ -147,18 +158,36 @@ setMethod("as.data.frame", "IndexedFst", definition=function(x, name) {
 })
 
 #' @importFrom fst threads_fst read.fst
-.fst.read.wrapper <- function(x, names=NULL){
-  if(!is.null(names) && length(names)>1) 
-    return(do.call(rbind, lapply(name, FUN=function(i) .fst.read.wrapper(x,i))))
-  ont <- threads_fst()
-  threads_fst(x@nthreads)
-  if(is.null(names)){
-    f <- read.fst(x@fst.file)
+#' @importFrom data.table rbindlist 
+#' @importFrom IRanges IRanges
+#' @importFrom GenomicRanges GRanges
+.fst.read.wrapper <- function(x, names=NULL, convertGR=TRUE){
+  if(!is(x,"IndexedFst")) stop("`x` should be an IndexedFst object.")
+  if(!is.null(names) && length(names)>1){
+    f <- lapply(names, FUN=function(i) .fst.read.wrapper(x,i,convertGR=FALSE))
+    if(length(f)>5){
+      f <- as.data.frame(data.table::rbindlist(f))
+    }else{
+      f <- do.call(rbind, f)
+    }
+  }else{
+    ont <- threads_fst()
+    threads_fst(x@nthreads)
+    if(is.null(names)){
+      f <- read.fst(x@fst.file)
+    }else{
+      f <- read.fst(x@fst.file, from=x@index[names,1], to=x@index[names,2])
+    }
     threads_fst(ont)
-    return(f)
   }
-  f <- read.fst(x@fst.file, from=x@index[names,1], to=x@index[names,2])
-  threads_fst(ont)
+  if(convertGR){
+    if(all(c("seqnames","start","end") %in% colnames(f))){
+      f <- GRanges(seqnames=f$seqnames, IRanges(f$start, f$end), strand=f$strand,
+                   f[,setdiff(colnames(f), c("seqnames","start","end","width","strand"))])
+    }
+    if("log_kd" %in% colnames(f) && is.integer(f$log_kd))
+      f$log_kd <- f$log_kd/-100
+  }
   f
 }
 

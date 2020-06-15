@@ -1,4 +1,4 @@
-#' @export
+#' @exportClass KdModel
 setClass(
   "KdModel",
   contains="lm",
@@ -27,6 +27,10 @@ setMethod("summary", "KdModel", function(object){
   sort(co)
 })
 
+#' @export
+setMethod("predict", signature(object="KdModel"), function(object, kmers){
+  predictKD(kmers, object)
+})
 
 #' getKdModel
 #' 
