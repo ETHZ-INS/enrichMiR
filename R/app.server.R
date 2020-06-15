@@ -22,6 +22,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
                             buttons=c('copy', 'csv', 'excel', 'csvHtml5') ) )
   }
   
+  
   function(input, output, session){
     
     ##############################
@@ -29,6 +30,13 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     
     updateSelectizeInput(session, "mirlist", choices=names(modlists))
     updateSelectizeInput(session, "annotation", choices=names(ensdbs))
+    
+    observe({
+      # when the choice of collection changes, update the annotation to
+      # use the same genome
+      if(!is.null(input$mirlist) && input$mirlist!="")
+        updateSelectizeInput(session, "annotation", selected=input$mirlist)
+    })
     
     
     ##############################
@@ -39,12 +47,13 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       modlists[[input$mirlist]]
     })
     
+    # prints a summary of the model collection
     output$collection_summary <- renderPrint({
       if(is.null(allmods())) return(NULL)
       summary(allmods())
     })
     
-    observe({
+    observe({ # when the selected collection changes, update the miRNA selection inputs
       updateSelectizeInput(session, "mirnas", choices=names(allmods()), server=TRUE)
       updateSelectizeInput(session, "mirna", choices=names(allmods()), server=TRUE)
     })
@@ -54,13 +63,13 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     
     ## transcript selection
     
-    sel_ensdb <- reactive({
+    sel_ensdb <- reactive({ # the ensembldb for the selected genome
       if(is.null(input$annotation) || input$annotation=="" || 
          !(input$annotation %in% names(ensdbs))) return(NULL)
       ensdbs[[input$annotation]]
     })
     
-    allgenes <- reactive({
+    allgenes <- reactive({ # all genes in the selected genome
       if(is.null(sel_ensdb())) return(NULL)
       g <- genes( sel_ensdb(), columns="gene_name",
                   return.type="data.frame")
@@ -79,7 +88,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       paste0(tx$tx_id, " (", tx$tx_biotype,")")
     })
     
-    seltx <- reactive({
+    seltx <- reactive({ # the selected transcript
       if(is.null(selgene()) || is.null(input$transcript) || 
          input$transcript=="") return(NULL)
       tx <- strsplit(input$transcript, " ")[[1]][[1]]
@@ -87,9 +96,12 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       tx
     })
     
+    # when the ensembldb is updated, update the gene input
     observe(updateSelectizeInput(session, "gene", choices=allgenes(), server=TRUE))
+    # when the gene selection is updated, update the transcript input
     observe(updateSelectizeInput(session, "transcript", choices=alltxs()))
     
+    # takes a genome package name as input, and returns the genome
     getGenome <- function(x){
       if(is.character(x)){
         library(x, character.only=TRUE)
@@ -99,7 +111,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       x
     }
     
-    seqs <- reactive({
+    seqs <- reactive({ # returns the selected sequence(s)
       if(is.null(selgene())) return(NULL)
       if(is.null(seltx())){
         gid <- selgene()
@@ -116,14 +128,13 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       }
       if(length(gr)==0) return(NULL)
       if(is.null(genomes[[input$annotation]])) return(NULL)
-      library(x,character.only = TRUE)
       seqs <- extractTranscriptSeqs(getGenome(genomes[[input$annotation]]), gr)
       seqs <- seqs[lengths(seqs)>6]
       if(length(seqs)==0) return(NULL)
       seqs
     })
     
-    output$tx_overview <- renderPrint({
+    output$tx_overview <- renderPrint({ # overview of the selected transcript
       if(is.null(seqs())) return(NULL)
       if(length(seqs())==0 || length(seqs())>1) return(seqs())
       return(seqs()[[1]])
@@ -137,7 +148,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       as.character(seqs())
     })
     
-    observeEvent(input$rndseq, {
+    observeEvent(input$rndseq, { # generate random sequence
       updateTextAreaInput(session, "customseq",
         value=paste(sample(c("A","C","G","T"), size = 3000, replace=TRUE), collapse=""))
     })
@@ -151,7 +162,8 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     
     ## Begin scan and results caching
     
-    cached.hits <- reactiveValues()
+    cached.hits <- reactiveValues() # actual and past scanning results are stored in this object
+    
     cached.checksums <- reactive({
       ch <- reactiveValuesToList(cached.hits)
       ch <- ch[!sapply(ch, is.null)]
@@ -161,13 +173,13 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     })
     current.cs <- reactiveVal()
     
-    hits <- reactive({
+    hits <- reactive({ # the results currently loaded are stored in this object
       if(is.null(current.cs())) return(NULL)
       if(current.cs() %in% names(cached.checksums())) return(cached.hits[[current.cs()]])
       NULL
     })
     
-    checksum <- reactive({
+    checksum <- reactive({ # generate a unique hash for the given input
       paste( digest::digest(selmods()),
              digest::digest(list(target=target(), shadow=input$shadow,
                                    keepMatchSeq=input$keepMatchSeq, 
@@ -182,7 +194,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       sum(sapply(ch, FUN=function(x) as.numeric(x$size)))
     })
     
-    cleanCache <- function(){
+    cleanCache <- function(){ # remove last-used results when over the cache size limit
       cs <- isolate(cached.checksums())
       if(length(cs)<3 || as.numeric(cache.size())<maxCacheSize) return(NULL)
       cs <- cs[order(sapply(cs, FUN=function(x) x$last), decreasing=TRUE)]
@@ -261,7 +273,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       if(current.cs()==input$selected.cache) current.cs(NULL)
     })
     
-    output$hits_table <- renderDT({
+    output$hits_table <- renderDT({ # prints the current hits
       if(is.null(hits()$hits)) return(NULL)
       h <- as.data.frame(hits()$hits)
       h <- h[,setdiff(colnames(h), c("seqnames","width","strand") )]
@@ -291,12 +303,12 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     ##############################
     ## miRNA-centric tab
 
-    mod <- reactive({
+    mod <- reactive({ # the currently-selected KdModel
       if(is.null(allmods()) || is.null(input$mirna)) return(NULL)
       allmods()[[input$mirna]]
     })
     
-    output$modplot <- renderPlot({
+    output$modplot <- renderPlot({ # affinity plot
       if(is.null(mod())) return(NULL)
       plotKdModel(mod())
     }, height=reactive(input$modplot_height))
@@ -306,18 +318,24 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
          !(input$mirlist %in% names(ensdbs))) return(NULL)
       db <- ensdbs[[input$mirlist]]
       if(is.null(db)) return(NULL)
-      tx <- mcols(transcripts(db, c("tx_id","gene_id")))
+      tx <- mcols(transcripts(db, c("tx_id","gene_id","tx_biotype")))
       tx <- merge(tx,mcols(genes(db, c("gene_id","symbol"))), by="gene_id")
-      # tx <- as.data.frame(tx[,c("symbol","gene_id","tx_id","tx_biotype")])
-      as.data.frame(tx[,c("symbol","tx_id")])
+      as.data.frame(tx[,c("symbol","tx_id","tx_biotype")])
     })
     
     output$mirna_targets <- renderDT({
-      if(is.null(targetlists[[input$mirlist]]) || is.null(mod())) return(NULL)
-      d <- targetlists[[input$mirlist]][[input$mirna]]
-      d$log_kd <- d$log_kd/100
-      d$log_kd.canonical <- d$log_kd.canonical/100
-      if(!is.null(txs())) d <- merge(txs(), d, by.x="tx_id", by.y="transcript")
+      tl <- paste0(input$mirlist, ifelse(input$targetlist_utronly, ".utrs", ".full"))
+      if(is.null(targetlists[[tl]]) || is.null(mod())) return(NULL)
+      d <- targetlists[[tl]][[input$mirna]]
+      d$log_kd <- abs(d$log_kd/100)
+      d$log_kd.canonical <- abs(d$log_kd.canonical/100)
+      if(!is.null(txs())){
+        d <- merge(txs(), d, by.x="tx_id", by.y="transcript")
+        if(input$targetlist_gene)
+          d <- aggregate(d[,grep("mer|log_kd",colnames(d))], d[,c("symbol","seed")], na.rm=TRUE, FUN=max)
+      }
+      d$log_kd <- -d$log_kd
+      d$log_kd.canonical <- -d$log_kd.canonical
       colnames(d) <- gsub("^n\\.","",colnames(d))
       dtwrapper(d)
     })
