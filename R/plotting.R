@@ -130,7 +130,13 @@ enrichPlot <- function( res,
       }
     }
     suppressPackageStartupMessages(library(plotly))
-    if("features" %in% colnames(res)) res <- res[which(!duplicated(res$features)),,drop=F]
+    if("features" %in% colnames(res)){
+      if(is(res$features, "CharacterList")){
+        res <- res[which(!duplicated(paste(res$features, collapse=""))),]
+      }else{
+        res <- res[which(!duplicated(res$features)),,drop=F]
+      }
+    }
     if(nrow(res)<=2) stop("Not enough data to plot! Perhaps check the thresholds being used...")
     res <- res[which( res$enrichment>=min.enr.thres & res[[sig.field]] <= min.sig.thres),]
     w <- which(res$enrichment>label.enr.thres & res[[sig.field]]<label.sig.thres)
