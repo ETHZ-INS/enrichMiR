@@ -176,6 +176,26 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
                           value=paste(sample(c("A","C","G","T"), size = 3000, replace=TRUE), collapse=""))
     })
     
+    ## Select miRNAs for scanning
+    
+    observeEvent(input$mirnas_confident, {
+      if(is.null(allmods())) return(NULL)
+      cons <- conservation(allmods())
+      if(all(is.na(cons))) return(NULL)
+      updateSelectizeInput(session, "mirnas", selected=names(cons)[as.numeric(cons)>1])
+    })
+    observeEvent(input$mirnas_mammals, {
+      if(is.null(allmods())) return(NULL)
+      cons <- conservation(allmods())
+      if(all(is.na(cons))) return(NULL)
+      updateSelectizeInput(session, "mirnas", selected=names(cons)[as.numeric(cons)>2])
+    })
+    observeEvent(input$mirnas_vert, {
+      if(is.null(allmods())) return(NULL)
+      cons <- conservation(allmods())
+      if(all(is.na(cons))) return(NULL)
+      updateSelectizeInput(session, "mirnas", selected=names(cons)[as.numeric(cons)>3])
+    })
     
     selmods <- reactive({ # models selected for scanning
       if(is.null(allmods())) return(NULL)
@@ -238,7 +258,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
         msg <- paste0("Scanning sequence for ",length(selmods())," miRNAS")
         detail <- NULL
         if(length(selmods())>4) detail <- "This might take a while..."
-        if(input@circular) detail <- "'Ribosomal Shadow' is ignored when scanning circRNAs"
+        if(input$circular) detail <- "'Ribosomal Shadow' is ignored when scanning circRNAs"
         withProgress(message=msg, detail=detail, value=1, max=3, {
           cached.hits[[cs]]$hits <- findSeedMatches( target(), selmods(),
                                                      keepMatchSeq=input$keepmatchseq,
