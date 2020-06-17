@@ -14,6 +14,8 @@
 enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genomes=list(),
                              maxCacheSize=100*10^6 ){
   library(DT)
+  library(stringr)
+  library(Biostrings)
   
   dtwrapper <- function(d, pageLength=25){
     datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
@@ -57,9 +59,51 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       updateSelectizeInput(session, "mirnas", choices=names(allmods()), server=TRUE)
       updateSelectizeInput(session, "mirna", choices=names(allmods()), server=TRUE)
     })
-        
+    
     ##############################    
     ## scan specific sequence
+    
+    
+    #### this is not good yet
+    
+    
+    ## should be possible to access the one from EnrichMir
+    guessSeqType <- function(x, use.subset=TRUE){
+      
+      seqs <- x[sample.int(length(x),min(length(x),10))]
+      
+      u <- any(grepl("U",seqs))
+      
+      t <- any(grepl("T",seqs))
+      
+      if(t && u) stop("Sequences contain both T and U!")
+      
+      if(t || u) return(ifelse(u,"RNA","DNA"))
+      
+      if(length(seqs)>10) return(.guessSeqType(x, FALSE))
+      
+      warning("Sequences contain neither T or U - assuming they are DNA...")
+      
+      return("DNA")
+    }
+    
+    
+    output$circular_info <- renderPrint({ # overview of the custom sequence
+      if(is.null(input$customseq)) return(NULL)
+      if(input$circular){
+        cir <- paste0(str_sub(input$customseq,-11),input$customseq)
+        names(cir) <- paste("Circular Sequence - The last 11 NTs are pasted to the beginning")
+        if(guessSeqType(input$customseq)=="DNA"){
+          cir <- c("Circular RNAs have to be pasted in RNA format")
+        }else{
+          cir <- RNAStringSet(cir)
+        }
+        cir
+      }else{
+        ifelse(guessSeqType(input$customseq)=="DNA", lin <- DNAStringSet(input$customseq), lin <- RNAStringSet(input$customseq))
+        lin
+      } 
+    }) 
     
     ## transcript selection
     
@@ -141,17 +185,22 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     })
     
     ## end transcript selection
-        
+    
     target <- reactive({ # target subject sequence
-      if(input$subjet_type=="custom") return(input$customseq)
+      if(input$subjet_type=="custom"){
+        if(input$circular){
+          return(paste0(str_sub(input$customseq,-11),input$customseq))
+        }else return(input$customseq)
+      }   
       if(is.null(seqs()) || length(seqs())>1) return(NULL)
       as.character(seqs())
     })
     
     observeEvent(input$rndseq, { # generate random sequence
       updateTextAreaInput(session, "customseq",
-        value=paste(sample(c("A","C","G","T"), size = 3000, replace=TRUE), collapse=""))
+                          value=paste(sample(c("A","C","G","T"), size = 3000, replace=TRUE), collapse=""))
     })
+    
     
     selmods <- reactive({ # models selected for scanning
       if(is.null(allmods())) return(NULL)
@@ -182,9 +231,9 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     checksum <- reactive({ # generate a unique hash for the given input
       paste( digest::digest(selmods()),
              digest::digest(list(target=target(), shadow=input$shadow,
-                                   keepMatchSeq=input$keepMatchSeq, 
-                                   minDist=input$minDist,
-                                   scanNonCanonical=input$scanNonCanonical))
+                                 keepMatchSeq=input$keepMatchSeq, 
+                                 minDist=input$minDist,
+                                 scanNonCanonical=input$scanNonCanonical))
       )
     })
     
@@ -216,11 +265,11 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
         if(length(selmods())>4) detail <- "This might take a while..."
         withProgress(message=msg, detail=detail, value=1, max=3, {
           cached.hits[[cs]]$hits <- findSeedMatches( target(), selmods(),
-                                        keepMatchSeq=input$keepmatchseq,
-                                        minDist=input$minDist,
-                                        shadow=input$shadow,
-                                        max.noncanonical.motifs=ifelse(input$scanNonCanonical,Inf,0),
-                                        BP=SerialParam(progressbar=TRUE) )
+                                                     keepMatchSeq=input$keepmatchseq,
+                                                     minDist=input$minDist,
+                                                     shadow=input$shadow,
+                                                     max.noncanonical.motifs=ifelse(input$scanNonCanonical,Inf,0),
+                                                     BP=SerialParam(progressbar=TRUE) )
           if(length(cached.hits[[cs]])>0){
             cached.hits[[cs]]$hits$miRNA <- cached.hits[[cs]]$hits$seed
             cached.hits[[cs]]$hits$seed <- NULL
@@ -235,7 +284,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
           cached.hits[[cs]]$target <- "custom sequence"
         }else{
           cached.hits[[cs]]$target <- paste(input$gene, "-", seltx(),
-                                  ifelse(input$utr_only, "(UTR)",""))
+                                            ifelse(input$utr_only, "(UTR)",""))
         }
         cleanCache()
       }
@@ -294,15 +343,27 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
         xlab <- "Position (ordinal)"
       }else{
         h$position <- round(rowMeans(h[,2:3]))
-        xlab <- "Position (nt)"
+        xlab <- paste0("Position (nt) in ",if(input$subjet_type=="custom"){
+          x_info <- ifelse(input$circular,"circular RNA","custom sequence")
+          x_info
+        }else{
+          x_info <- paste(input$gene, "-", seltx(),
+                          ifelse(input$utr_only, "(UTR)",""))
+          x_info
+        })
       }
-      ggplot(h, aes(position, -log_kd, colour=miRNA)) + geom_point(size=2) + 
-        xlab(xlab)
+      p <- ggplot(h, aes(position, -log_kd, colour=miRNA)) + geom_point(size=2) + 
+        xlab(xlab) + geom_hline(yintercept=1.5, linetype="dashed", 
+                                color = "red", size=1)
+      if(input$manhattan_ordinal){
+        p }else{
+          p + expand_limits(x = c(0,str_length(target())), y = 0)
+        }
     })
     
     ##############################
     ## miRNA-centric tab
-
+    
     mod <- reactive({ # the currently-selected KdModel
       if(is.null(allmods()) || is.null(input$mirna)) return(NULL)
       allmods()[[input$mirna]]
@@ -332,13 +393,14 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       if(!is.null(txs())){
         d <- merge(txs(), d, by.x="tx_id", by.y="transcript")
         if(input$targetlist_gene)
-          d <- aggregate(d[,grep("mer|log_kd",colnames(d))], d[,c("symbol","seed")], na.rm=TRUE, FUN=max)
+          d <- aggregate(d[,grep("mer|log_kd",colnames(d))], d[,c("symbol","seed")], na.rm=TRUE, FUN=sum)
       }
       d$log_kd <- -d$log_kd
       d$log_kd.canonical <- -d$log_kd.canonical
+      d <- d[which(d$log_kd <= -1.5),]
       colnames(d) <- gsub("^n\\.","",colnames(d))
       dtwrapper(d)
     })
-
+    
   }
 }
