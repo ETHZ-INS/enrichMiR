@@ -157,11 +157,10 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     
     output$custom_info <- renderPrint({ # overview of the custom sequence
       if(is.null(input$customseq)) return("")
-      cat(capture.output({
-        if(input$circular) 
-          message("Circularized sequence: the first 11nt are pasted to the end of the sequence.")
-        customTarget()
-      }))
+      out <- capture.output(customTarget())
+      if(input$circular) out <- c("Circularized sequence: the first 11nt are pasted to ",
+                                  "the end of the sequence.\n", out)
+      cat(out)
     })
 
     target <- reactive({ # target subject sequence
