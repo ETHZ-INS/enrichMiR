@@ -59,7 +59,9 @@ enrichMiR.ui <- function(){
                                               choices=c(), multiple=TRUE) ),
                     column(4, 
                            checkboxInput("mirnas_all", "Search for all miRNAs"),
-                           actionButton("mirnas_conserved", "Select conserved miRNAs")
+                           actionButton("mirnas_confident", "Select confidently annotated miRNAs"),
+                           actionButton("mirnas_mammals", "Select miRNAs conserved across mammals"),
+                           actionButton("mirnas_vert", "Select miRNAs conserved across vertebrates")
                     )
                 )
         ),
