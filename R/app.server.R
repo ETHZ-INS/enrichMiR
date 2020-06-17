@@ -365,6 +365,11 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       allmods()[[input$mirna]]
     })
     
+    output$modconservation <- renderText({
+      if(is.null(mod())) return(NULL)
+      as.character(conservation(mod()))
+    })
+    
     output$modplot <- renderPlot({ # affinity plot
       if(is.null(mod())) return(NULL)
       plotKdModel(mod())
