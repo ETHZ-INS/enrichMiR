@@ -108,7 +108,7 @@ enrichMiR.ui <- function(){
                 box(width=12, title="Targets", collapsible=TRUE,
                     fluidRow(
                       column(6, checkboxInput("targetlist_utronly", "Show only 3'UTR Binding Sites", value=TRUE)),
-                      column(6, checkboxInput("targetlist_gene", "Show Binding Sites on full transcripts", value=FALSE))),
+                      column(6, checkboxInput("targetlist_gene", "Aggregate by gene", value=FALSE))),
                     withSpinner(DTOutput("mirna_targets"))
                 )
         ),

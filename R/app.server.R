@@ -393,7 +393,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       if(!is.null(txs())){
         d <- merge(txs(), d, by.x="tx_id", by.y="transcript")
         if(input$targetlist_gene)
-          d <- aggregate(d[,grep("mer|log_kd",colnames(d))], d[,c("symbol","seed")], na.rm=TRUE, FUN=sum)
+          d <- aggregate(d[,grep("mer|log_kd",colnames(d))], d[,c("symbol","seed")], na.rm=TRUE, FUN=max)
       }
       d$log_kd <- -d$log_kd
       d$log_kd.canonical <- -d$log_kd.canonical
