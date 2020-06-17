@@ -40,7 +40,7 @@ enrichMiR.ui <- function(){
                                 textAreaInput(inputId="customseq", label="Sequence (RNA or DNA)", 
                                               placeholder="Paste in here a sequence in which you want to search for binding sites",
                                               height = "250px"),
-                                checkboxInput(inputId="circular", label="sequence is circular"),
+                                checkboxInput(inputId="circular", label="circularize"),
                                 verbatimTextOutput("circular_info"),
                                 actionButton("rndseq", "Generate random sequence")
                        ),
@@ -108,7 +108,7 @@ enrichMiR.ui <- function(){
                 box(width=12, title="Targets", collapsible=TRUE,
                     fluidRow(
                       column(6, checkboxInput("targetlist_utronly", "Show only 3'UTR Binding Sites", value=TRUE)),
-                      column(6, checkboxInput("targetlist_gene", "Show Binding Sites on full transcripts", value=FALSE))),
+                      column(6, checkboxInput("targetlist_gene", "Aggregate by gene", value=FALSE))),
                     withSpinner(DTOutput("mirna_targets"))
                 )
         ),
