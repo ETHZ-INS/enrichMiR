@@ -40,7 +40,7 @@ enrichMiR.ui <- function(){
                                 textAreaInput(inputId="customseq", label="Sequence (RNA or DNA)", 
                                               placeholder="Paste in here a sequence in which you want to search for binding sites",
                                               height = "250px"),
-                                checkboxInput(inputId="circular", label="sequence is circular"),
+                                checkboxInput(inputId="circular", label="circularize"),
                                 verbatimTextOutput("circular_info"),
                                 actionButton("rndseq", "Generate random sequence")
                        ),
