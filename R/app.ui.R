@@ -37,11 +37,11 @@ enrichMiR.ui <- function(){
         tabItem(tabName = "tab_subject",
                 tabBox(title="Search bindings in", side="right", id="subjet_type", width=12, selected = "transcript",
                        tabPanel(title="Custom sequence", value="custom",
-                                textAreaInput(inputId="customseq", label="Sequence (RNA or DNA)", 
+                                textAreaInput(inputId="customseq", label="Sequence (RNA or DNA)", width = "100%",
                                               placeholder="Paste in here a sequence in which you want to search for binding sites",
                                               height = "250px"),
                                 checkboxInput(inputId="circular", label="circularize"),
-                                verbatimTextOutput("circular_info"),
+                                verbatimTextOutput("custom_info"),
                                 actionButton("rndseq", "Generate random sequence")
                        ),
                        tabPanel(title="Transcript", value="transcript",
