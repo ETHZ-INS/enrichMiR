@@ -167,7 +167,7 @@ compressKdModList <- function(mods){
 
 .kdmodfields <- function(){
   c( "rank","qr","df.residual","mirseq","canonical.seed","pwm",
-     "cor.with.cnn","mae.with.cnn","name" )
+     "cor.with.cnn","mae.with.cnn","name","conservation" )
 }
 .inflateKdMod <- function(mod, co, o, fl){
   for(f in .kdmodfields()) if(f %in% names(o)) mod[[f]] <- o[[f]]
