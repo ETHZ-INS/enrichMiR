@@ -37,6 +37,11 @@ setMethod("summary", "CompressedKdModelList", function(object){
     cat("\n",object@metadata$description)
   if(!is.null(object@metadata$created)) 
     cat("\n",format(object@metadata$created))
+  cons <- conservation(object)
+  if(!all(is.na(cons))){
+    cat("\n")
+    print(table(conservation(modlists$mmu)))
+  }
 })
 
 #' @export
@@ -176,4 +181,30 @@ compressKdModList <- function(mods){
   mod$coefficients <- c( co2[grep(":",names(co2),invert=TRUE)],
                          fl2, co2[grep(":",names(co2))] )
   new("KdModel", mod)
+}
+
+
+#' conservation
+#'
+#' @param x A CompressedKdModelList
+#'
+#' @return A vector of the conservation status for each miRNA
+#' @export
+conservation <- function(x){
+  lvls <- c("-1"="Low-confidence","0"="Poorly conserved","1"="Conserved across mammals",
+            "2"="Conserved across vertebrates")
+  if(is(x,"CompressedKdModelList")){
+    y <- factor(sapply(x@permir, FUN=function(x){
+      if(is.null(x$conservation)) return(NA_integer_)
+      x$conservation
+    }), levels=names(lvls))
+  }else if(is(x,"KdModel")){
+    y <- factor(x$conservation, levels=names(lvls))
+  }else if(is(x,"list") && is(x[[1]], "KdModel")){
+    y <- factor(sapply(x, FUN=function(m) m$conservation), names(lvls))
+  }else{
+    stop("Undefined for an object of class ", class(x))
+  }
+  levels(y) <- as.character(lvls)
+  y
 }
