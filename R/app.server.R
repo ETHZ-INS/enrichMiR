@@ -63,48 +63,6 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     ##############################    
     ## scan specific sequence
     
-    
-    #### this is not good yet
-    
-    
-    ## should be possible to access the one from EnrichMir
-    guessSeqType <- function(x, use.subset=TRUE){
-      
-      seqs <- x[sample.int(length(x),min(length(x),10))]
-      
-      u <- any(grepl("U",seqs))
-      
-      t <- any(grepl("T",seqs))
-      
-      if(t && u) stop("Sequences contain both T and U!")
-      
-      if(t || u) return(ifelse(u,"RNA","DNA"))
-      
-      if(length(seqs)>10) return(.guessSeqType(x, FALSE))
-      
-      warning("Sequences contain neither T or U - assuming they are DNA...")
-      
-      return("DNA")
-    }
-    
-    
-    output$circular_info <- renderPrint({ # overview of the custom sequence
-      if(is.null(input$customseq)) return(NULL)
-      if(input$circular){
-        cir <- paste0(str_sub(input$customseq,-11),input$customseq)
-        names(cir) <- paste("Circular Sequence - The last 11 NTs are pasted to the beginning")
-        if(guessSeqType(input$customseq)=="DNA"){
-          cir <- c("Circular RNAs have to be pasted in RNA format")
-        }else{
-          cir <- RNAStringSet(cir)
-        }
-        cir
-      }else{
-        ifelse(guessSeqType(input$customseq)=="DNA", lin <- DNAStringSet(input$customseq), lin <- RNAStringSet(input$customseq))
-        lin
-      } 
-    }) 
-    
     ## transcript selection
     
     sel_ensdb <- reactive({ # the ensembldb for the selected genome
@@ -185,12 +143,30 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     })
     
     ## end transcript selection
+
+    ## custom sequence
     
+    customTarget <- reactive({
+      if(is.null(input$customseq) || input$customseq=="") return(NULL)
+      seqtype <- suppressWarnings(enrichMiR:::.guessSeqType(input$customseq))
+      seq <- input$customseq
+      if(input$circular) seq <- paste0(seq,substr(seq,1,min(nchar(seq),11)))
+      if(seqtype=="DNA") return(DNAString(seq))
+      return(RNAString(seq))
+    })
+    
+    output$custom_info <- renderPrint({ # overview of the custom sequence
+      if(is.null(input$customseq)) return("")
+      cat(capture.output({
+        if(input$circular) 
+          message("Circularized sequence: the first 11nt are pasted to the end of the sequence.")
+        customTarget()
+      }))
+    })
+
     target <- reactive({ # target subject sequence
       if(input$subjet_type=="custom"){
-        if(input$circular){
-          return(paste0(str_sub(input$customseq,-11),input$customseq))
-        }else return(input$customseq)
+        return(as.character(DNAStringSet(customTarget())))
       }   
       if(is.null(seqs()) || length(seqs())>1) return(NULL)
       as.character(seqs())
