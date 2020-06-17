@@ -263,11 +263,12 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
         msg <- paste0("Scanning sequence for ",length(selmods())," miRNAS")
         detail <- NULL
         if(length(selmods())>4) detail <- "This might take a while..."
+        if(input@circular) detail <- "'Ribosomal Shadow' is ignored when scanning circRNAs"
         withProgress(message=msg, detail=detail, value=1, max=3, {
           cached.hits[[cs]]$hits <- findSeedMatches( target(), selmods(),
                                                      keepMatchSeq=input$keepmatchseq,
                                                      minDist=input$minDist,
-                                                     shadow=input$shadow,
+                                                     shadow=ifelse(input$circular,0,input$shadow),
                                                      max.noncanonical.motifs=ifelse(input$scanNonCanonical,Inf,0),
                                                      BP=SerialParam(progressbar=TRUE) )
           if(length(cached.hits[[cs]])>0){
