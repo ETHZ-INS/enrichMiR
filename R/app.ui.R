@@ -102,7 +102,7 @@ enrichMiR.ui <- function(){
         # miRNA-based
         tabItem(tabName="tab_mirna",
                 column(6, selectizeInput("mirna", "miRNA", choices=c())),
-                column(6, textOutput("modconservation")),
+                column(6, tags$strong("Status"), textOutput("modconservation")),
                 box(width=12, title="Affinity plot", collapsible=TRUE, collapsed=FALSE,
                     withSpinner(plotOutput("modplot")),
                     numericInput("modplot_height", "Plot height (px)", value=400,
