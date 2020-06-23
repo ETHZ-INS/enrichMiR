@@ -16,6 +16,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
   library(DT)
   library(stringr)
   library(Biostrings)
+  library(ggplot2)
   
   dtwrapper <- function(d, pageLength=25){
     datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
@@ -265,7 +266,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
                                                      minDist=input$minDist,
                                                      shadow=ifelse(input$circular,0,input$shadow),
                                                      max.noncanonical.motifs=ifelse(input$scanNonCanonical,Inf,0),
-                                                     BP=SerialParam(progressbar=TRUE) )
+                                                     BP=MulticoreParam(2, progressbar=TRUE) )
           if(length(cached.hits[[cs]])>0){
             cached.hits[[cs]]$hits$miRNA <- cached.hits[[cs]]$hits$seed
             cached.hits[[cs]]$hits$seed <- NULL

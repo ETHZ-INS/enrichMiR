@@ -40,7 +40,7 @@ setMethod("summary", "CompressedKdModelList", function(object){
   cons <- conservation(object)
   if(!all(is.na(cons))){
     cat("\n")
-    print(table(conservation(modlists$mmu)))
+    print(table(conservation(object)))
   }
 })
 
