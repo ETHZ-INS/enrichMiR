@@ -12,7 +12,7 @@ enrichMiR2(
   miRNA.expression = NULL,
   families = NULL,
   testOnlyAnnotated = FALSE,
-  test = "michael",
+  test = "siteMir",
   cleanNames = FALSE,
   minSize = 5
 )
@@ -32,7 +32,7 @@ enrichMiR2(
 
 \item{testOnlyAnnotated}{Whether to excluded features that are bound by no miRNA (default FALSE).}
 
-\item{test}{The test to be used, either `EA`, `wEA` and `michael` (default `michael`)}
+\item{test}{The test to be used, either `EA`, `wEA` and `siteMir` (default `siteMir`)}
 
 \item{cleanNames}{Logical; whether to remove prefix from all miRNA names (default FALSE).}
 
