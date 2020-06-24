@@ -436,7 +436,7 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
                   stop("This stop actually shouldn't happen")
     )
     
-    dt <- dt[dt$overlap_in.subset >= min_pairs,]
+    dt <- dt[dt$overlap_in.subset >= min_pairs_sub,]
     dt <- setcolorder(dt,"miRNA","Partner")
     dt[order(p.value.enrich),]  
     
