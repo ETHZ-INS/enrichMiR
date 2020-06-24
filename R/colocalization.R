@@ -10,6 +10,7 @@
 # For the KDs, include option to work on a Transcript level?
 
 #0) Ãberlege Dir 1-2 leichte Analysen um sie Gerhard und den anderen zu zeigen (Syncrip and PTX RBPs + Celf from Postar?)
+#   Human Synaptogenesis genes, enrichment for RBP + miRNA
 
 #3) test ob das mit dem custom funktioniert (>> vll direkt mit Syncrip um es Gerhard zu zeigen?)
 
@@ -103,11 +104,28 @@ findCoLoc <- function(expressed.genes=NULL, expressed.miRNAs=NULL, search.mode =
       m <- m[m$`Gene ID` %in% expressed.genes,]
     }
     
+    #Download miRNA families
+    miRFam <- .getMirfamilies(species)
+    mirvec <- CharacterList(lapply(split(miRFam$`MiRBase ID`, miRFam$`Seed+m8`),unique))
+    
+    
     #filter for expressed miRNAs
     if(!is.null(expressed.miRNAs)){
-      m <- m[m$`MiRBase ID` %in% expressed.miRNAs,]
+      mirvec <- mirvec[sapply(mirvec, function(y) any(expressed.miRNAs %in% y))]
     }
-    
+      
+    # include miRnames
+    ff <- sapply(mirvec,FUN=function(x){ paste(x, collapse = ", ") })
+    ff <- as.data.frame(ff,row.names=names(ff))
+    colnames(ff) <- "miRNAs"
+    ff <- as.data.table(ff,keep.rownames = TRUE)
+    ff <- merge(ff,miRFam[,c("miR family","Seed+m8")], by.x = "rn",by.y ="Seed+m8", all = FALSE)
+    colnames(ff)[colnames(ff)=="rn"] <- "Seed+m8"
+      
+    #miRNA Position DataFrame preparation with optionally filtered miRs
+    m <- merge(m, ff, by.x = "miR Family", by.y = "miR family", all = FALSE)
+      
+
     if(length(m$`Gene ID`) == 0)
       stop("No miRNA pairs found in expressed genes")
   
@@ -182,11 +200,6 @@ findCoLoc <- function(expressed.genes=NULL, expressed.miRNAs=NULL, search.mode =
 
 
 
-
-
-
-
-
 #' Find miRNA colocalizations in a subset of genes
 #'
 #' Finds pairs of miRNAs that are located on the same gene or transcript within
@@ -199,7 +212,7 @@ findCoLoc <- function(expressed.genes=NULL, expressed.miRNAs=NULL, search.mode =
 #'   enrichment of colocalizations in these "genes_in_set" with regards to the
 #'   gene universe ("expressed.genes").
 #' @param expressed.genes A vector of expressed genes (at the moment EnsemblID,
-#'   maybe give option?) as a universe to search in
+#'   maybe give option?) as a universe to search in (including the genes_in_set)
 #' @param search.mode character object. Please specify here whether you want to
 #'   search for colocalizations between miRNAs & miRNAs (="MM") or between
 #'   miRNAs & RBPs (="MR") or between miRNAs & a custom position objects
@@ -228,22 +241,21 @@ findCoLoc <- function(expressed.genes=NULL, expressed.miRNAs=NULL, search.mode =
 #'   miRNA-seeds / KD-12mers and taken into consideration for the search. For
 #'   further info, see co_dist_min.
 #' @param Possibility to use prediced KS-sites for the search. Not yet.
-#' @param min_pairs_sub Minimum number of required miRNA-pairs in the subset of
-#'   genes to be displayed in the result table. Default = 10 (bit arbitrary, one
-#'   could maybe go down to 5?)
+#' @param min_pairs_sub Minimum number of required miRNA-Partner-pairs in the subset of
+#'   genes to be displayed in the result table. Default = 5
 #'
 #' @return a data.table of all colocalizations including statistics
 #'
 #' @import GenomicRanges IRanges data.table
 #' @export
 #'
+#' 
 #'
-#'
 #' 
 #' 
 #' 
 #' 
-findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode = c("MM","MR","MC"), cust.input = NULL, species = c("human","mouse","rat"), expressed.miRNAs=NULL, co_dist_min = NULL, co_dist_max = NULL, KD_Sites = FALSE, min_pairs_sub = 10){
+findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode = c("MM","MR","MC"), cust.input = NULL, species = c("human","mouse","rat"), expressed.miRNAs=NULL, co_dist_min = NULL, co_dist_max = NULL, KD_Sites = FALSE, min_pairs_sub = 5){
   library(GenomicRanges)
   library(IRanges)
   library(data.table)
@@ -276,10 +288,28 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
       m <- m[m$`Gene ID` %in% expressed.genes,]
     }
     
+    #Download miRNA families
+    miRFam <- .getMirfamilies(species)
+    mirvec <- CharacterList(lapply(split(miRFam$`MiRBase ID`, miRFam$`Seed+m8`),unique))
+    
+    
     #filter for expressed miRNAs
+    ## is that correct?
     if(!is.null(expressed.miRNAs)){
-      m <- m[m$`MiRBase ID` %in% expressed.miRNAs,]
+      mirvec <- mirvec[sapply(mirvec, function(y) any(expressed.miRNAs %in% y))]
     }
+    
+    # include miRnames
+    ff <- sapply(mirvec,FUN=function(x){ paste(x, collapse = ", ") })
+    ff <- as.data.frame(ff,row.names=names(ff))
+    colnames(ff) <- "miRNAs"
+    ff <- as.data.table(ff,keep.rownames = TRUE)
+    ff <- merge(ff,miRFam[,c("miR family","Seed+m8")], by.x = "rn",by.y ="Seed+m8", all.x = TRUE)
+    colnames(ff)[colnames(ff)=="rn"] <- "Seed+m8"
+    ff <- unique(ff,by = "Seed+m8")
+    
+    #miRNA Position DataFrame preparation with optionally filtered miRs
+    m <- merge(m, ff, by.x = "miR Family", by.y = "miR family", all = FALSE)
     
     
     if(length(m$`Gene ID`) == 0)
@@ -301,10 +331,10 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
     dt <- switch( search.mode,
                   MM = {
                     dt1 <- .findcoloc1mir(co_dist_min,co_dist_max,mirs1)
-                    colnames(dt1) <- paste(colnames(dt1), "in.subset", sep = "_")
+                    colnames(dt1)[-c(1,2)] <- paste(colnames(dt1)[-c(1,2)], "in.subset", sep = "_")
                     
                     dt2 <- .findcoloc1mir(co_dist_min,co_dist_max,mirs2)
-                    dt <- merge(dt1,dt2,by.x = c("miRNA_in.subset","Partner_in.subset"), by.y = c("miRNA","Partner"), all = TRUE)
+                    dt <- merge(dt1,dt2,by = c("miRNA","Partner"), all = TRUE)
                     dt[is.na(dt)] <- 0
                     dt},
                   MR = {
@@ -316,11 +346,11 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
                     rbps2 <- rbps[rbps$info == "back" ,]
                     
                     dt1 <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs1,rbps1)     
-                    colnames(dt1) <- paste(colnames(dt1), "in.subset", sep = "_")
+                    colnames(dt1)[-c(1,2)] <- paste(colnames(dt1)[-c(1,2)], "in.subset", sep = "_")
                     
                     dt2 <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs2, rbps2)
                     
-                    dt <- merge(dt1,dt2,by.x = c("miRNA_in.subset","Partner_in.subset"), by.y = c("miRNA","Partner"), all = TRUE)
+                    dt <- merge(dt1,dt2,by = c("miRNA","Partner"), all = TRUE)
                     dt[is.na(dt)] <- 0
                     dt},
                   MC = {
@@ -333,11 +363,11 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
                     cust2 <- cust[cust$info == "back" ,]
                     
                     dt1 <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs1,cust1)     
-                    colnames(dt1) <- paste(colnames(dt1), "in.subset", sep = "_")
+                    colnames(dt1)[-c(1,2)] <- paste(colnames(dt1)[-c(1,2)], "in.subset", sep = "_")
                     
                     dt2 <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs2, cust2)
                     
-                    dt <- merge(dt1,dt2,by.x = c("miRNA_in.subset","Partner_in.subset"), by.y = c("miRNA","Partner"), all = TRUE)
+                    dt <- merge(dt1,dt2,by = c("miRNA","Partner"), all = TRUE)
                     dt[is.na(dt)] <- 0
                     dt},
                   stop("This stop actually shouldn't happen")
@@ -397,7 +427,7 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
                     dt <- merge(dt,RBPPos,by.x = "Partner",by.y = "Motif_ID", all.x = TRUE)
                     colnames(dt)[colnames(dt)=="RBP_mus_direct"] <- "RBP_names.direct"
                     colnames(dt)[colnames(dt)=="RBP_mus_all"] <- "RBP_names.all"
-                    setcolorder(dt,)
+                    setcolorder(dt,c(1:17,19,18))
                     dt},
                   MC = {
                     colnames(dt)[colnames(dt)=="miRNAs"] <- "miRNA_names"
@@ -407,7 +437,7 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
                   stop("This stop actually shouldn't happen")
     )
     
-    dt <- dt[dt$overlap >= min_pairs,]
+    dt <- dt[dt$overlap_in.subset >= min_pairs,]
     dt <- setcolorder(dt,"miRNA","Partner")
     dt[order(p.value.enrich),]  
     
@@ -466,7 +496,6 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
 
 .findcoloc1rbp<- function(min.dist,max.dist,mirs,Pos_Object2) {
  
-  
   # This should be miRNA centered, correct? Would that matter?
   
   df <- sapply( split(mirs, mirs$seed), FUN=function(mirs_all){
@@ -560,31 +589,8 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
   #filter for the miRNA species
   miRPos <- miRPos[miRPos$`Species ID` == spec,]
   miRPos$`Gene ID` = substr(miRPos$`Gene ID`,1,18)
-  
-  # download TargetScan miRNA families
-  tmp <- tempfile()
-  download.file("http://www.targetscan.org/vert_72/vert_72_data_download/miR_Family_Info.txt.zip", tmp)
-  miRFam <- fread(unzip(file.path(tmp)))
-  unlink(tmp)
-  
-  #filter for the miRNA species
-  miRFam <- miRFam[miRFam$`Species ID` == spec,]
-  
-  # include miRnames
-  mirvec <- CharacterList(lapply(split(miRFam$`MiRBase ID`, miRFam$`Seed+m8`),unique))
-  ff <- sapply(mirvec,FUN=function(x){ paste(x, collapse = ", ") })
-  ff <- as.data.frame(ff,row.names=names(ff))
-  colnames(ff) <- "miRNAs"
-  ff <- as.data.table(ff,keep.rownames = TRUE)
-  miRFam <- merge(miRFam,ff, by.x = "Seed+m8", by.y = "rn", all.x = TRUE)
-  
-  #unique families
-  miRFam <- unique(miRFam,by = "Seed+m8")
-  
-  #miRNA Position DataFrame preparation
-  m <- merge(miRPos, miRFam[,-"Species ID"], by.x = "miR Family", by.y = "miR family")
-  m$`Transcript ID` = substr(m$`Transcript ID`,1,18)
-  m
+  miRPos$`Transcript ID` = substr(miRPos$`Transcript ID`,1,18)
+  miRPos
 }
 
 
@@ -612,9 +618,26 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
 
 
 
+.getMirfamilies <- function(species = c("human","mouse","rat")) {
+  species <- match.arg(species)
+  # assign species ID
+  spec <- switch( species,
+                  human = 9606,
+                  mouse = 10090,
+                  rat = 10116, 
+                  stop("No matched species"))
 
-
-
+  # download TargetScan miRNA families
+  tmp <- tempfile()
+  download.file("http://www.targetscan.org/vert_72/vert_72_data_download/miR_Family_Info.txt.zip", tmp)
+  miRFam <- fread(unzip(file.path(tmp)))
+  unlink(tmp)
+  
+  #filter for the miRNA species
+  miRFam <- miRFam[miRFam$`Species ID` == spec,]
+  
+  
+}
 
 
 
