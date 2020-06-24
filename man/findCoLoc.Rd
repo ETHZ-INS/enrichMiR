@@ -14,7 +14,7 @@ findCoLoc(
   co_dist_max = NULL,
   BP = NULL,
   KD_Sites = FALSE,
-  min_pairs = 10
+  min_pairs = 5
 )
 }
 \arguments{
@@ -59,8 +59,7 @@ further info, see co_dist_min.}
 enable multithreading.}
 
 \item{min_pairs}{Minimum number of required miRNA-pairs to be displayed in
-the result table. Default = 10 (bit arbitrary, one could maybe go down to
-5?)}
+the result table. Default = 5}
 
 \item{KD_sites}{Possibility to use prediced KS-sites for the search. Not yet.}
 }

@@ -14,7 +14,7 @@ findCoLocsubset(
   co_dist_min = NULL,
   co_dist_max = NULL,
   KD_Sites = FALSE,
-  min_pairs_sub = 10
+  min_pairs_sub = 5
 )
 }
 \arguments{
@@ -24,7 +24,7 @@ enrichment of colocalizations in these "genes_in_set" with regards to the
 gene universe ("expressed.genes").}
 
 \item{expressed.genes}{A vector of expressed genes (at the moment EnsemblID,
-maybe give option?) as a universe to search in}
+maybe give option?) as a universe to search in (including the genes_in_set)}
 
 \item{search.mode}{character object. Please specify here whether you want to
 search for colocalizations between miRNAs & miRNAs (="MM") or between
@@ -59,9 +59,8 @@ on the whole transcript will be reported.}
 miRNA-seeds / KD-12mers and taken into consideration for the search. For
 further info, see co_dist_min.}
 
-\item{min_pairs_sub}{Minimum number of required miRNA-pairs in the subset of
-genes to be displayed in the result table. Default = 10 (bit arbitrary, one
-could maybe go down to 5?)}
+\item{min_pairs_sub}{Minimum number of required miRNA-Partner-pairs in the
+subset of genes to be displayed in the result table. Default = 5}
 
 \item{Possibility}{to use prediced KS-sites for the search. Not yet.}
 }

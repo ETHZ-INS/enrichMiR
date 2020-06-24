@@ -9,7 +9,7 @@
 
 # For the KDs, include option to work on a Transcript level?
 
-#0) Ãberlege Dir 1-2 leichte Analysen um sie Gerhard und den anderen zu zeigen (Syncrip and PTX RBPs + Celf from Postar?)
+#0) ?berlege Dir 1-2 leichte Analysen um sie Gerhard und den anderen zu zeigen (Syncrip and PTX RBPs + Celf from Postar?)
 #   Human Synaptogenesis genes, enrichment for RBP + miRNA
 
 #3) test ob das mit dem custom funktioniert (>> vll direkt mit Syncrip um es Gerhard zu zeigen?)
@@ -62,8 +62,7 @@
 #'   enable multithreading.
 #' @param KD_sites Possibility to use prediced KS-sites for the search. Not yet.
 #' @param min_pairs Minimum number of required miRNA-pairs to be displayed in
-#'   the result table. Default = 10 (bit arbitrary, one could maybe go down to
-#'   5?)
+#'   the result table. Default = 5
 #'
 #' @return a data.table of all colocalizations including statistics
 #'
@@ -74,7 +73,7 @@
 #'  
 #'    
 findCoLoc <- function(expressed.genes=NULL, expressed.miRNAs=NULL, search.mode = c("MM","MR","MC"), cust.input = NULL, species = c("human","mouse","rat"), co_dist_min = NULL, co_dist_max = NULL, 
-                      BP= NULL, KD_Sites = FALSE, min_pairs = 10){
+                      BP= NULL, KD_Sites = FALSE, min_pairs = 5){
   library(GenomicRanges)
   library(IRanges)
   library(data.table)
@@ -241,15 +240,15 @@ findCoLoc <- function(expressed.genes=NULL, expressed.miRNAs=NULL, search.mode =
 #'   miRNA-seeds / KD-12mers and taken into consideration for the search. For
 #'   further info, see co_dist_min.
 #' @param Possibility to use prediced KS-sites for the search. Not yet.
-#' @param min_pairs_sub Minimum number of required miRNA-Partner-pairs in the subset of
-#'   genes to be displayed in the result table. Default = 5
+#' @param min_pairs_sub Minimum number of required miRNA-Partner-pairs in the
+#'   subset of genes to be displayed in the result table. Default = 5
 #'
 #' @return a data.table of all colocalizations including statistics
 #'
 #' @import GenomicRanges IRanges data.table
 #' @export
 #'
-#' 
+#'
 #'
 #' 
 #' 
