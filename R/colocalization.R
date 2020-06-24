@@ -191,7 +191,7 @@ findCoLoc <- function(expressed.genes=NULL, expressed.miRNAs=NULL, search.mode =
     )
     
     dt <- dt[dt$overlap >= min_pairs,]
-    dt <- setcolorder(dt,"miRNA","Partner")
+    dt <- setcolorder(dt,"miRNA")
     dt[order(p.value.enrich),]  
     
   }
@@ -437,7 +437,7 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
     )
     
     dt <- dt[dt$overlap_in.subset >= min_pairs_sub,]
-    dt <- setcolorder(dt,"miRNA","Partner")
+    dt <- setcolorder(dt,"miRNA")
     dt[order(p.value.enrich),]  
     
   }
