@@ -329,7 +329,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     
     ## end scan hits and cache 
     
-    output$manhattan <- renderPlot({
+    output$manhattan <- renderPlotly({
       if(is.null(hits()$hits)) return(NULL)
       h <- as.data.frame(sort(hits()$hits))
       tt <- sort(table(h$miRNA), decreasing=TRUE)
@@ -353,9 +353,14 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
         xlab(xlab) + geom_hline(yintercept=1.5, linetype="dashed", 
                                 color = "red", size=1)
       if(input$manhattan_ordinal){
-        p }else{
-          p + expand_limits(x = c(0,str_length(target())), y = 0)
+        p <- p + expand_limits(y = 0) 
+        }else{
+         p <-  p + expand_limits(x = c(0,str_length(target())), y = 0)
         }
+      ggplotly(p
+               #, height = input$manhattan_height
+               # this doesn't work yet, one would need renderUI to get it probably
+               )
     })
     
     ##############################

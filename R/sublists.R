@@ -94,7 +94,11 @@ enrichMiR2 <- function(genes_in_set, allgenes, TS, categories, miRNA.expression=
   ll <- lapply(categories, y=genes_in_set, bg=allgenes, TS=TS, test=get(test, mode='function'), testOnlyAnnotated=testOnlyAnnotated, 
                  FUN=function(x,y,bg,TS,test,testOnlyAnnotated){
                       gin <- intersect(x,y)
-                      test(bg, gin, TS, testOnlyAnnotated=testOnlyAnnotated)
+                      dat <- bg %in% gin
+                      names(dat) <- bg
+                      m <- test(dat, TS, testOnlyAnnotated=testOnlyAnnotated)
+                      m <- as.data.frame(m)
+                      m
                  })
   catSizes <- sapply(categories, length)
   for(i in 1:length(ll)){

@@ -191,10 +191,12 @@ siteMir <- function(signal, TS, minSize=3, testOnlyAnnotated=FALSE){
   res <- res[which(res[,"annotated"]>=minSize),]
   res$fisher.pvalue <- as.numeric(unlist(res$over.pvalue))
   res$FDR <- p.adjust(res$over.pvalue,method="fdr")
+  ll <- split(TS$feature,TS$family)
   res$features <- CharacterList(lapply( ll[as.character(res$family)],
                                         y=significant, FUN=function(x,y){
                                           sort(intersect(x,y))
                                         }))
+  res$features <- vapply(res$features,FUN.VALUE = character(length = 1),FUN=function(x){ paste(x, collapse = ", ") })
   row.names(res) <- res$family
   res[order(res$FDR,res$over.pvalue),-1]
 }
