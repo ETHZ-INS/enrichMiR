@@ -120,6 +120,7 @@ findCoLoc <- function(expressed.genes=NULL, expressed.miRNAs=NULL, search.mode =
     ff <- as.data.table(ff,keep.rownames = TRUE)
     ff <- merge(ff,miRFam[,c("miR family","Seed+m8")], by.x = "rn",by.y ="Seed+m8", all = FALSE)
     colnames(ff)[colnames(ff)=="rn"] <- "Seed+m8"
+    ff <- unique(ff,by = "Seed+m8")
       
     #miRNA Position DataFrame preparation with optionally filtered miRs
     m <- merge(m, ff, by.x = "miR Family", by.y = "miR family", all = FALSE)
@@ -438,7 +439,7 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
     
     dt <- dt[dt$overlap_in.subset >= min_pairs_sub,]
     dt <- setcolorder(dt,"miRNA")
-    dt[order(p.value.enrich),]  
+    dt[order(overlap.enrich),]  
     
   }
 }    
@@ -458,8 +459,63 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
     })
     sapply(ll,FUN=function(x) {
       #assign the min-max values
+      if(is.numeric(min.dist)){
+        if(is.numeric(max.dist)){
+          sum(abs(x)>= min.dist & abs(x)<= max.dist, na.rm = T)
+        }else{
+          sum(abs(x)>= min.dist, na.rm = T)
+        }
+      }else{
+        if(is.numeric(max.dist)){
+          sum(abs(x)<= max.dist, na.rm = T)  
+        }else{
+          stop("This stop actually shouldn't happen")
+        }
+      }
+    })
+  })
+  #Prepare a dataframe to analyze the results and filter out the "self-counts" of each micro which are on the diagonale of the df.
+  df<- as.data.frame(df)
+  df[upper.tri(df, diag = TRUE)] <- NA
+  df$miRNA <- row.names(df)
+  dt <- as.data.table(df)
+  dt <- melt(dt, id.vars = 'miRNA', na.rm = TRUE, variable.name = "Partner", value.name = "overlap")
+  
+  # sum up the pairs
+  mir_nr <- dt[,.(sum_mir = sum(.SD)),by = "miRNA", .SDcols = c("overlap")]
+  partner_nr <- dt[,.(sum_partner = sum(.SD)),by = "Partner", .SDcols = c("overlap")]
+  pairs <- merge(mir_nr,partner_nr, by.x = 'miRNA', by.y = 'Partner', all=TRUE)
+  pairs[is.na(pairs)] <- 0
+  pairs$nr_of_pairs <- pairs$sum_mir + pairs$sum_partner
+  
+  # get miRNA numbers for statistics
+  dt <- merge(dt,pairs[,c("miRNA","nr_of_pairs")], by = 'miRNA', all.x = TRUE)
+  colnames(dt)[colnames(dt)=="nr_of_pairs"] <- "nr_of_pairs_miRNA"
+  dt <- merge(dt,pairs[,c("miRNA","nr_of_pairs")], by.x = 'Partner', by.y = 'miRNA', all.x = TRUE)
+  colnames(dt)[colnames(dt)=="nr_of_pairs"] <- "nr_of_pairs_Partner"
+  dt$other_pairs_miRNA <- dt$nr_of_pairs_miRNA - dt$overlap
+  dt$other_pairs_Partner <- dt$nr_of_pairs_Partner - dt$overlap
+  dt$background_pairs <- sum(dt$overlap) - (dt$overlap + dt$other_pairs_miRNA + dt$other_pairs_Partner)
+  dt <- dt[,-c(4,5)]
+  dt
+}
+
+
+
+
+
+#This function doesn't work for mindist = 0 und max.dist = NULL
+.findcoloc1mir2 <- function(min.dist,max.dist,Pos_object) {
+  df <- sapply( split(Pos_object, Pos_object$seed), FUN=function(mirs_all){
+    # each mirs contains all the binding sites of a single miRNA
+    # this means basically that a second argument (the mirs_all) is passed to the lapply function
+    ll <- lapply(split(Pos_object, Pos_object$seed), mi=mirs_all, FUN=function(x,mi){
+      suppressWarnings(distanceToNearest(x, mi, ignore.strand=T)@elementMetadata$distance)
+    })
+    sapply(ll,FUN=function(x) {
+      #assign the min-max values
       if(is.null(x)) return(NA_integer_)
-          sum((is.null(min.dist) | abs(x)>= min.dist) & (is.null(max.dist) | abs(x)<= max.dist), na.rm = T)
+      sum((is.null(min.dist) | abs(x)>= min.dist) & (is.null(max.dist) | abs(x)<= max.dist), na.rm = T)
     })
   })
   #Prepare a dataframe to analyze the results and filter out the "self-counts" of each micro which are on the diagonale of the df.
@@ -504,8 +560,19 @@ findCoLocsubset <- function(genes_in_set=NULL, expressed.genes=NULL, search.mode
     })
     sapply(ll,FUN=function(x) {
       #assign the min-max values
-      if(is.null(x)) return(NA_integer_)
-      sum((is.null(min.dist) | abs(x)>= min.dist) & (is.null(max.dist) | abs(x)<= max.dist), na.rm = T)
+      if(is.numeric(min.dist)){
+        if(is.numeric(max.dist)){
+          sum(abs(x)>= min.dist & abs(x)<= max.dist, na.rm = T)
+        }else{
+          sum(abs(x)>= min.dist, na.rm = T)
+        }
+      }else{
+        if(is.numeric(max.dist)){
+          sum(abs(x)<= max.dist, na.rm = T)  
+        }else{
+          stop("This stop actually shouldn't happen")
+        }
+      }
     })
   })
   
