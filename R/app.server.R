@@ -197,6 +197,9 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
       if(all(is.na(cons))) return(NULL)
       updateSelectizeInput(session, "mirnas", selected=names(cons)[as.numeric(cons)>3])
     })
+    observeEvent(input$mirnas_clear, {
+      updateSelectizeInput(session, "mirnas", selected="")
+    })
     
     selmods <- reactive({ # models selected for scanning
       if(is.null(allmods())) return(NULL)
@@ -374,6 +377,11 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     output$modconservation <- renderText({
       if(is.null(mod())) return(NULL)
       as.character(conservation(mod()))
+    })
+    
+    output$mirbase_link <- renderUI({
+      tags$a(href=paste0("http://www.mirbase.org/textsearch.shtml?q=", input$mirna), 
+             "miRBase", target="_blank")
     })
     
     output$modplot <- renderPlot({ # affinity plot
