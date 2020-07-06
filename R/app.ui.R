@@ -61,7 +61,8 @@ enrichMiR.ui <- function(){
                            checkboxInput("mirnas_all", "Search for all miRNAs"),
                            actionButton("mirnas_confident", "Select confidently annotated miRNAs"),
                            actionButton("mirnas_mammals", "Select miRNAs conserved across mammals"),
-                           actionButton("mirnas_vert", "Select miRNAs conserved across vertebrates")
+                           actionButton("mirnas_vert", "Select miRNAs conserved across vertebrates"),
+                           actionButton("mirnas_clear", "Clear all selected miRNAs")
                     )
                 )
         ),
@@ -101,8 +102,9 @@ enrichMiR.ui <- function(){
         
         # miRNA-based
         tabItem(tabName="tab_mirna",
-                column(6, selectizeInput("mirna", "miRNA", choices=c())),
-                column(6, tags$strong("Status"), textOutput("modconservation")),
+                column(5, selectizeInput("mirna", "miRNA", choices=c())),
+                column(4, tags$strong("Status"), textOutput("modconservation")),
+                column(3, htmlOutput("mirbase_link")),
                 box(width=12, title="Affinity plot", collapsible=TRUE, collapsed=FALSE,
                     withSpinner(plotOutput("modplot")),
                     numericInput("modplot_height", "Plot height (px)", value=400,
