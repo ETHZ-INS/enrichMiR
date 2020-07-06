@@ -19,7 +19,7 @@
 #' @param gsea.fdr.thres The FDR threshold for inclusion in GSEA (default 0.2).
 #' @param testOnlyAnnotated Whether to excluded features that are bound by no miRNA (default FALSE).
 #' @param tests Character vector of the tests to perform. Any combination of: 
-#' `overlap`, `wo` (weighted overlap), `michael`, `KS`, `KS2`, `MW`, `GSEA`, `modSites`, `modScore`, 
+#' `overlap`, `wo` (weighted overlap), `siteMir`, `KS`, `KS2`, `MW`, `GSEA`, `modSites`, `modScore`, 
 #' or NULL to perform all tests (default).
 #' @param cleanNames Logical; whether to remove prefix from all miRNA names (default FALSE).
 #'
@@ -30,7 +30,7 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL,
                        th.abs.logFC=0, th.FDR=0.05, minSize=5, gsea.maxSize=1000,
                        gsea.permutations=2000, gsea.fdr.thres=0.2, 
                        testOnlyAnnotated=FALSE, tests=NULL, cleanNames=FALSE, ...){
-    if(!is.null(tests)) tests <- match.arg(tolower(tests), choices=c("overlap","michael","wo","mw","ks","ks2","gsea","modscore","modsites","areamir","areamirp","regmir","regmirb"), several.ok = T)
+    if(!is.null(tests)) tests <- match.arg(tolower(tests), choices=c("overlap","siteMir","wo","mw","ks","ks2","gsea","modscore","modsites","areamir","areamirp","regmir","regmirb"), several.ok = T)
     if(is.null(families)){
         data("miR_families")
         families <- miR_families
@@ -62,9 +62,9 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL,
     if(is.null(tests) || "wo" %in% tests) o@res$wEN.up <- wEA(up, TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "wo" %in% tests) o@res$wEN.down <- wEA(down, TS, minSize, testOnlyAnnotated)
     #if(is.null(tests) || "wo" %in% tests) o@res$wEN.combined <- .combTests(o@res$wEN.up, o@res$wEN.down)
-    if(is.null(tests) || "michael" %in% tests) o@res$michael.up <- michael(up, TS, minSize, testOnlyAnnotated)
-    if(is.null(tests) || "michael" %in% tests) o@res$michael.down <- michael(down, TS, minSize, testOnlyAnnotated)
-    #if(is.null(tests) || "michael" %in% tests) o@res$michael.combined <- .combTests(o@res$michael.up, o@res$michael.down)
+    if(is.null(tests) || "siteMir" %in% tests) o@res$siteMir.up <- siteMir(up, TS, minSize, testOnlyAnnotated)
+    if(is.null(tests) || "siteMir" %in% tests) o@res$siteMir.down <- siteMir(down, TS, minSize, testOnlyAnnotated)
+    #if(is.null(tests) || "siteMir" %in% tests) o@res$siteMir.combined <- .combTests(o@res$siteMir.up, o@res$siteMir.down)
     if(is.null(tests) || "mw" %in% tests) o@res$MW=MW(DEA, TS, minSize)
     if(is.null(tests) || "ks" %in% tests) o@res$KS=KS(DEA, TS, minSize)
     if(is.null(tests) || "ks2" %in% tests) o@res$KS2=KS2(DEA, TS, minSize)

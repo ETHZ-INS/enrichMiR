@@ -50,7 +50,7 @@ considered differentially-expressed (default 0).}
 \item{testOnlyAnnotated}{Whether to excluded features that are bound by no miRNA (default FALSE).}
 
 \item{tests}{Character vector of the tests to perform. Any combination of: 
-`overlap`, `wo` (weighted overlap), `michael`, `KS`, `KS2`, `MW`, `GSEA`, `modSites`, `modScore`, 
+`overlap`, `wo` (weighted overlap), `siteMir`, `KS`, `KS2`, `MW`, `GSEA`, `modSites`, `modScore`, 
 or NULL to perform all tests (default).}
 
 \item{cleanNames}{Logical; whether to remove prefix from all miRNA names (default FALSE).}

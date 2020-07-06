@@ -61,14 +61,14 @@ findGO <- function(expr, fixed=FALSE, ontology="BP|MF|CC"){
 #' @param families A named vector of miRNA families, with individual miRNAs as names. If not given, internal data from the package will be used (mouse miRNA families from targetScan).
 #' @param testOnlyAnnotated Whether to excluded features that are bound by no miRNA (default FALSE).
 #' @param cleanNames Logical; whether to remove prefix from all miRNA names (default FALSE).
-#' @param test The test to be used, either `EA`, `wEA` and `michael` (default `michael`)
+#' @param test The test to be used, either `EA`, `wEA` and `siteMir` (default `siteMir`)
 #' @param minSize The minimum effective size of a category for it to be tested (default 5)
 #'
 #' @return a data.frame
 #'
 #' @export
-enrichMiR2 <- function(genes_in_set, allgenes, TS, categories, miRNA.expression=NULL, families=NULL, testOnlyAnnotated=FALSE, test="michael", cleanNames=FALSE, minSize=5){
-  test <- match.arg(test, choices=c("EA","wEA", "michael"))
+enrichMiR2 <- function(genes_in_set, allgenes, TS, categories, miRNA.expression=NULL, families=NULL, testOnlyAnnotated=FALSE, test="siteMir", cleanNames=FALSE, minSize=5){
+  test <- match.arg(test, choices=c("EA","wEA", "siteMir"))
   if(is.null(families)){
     data("miR_families")
     families <- miR_families
@@ -94,7 +94,11 @@ enrichMiR2 <- function(genes_in_set, allgenes, TS, categories, miRNA.expression=
   ll <- lapply(categories, y=genes_in_set, bg=allgenes, TS=TS, test=get(test, mode='function'), testOnlyAnnotated=testOnlyAnnotated, 
                  FUN=function(x,y,bg,TS,test,testOnlyAnnotated){
                       gin <- intersect(x,y)
-                      test(bg, gin, TS, testOnlyAnnotated=testOnlyAnnotated)
+                      dat <- bg %in% gin
+                      names(dat) <- bg
+                      m <- test(dat, TS, testOnlyAnnotated=testOnlyAnnotated)
+                      m <- as.data.frame(m)
+                      m
                  })
   catSizes <- sapply(categories, length)
   for(i in 1:length(ll)){
