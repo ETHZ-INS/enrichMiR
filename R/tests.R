@@ -142,7 +142,7 @@ wEA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE, method="Wallenius
   res[,-1]
 }
 
-#' michael
+#' siteMir
 #'
 #' Applies Fisher's test to the number of miRNA binding sites among a set of features (vs all other binding sites in that set of features).
 #' Of note, this application violates the assumptions of Fisher's exact test.
@@ -157,7 +157,7 @@ wEA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE, method="Wallenius
 #' @return a data.frame.
 #'
 #' @export
-michael <- function(signal, TS, minSize=3, testOnlyAnnotated=FALSE){
+siteMir <- function(signal, TS, minSize=3, testOnlyAnnotated=FALSE){
   library(data.table)
   tested <- names(signal)
   significant <- names(signal)[signal]
@@ -191,10 +191,12 @@ michael <- function(signal, TS, minSize=3, testOnlyAnnotated=FALSE){
   res <- res[which(res[,"annotated"]>=minSize),]
   res$fisher.pvalue <- as.numeric(unlist(res$over.pvalue))
   res$FDR <- p.adjust(res$over.pvalue,method="fdr")
+  ll <- split(TS$feature,TS$family)
   res$features <- CharacterList(lapply( ll[as.character(res$family)],
                                         y=significant, FUN=function(x,y){
                                           sort(intersect(x,y))
                                         }))
+  res$features <- vapply(res$features,FUN.VALUE = character(length = 1),FUN=function(x){ paste(x, collapse = ", ") })
   row.names(res) <- res$family
   res[order(res$FDR,res$over.pvalue),-1]
 }

@@ -68,7 +68,7 @@ enrichMiR.ui <- function(){
         ),
         tabItem(tabName="tab_options", 
                 box(width=6,
-                    sliderInput("minDist", label="Minium distance in NT between two binding sites of the same miRNA", 
+                    sliderInput("minDist", label="Minimum distance in NT between two binding sites of the same miRNA", 
                                 min = 0, max = 20, value = 7, step = 1),
                     sliderInput(inputId="shadow", label = "Ribosomal shadow at the beginning of the 3'UTR, recommended is 15 NT", 
                                 min = 0, max = 20, value = 15, step = 1)
@@ -80,7 +80,7 @@ enrichMiR.ui <- function(){
                 column(2, actionButton("scan", "Scan!", icon = icon("search"))),
                 column(10, tags$h5(textOutput("scan_target"))),
                 box(width=12, title="Manhattan Plot", collapsible=TRUE, collapsed=TRUE,
-                    withSpinner(plotOutput("manhattan")),
+                    withSpinner(plotlyOutput("manhattan")),
                     column(6, numericInput("manhattan_n", "Max number of miRNAs", value=10, min=1, max=50),
                            checkboxInput("manhattan_ordinal", "Ordinal position", value=FALSE)),
                     column(6, numericInput("manhattan_height", "Plot height (px)", value=300,
