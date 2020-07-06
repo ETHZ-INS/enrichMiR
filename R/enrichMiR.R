@@ -30,7 +30,7 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL,
                        th.abs.logFC=0, th.FDR=0.05, minSize=5, gsea.maxSize=1000,
                        gsea.permutations=2000, gsea.fdr.thres=0.2, 
                        testOnlyAnnotated=FALSE, tests=NULL, cleanNames=FALSE, ...){
-    if(!is.null(tests)) tests <- match.arg(tolower(tests), choices=c("overlap","siteMir","wo","mw","ks","ks2","gsea","modscore","modsites","areamir","areamirp","regmir","regmirb"), several.ok = T)
+    if(!is.null(tests)) tests <- match.arg(tolower(tests), choices=c("overlap","sitemir","wo","mw","ks","ks2","gsea","modscore","modsites","areamir","areamirp","regmir","regmirb"), several.ok = T)
     if(is.null(families)){
         data("miR_families")
         families <- miR_families
