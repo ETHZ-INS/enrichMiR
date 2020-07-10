@@ -64,7 +64,7 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL,
     #if(is.null(tests) || "wo" %in% tests) o@res$wEN.combined <- .combTests(o@res$wEN.up, o@res$wEN.down)
     if(is.null(tests) || "sitemir" %in% tests) o@res$siteMir.up <- siteMir(up, TS, minSize, testOnlyAnnotated)
     if(is.null(tests) || "sitemir" %in% tests) o@res$siteMir.down <- siteMir(down, TS, minSize, testOnlyAnnotated)
-    #if(is.null(tests) || "siteMir" %in% tests) o@res$siteMir.combined <- .combTests(o@res$siteMir.up, o@res$siteMir.down)
+    #if(is.null(tests) || "sitemir" %in% tests) o@res$siteMir.combined <- .combTests(o@res$siteMir.up, o@res$siteMir.down)
     if(is.null(tests) || "mw" %in% tests) o@res$MW=MW(DEA, TS, minSize)
     if(is.null(tests) || "ks" %in% tests) o@res$KS=KS(DEA, TS, minSize)
     if(is.null(tests) || "ks2" %in% tests) o@res$KS2=KS2(DEA, TS, minSize)
@@ -119,7 +119,7 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL,
 #' @export
 enrichMiR.results <- function(object, test=NULL, nameCleanFun=function(x){x}){
   if(!is(object,"enrichMiR")) stop("object should be of class `enrichMiR'")
-  if(!is.null(test) && !all(test %in% names(object@res))) stop(paste("Required test not in the object's results. Available tests are:",paste(names(object$res),collapse=", ")))
+  if(!is.null(test) && !all(test %in% names(object@res))) stop(paste("Required test not in the object's results. Available tests are:",paste(names(object@res),collapse=", ")))
   if(is.null(test) || length(test)==0) test <- names(object@res)
   ll <- object@res[test]
   if(length(ll)>1){
