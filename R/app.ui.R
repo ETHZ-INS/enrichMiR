@@ -3,6 +3,7 @@ enrichMiR.ui <- function(){
   library(shiny)
   library(shinydashboard)
   library(shinycssloaders)
+  library(plotly)
   
   ui <- dashboardPage(
     
@@ -80,7 +81,7 @@ enrichMiR.ui <- function(){
                 column(2, actionButton("scan", "Scan!", icon = icon("search"))),
                 column(10, tags$h5(textOutput("scan_target"))),
                 box(width=12, title="Manhattan Plot", collapsible=TRUE, collapsed=TRUE,
-                    withSpinner(plotlyOutput("manhattan")),
+                    withSpinner(uiOutput("manhattan")),
                     column(6, numericInput("manhattan_n", "Max number of miRNAs", value=10, min=1, max=50),
                            checkboxInput("manhattan_ordinal", "Ordinal position", value=FALSE)),
                     column(6, numericInput("manhattan_height", "Plot height (px)", value=300,
