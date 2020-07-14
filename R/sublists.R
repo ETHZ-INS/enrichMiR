@@ -97,6 +97,7 @@ enrichMiR2 <- function(genes_in_set, allgenes, TS, categories, miRNA.expression=
                       dat <- bg %in% gin
                       names(dat) <- bg
                       m <- test(dat, TS, testOnlyAnnotated=testOnlyAnnotated)
+                      m$family <- row.names(m)
                       m <- as.data.frame(m)
                       m
                  })
