@@ -332,7 +332,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     
     ## end scan hits and cache 
     
-    output$manhattan <- renderPlotly({
+    output$manhattan <- renderUI({
       if(is.null(hits()$hits)) return(NULL)
       h <- as.data.frame(sort(hits()$hits))
       tt <- sort(table(h$miRNA), decreasing=TRUE)
@@ -360,10 +360,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
         }else{
          p <-  p + expand_limits(x = c(0,str_length(target())), y = 0)
         }
-      ggplotly(p
-               #, height = input$manhattan_height
-               # this doesn't work yet, one would need renderUI to get it probably
-               )
+      layout(ggplotly(p), height=input$manhattan_height)
     })
     
     ##############################
