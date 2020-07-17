@@ -280,6 +280,7 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
         cached.hits[[cs]]$size <- object.size(cached.hits[[cs]]$hits)
         cached.hits[[cs]]$nsel <- nm <- length(selmods())
         cached.hits[[cs]]$sel <- ifelse(nm>1,paste(nm,"models"),input$mirnas)
+        cached.hits[[cs]]$target_length <- nchar(target())
         if(input$subjet_type=="custom"){
           cached.hits[[cs]]$target <- "custom sequence"
         }else{
@@ -332,35 +333,29 @@ enrichMiR.server <- function(modlists, targetlists=list(), ensdbs=list(), genome
     
     ## end scan hits and cache 
     
-    output$manhattan <- renderUI({
+    output$manhattan <- renderPlotly({
       if(is.null(hits()$hits)) return(NULL)
       h <- as.data.frame(sort(hits()$hits))
       tt <- sort(table(h$miRNA), decreasing=TRUE)
       mirs <- names(tt)[seq_len(min(input$manhattan_n, length(tt)))]
       h <- h[h$miRNA %in% mirs,,drop=FALSE]
-      if(input$manhattan_ordinal){
+      if(!is.null(input$manhattan_ordinal) && input$manhattan_ordinal){
         h$position <- seq_len(nrow(h))
         xlab <- "Position (ordinal)"
+        xlim <- c(0,nchar(hits()$target_length))
       }else{
         h$position <- round(rowMeans(h[,2:3]))
-        xlab <- paste0("Position (nt) in ",if(input$subjet_type=="custom"){
-          x_info <- ifelse(input$circular,"circular RNA","custom sequence")
-          x_info
-        }else{
-          x_info <- paste(input$gene, "-", seltx(),
-                          ifelse(input$utr_only, "(UTR)",""))
-          x_info
-        })
+        xlab <- "Position (nt) in sequence"
+        xlim <- NULL
       }
-      p <- ggplot(h, aes(position, -log_kd, colour=miRNA)) + geom_point(size=2) + 
-        xlab(xlab) + geom_hline(yintercept=1.5, linetype="dashed", 
-                                color = "red", size=1)
-      if(input$manhattan_ordinal){
-        p <- p + expand_limits(y = 0) 
-        }else{
-         p <-  p + expand_limits(x = c(0,str_length(target())), y = 0)
-        }
-      layout(ggplotly(p), height=input$manhattan_height)
+      if("sequence" %in% colnames(h)){
+        p <- ggplot(h, aes(position, -log_kd, colour=miRNA, seq=sequence, kmer_type=type))
+      }else{
+        p <- ggplot(h, aes(position, -log_kd, colour=miRNA, kmer_type=type))
+      }
+      p <- p + geom_hline(yintercept=1.5, linetype="dashed", color = "red", size=1) + 
+        geom_point(size=2) + xlab(xlab) + expand_limits(x=xlim, y=0)
+      ggplotly(p)
     })
     
     ##############################
