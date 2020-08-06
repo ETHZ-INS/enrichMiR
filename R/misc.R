@@ -81,3 +81,51 @@ recapitalizeMiRs <- function(x){
   names(x) <- row.names(dea)
   x
 }
+
+RNAfold <- function(seqs, bin.path="RNAfold", nthreads=1){
+  f <- tempfile()
+  write(as.character(seqs), f)
+  a <- system(paste0('cat ', f, ' | ', bin.path, ' --jobs=',as.integer(nthreads),' --noPS'),
+              intern=TRUE)
+  a <- as.data.frame(t(vapply(strsplit(a[1:(length(a)/2)*2], " ( ",fixed=TRUE),
+                FUN.VALUE=character(2L), FUN=identity)), stringsAsFactor=FALSE)
+  colnames(a) <- c("fold","energy")
+  a$energy <- as.numeric(gsub(")","",a$energy))
+  a
+}
+
+#' optimize.ag
+#'
+#' Optimizes the a_g parameter based on matches' log_kd and a DEA
+#'
+#' @param matches 
+#' @param dea 
+#' @param ag.range 
+#' @param costfn cost function; if null will use multiple ones
+#' @param maximum Logical; whether to maximize
+#'
+#' @return if costfn is given, a list returning the optimized parameter and its objective;
+#' otherwise the optimized parameter values based on the different cost functions.
+#' @export
+optimize.ag <- function(matches, dea, ag.range=10^c(-0.5,-4), costfn=NULL, maximum=TRUE){
+  m2 <- matches[seqnames(matches) %in% row.names(dea),]
+  if(is.null(costfn)){
+    return(sapply(c("pearson","spearman","iMAD","NMI"), FUN=function(x){
+      optimize.ag(matches=m2, dea=dea, costfn=x)$maximum
+    }))
+  }
+  txs <- droplevels(factor(seqnames(m2)))
+  lfc <- dea[levels(txs),"logFC.SVA.shrinked"]  # generalize this or change to something better
+  if(!is.function(costfn))
+    costfn <- switch(costfn,
+                     "pearson"=function(x,y) cor(x,y,use="pairwise"),
+                     "spearman"=function(x,y) cor(x,y,use="pairwise",method="spearman"),
+                     "iMAD"=function(x,y) 1/median(abs(x-y),na.rm=TRUE),
+                     "NMI"=function(x,y) aricode::NMI(x,y),
+                     stop("Unknown cost function!"))
+  f <- function(ag){
+    x <- rowsum(ag/(ag-10^(m2$log_kd/-100)), txs)
+    as.numeric(costfn(x[,1],lfc))
+  }
+  optimise(f, ag.range, maximum = maximum)
+}

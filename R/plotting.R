@@ -55,6 +55,26 @@ CDplot <- function(x, family=NULL, cols=1:8, xlim=c(-2,2), xlab="log2(foldchange
 }
 
 
+CDplot <- function(ll, by=NULL, k=5, ...){
+  if(!is.list(ll)){
+    if(is.null(by)) stop("If `ll` is not already a list, `by` should be given.")
+    if(length(by)!=length(ll)) stop("Lengths of ll and by differ.")
+    ll <- split(ll, cut(by, k, dig.lab=3-ceiling(log10(abs(mean(by))))))
+  }
+  p <- format(suppressWarnings(ks.test(ll[[1]], rev(ll)[[1]])$p.value), digits=2)
+  message("KS p-value between first and last sets:\n", p)
+  d <- dplyr::bind_rows(lapply(ll, FUN=function(x){
+    data.frame( y=seq_along(x)/length(x),
+                x=sort(x) )
+  }), .id="Genesets")
+  d$Genesets <- factor(d$Genesets, levels=unique(d$Genesets))
+  p <- ggplot(d, aes(x,y,colour=Genesets)) + 
+    geom_vline(xintercept=0, linetype="dashed") + geom_line(...)
+  p + ylab("Cumulative proportion")
+}
+
+
+
 
 
 #' enrichPlot

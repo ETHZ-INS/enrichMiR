@@ -67,9 +67,9 @@ getKdModel <- function(kd, name=NULL){
   if(!all(fields %in% colnames(kd))) stop("Malformed `kd` data.frame.")
   w <- (1-kd$log_kd)^2
   w[which(w<0.5)] <- 0.5
-  mod <- lm( log_kd~sr*A+fl, data=kd, model=FALSE, weights=w, x=FALSE, y=FALSE )
+  mod <- lm( log_kd~sr*A+fl, data=kd, model=FALSE, x=FALSE, y=FALSE )
   mod$cor.with.cnn <- cor(mod$fitted.values, kd$log_kd)
-  mod$mae.with.cnn <- median(abs(mod$fitted.values-kd$log_kd))
+  mod$mae.with.cnn <- median(abs(mod$residuals))
   mod$residuals <- NULL
   mod$fitted.values <- NULL
   mod$weights <- NULL
@@ -90,21 +90,26 @@ getKdModel <- function(kd, name=NULL){
 #' "X12mer" and "log_kd"
 #' @param mod An optional linear model summarizing the kd activity.
 #' @param maxSeedMedian Max median log_kd for alternative seed inclusion.
+#' @param maxNSeeds Maximum number of seeds to include in the model
 #'
 #' @return A data.frame
 #' @export
-prep12mers <- function(x, mod=NULL, maxSeedMedian=-1.2){
+prep12mers <- function(x, mod=NULL, maxSeedMedian=-1.2, maxNSeeds=30){
   if(is.data.frame(x)){
     if(!all(c("X12mer","log_kd") %in% colnames(x)))
       stop("`x` should be a character vector or a data.frame with the columns ",
            "'X12mer' and 'log_kd'")
     x <- x[grep("X",x$X12mer,invert=TRUE),]
-    x <- cbind(x[,"log_kd",drop=FALSE], prep12mers(x$X12mer))
+    x <- cbind( x[,intersect(c("log_kd","energy"), colnames(x)),drop=FALSE], 
+                prep12mers(x$X12mer) )
     ag <- aggregate(x$log_kd, by=list(seed=x$sr), FUN=median)
-    ag <- as.character(ag[ag$x <= maxSeedMedian,1])
-    return( rbind( data.frame( log_kd=0, sr="other", A=FALSE, 
-                               fl=levels(x$fl)[1] ),
-                   x[x$sr %in% ag,] ) )
+    seedMed <- ag$x
+    names(seedMed) <- ag[,1]
+    seedMed <- sort(seedMed[seedMed<=maxSeedMedian])
+    seedMed <- names(seedMed)[seq_len(min(length(seedMed), maxNSeeds))]
+    d <- data.frame( log_kd=0, sr="other", A=FALSE, fl=levels(x$fl)[1] )
+    if("energy" %in% colnames(x)) d$energy <- 0
+    return( rbind( d[,colnames(x)], x[x$sr %in% seedMed,] ) )
   }
   x <- as.character(x)
   sr <- sapply(x, FUN=function(x) substr(x, 3,9))
@@ -120,8 +125,10 @@ prep12mers <- function(x, mod=NULL, maxSeedMedian=-1.2){
   d <- data.frame( sr=sr, A=as.logical(substr(x, 10, 10)=="A"),
                    fl=factor(fl, levels=getKmers(4)), row.names=NULL )
   d$A[is.na(d$A)] <- FALSE
-  fl <- sort(coef(mod)[grep("fl",names(coef(mod)))])
-  d$fl[is.na(d$fl)] <- gsub("^fl","",names(fl)[floor(length(fl)/2)])
+  if(!is.null(mod) && any(is.na(d$fl))){
+    fl <- sort(coef(mod)[grep("fl",names(coef(mod)))])
+    d$fl[is.na(d$fl)] <- gsub("^fl","",names(fl)[floor(length(fl)/2)])
+  }
   d
 }
 
