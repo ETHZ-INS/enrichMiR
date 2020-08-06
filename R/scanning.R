@@ -383,28 +383,30 @@ predictKD <- function(kmer, mod){
 #' @import data.table
 #' @importFrom GenomicRanges mcols
 #' @export
-aggregateMatches <- function(e){
+aggregateMatches <- function(e, fn=agg.repr){
   d <- as.data.frame(mcols(e))
   d$transcript <- as.factor(seqnames(e))
   d <- as.data.table(d)
   d2 <- subset(d, type!="non-canonical")
-  m <- dcast( d2[,.(N=.N), by=c("transcript","seed","type")],
+  ag1a <- d2[,.( log_kd.canonical=log10(1/sum(1/10^log_kd)), repr.canonical=fn(log_kd)),
+                 by=c("transcript","seed")]
+  ag2 <- d[,.( log_kd=log10(1/sum(1/10^log_kd)), repr=fn(log_kd)),
+             by=c("transcript","seed")]  
+  ag1b <- dcast( d2[,.(N=.N), by=c("transcript","seed","type")],
                  formula=transcript+seed~type, value.var="N", fill=0)
-  ag2 <- ag1 <- NULL
-  if("log_kd" %in% colnames(d)){
-    ag1 <- d2[,.( log_kd.canonical=-log10(sum(10^-log_kd))), by=c("transcript","seed")]
-    ag2 <- d[,.( log_kd=-log10(sum(10^-log_kd))), by=c("transcript","seed")]
-  }
   rm(d,d2)
-  if(!is.null(ag2)){
-    m <- merge(m, ag1, by=c("transcript","seed"), all=TRUE)
-    m <- merge(m, ag2, by=c("transcript","seed"), all=TRUE)
-    m$log_kd.canonical[is.na(m$log_kd.canonical)] <- 0
-  }
+  m <- merge(ag1b, ag1a, by=c("transcript","seed"), all=TRUE)
+  m <- merge(m, ag2, by=c("transcript","seed"), all=TRUE)
   m <- as.data.frame(m)
+  for(f in c("log_kd.canonical", "log_kd", "repr.canonical", "repr")){
+    m[[f]][is.na(m[[f]])] <- 0
+  }
   m$`offset 6mer` <- NULL
-  ff <- c("8mer","7mer-m8","7mer-A1","6mer")
-  for( f in ff) m[[f]][is.na(m[[f]])] <- 0
+  for( f in c("8mer","7mer-m8","7mer-A1","6mer") ) m[[f]][is.na(m[[f]])] <- 0
   colnames(m)[3:6] <- gsub("-","",paste0("n.",colnames(m)[3:6]))
   m
+}
+
+agg.repr <- function(x, b=1.8, ag=10^-2){
+  log(1+b*sum(ag/(ag+rep(1,length(x)))))-log(1+b*sum(ag/(ag+10^x)))
 }
