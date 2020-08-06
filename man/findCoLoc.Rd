@@ -4,18 +4,10 @@
 \alias{findCoLoc}
 \title{Find miRNA colocalizations}
 \usage{
-findCoLoc(
-  expressed.genes = NULL,
-  expressed.miRNAs = NULL,
-  search.mode = c("MM", "MR", "MC"),
-  cust.input = NULL,
-  species = c("human", "mouse", "rat"),
-  co_dist_min = NULL,
-  co_dist_max = NULL,
-  BP = NULL,
-  KD_Sites = FALSE,
-  min_pairs = 5
-)
+findCoLoc(expressed.genes = NULL, expressed.miRNAs = NULL,
+  search.mode = c("MM", "MR", "MC"), cust.input = NULL,
+  species = c("human", "mouse", "rat"), co_dist_min = NULL,
+  co_dist_max = NULL, BP = NULL, KD_Sites = FALSE, min_pairs = 5)
 }
 \arguments{
 \item{expressed.genes}{A vector of expressed genes (at the moment EnsemblID,

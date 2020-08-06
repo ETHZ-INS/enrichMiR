@@ -4,7 +4,8 @@
 \alias{gsea}
 \title{gsea}
 \usage{
-gsea(DEA, TS, minSize = 5, maxSize = 300, fdr.thres = 0.5, nperm = 2000)
+gsea(DEA, TS, minSize = 5, maxSize = 300, fdr.thres = 0.5,
+  nperm = 2000)
 }
 \arguments{
 \item{DEA}{A data.frame of the results of a differential expression analysis, with features (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`}

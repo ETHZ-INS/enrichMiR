@@ -4,15 +4,8 @@
 \alias{regmir}
 \title{regmir}
 \usage{
-regmir(
-  signal,
-  TS,
-  binary = TRUE,
-  alpha = 1,
-  do.plot = FALSE,
-  use.intercept = FALSE,
-  keepAll = FALSE
-)
+regmir(signal, TS, binary = TRUE, alpha = 1, do.plot = FALSE,
+  use.intercept = FALSE, keepAll = FALSE)
 }
 \arguments{
 \item{signal}{A vector of logical or numeric values, with gene symbols as names.}

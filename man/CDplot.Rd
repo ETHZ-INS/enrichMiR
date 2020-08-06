@@ -4,22 +4,16 @@
 \alias{CDplot}
 \title{CDplot}
 \usage{
-CDplot(
-  x,
-  family = NULL,
-  cols = 1:8,
-  xlim = c(-2, 2),
-  xlab = "log2(foldchange)",
-  main = "",
-  sub = NULL,
-  splitBy = "sites",
-  ...
-)
+CDplot(ll, by = NULL, k = 5, ...)
 }
 \arguments{
+\item{...}{Any other arguments passed to the plot function.}
+
 \item{x}{Either and object of class `enrichMiR`, or a list containing vectors of foldchanges.}
 
 \item{family}{If `x` is an object of class `enrichMiR`, the family to be plotted.}
+
+\item{col}{The vector of colors to be used for the different distributions (defaults to R default colors).}
 
 \item{xlim}{The x axis range to be displayed, default `c(-2,2)`.}
 
@@ -31,10 +25,6 @@ CDplot(
 
 \item{splitBy}{Split the genes by number of binding sites (`splitBy='sites'`, default), by targetscan score 
 (`splitBy='score'`), or simply into target/non-target (`splitBy=NULL`).}
-
-\item{...}{Any other arguments passed to the plot function.}
-
-\item{col}{The vector of colors to be used for the different distributions (defaults to R default colors).}
 }
 \description{
 Plots the cumulative foldchange distribution for a given miRNA family or lists of foldchanges.
