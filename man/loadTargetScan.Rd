@@ -4,11 +4,8 @@
 \alias{loadTargetScan}
 \title{loadTargetScan}
 \usage{
-loadTargetScan(
-  ts.filepath,
-  featureIdentifier = "symbol",
-  recapitalizeGenes = FALSE
-)
+loadTargetScan(ts.filepath, featureIdentifier = "symbol",
+  recapitalizeGenes = FALSE)
 }
 \arguments{
 \item{ts.filepath}{Path to the targetScan conserved targets file.}

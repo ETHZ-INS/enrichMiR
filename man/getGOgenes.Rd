@@ -13,9 +13,6 @@ getGOgenes(go_ids, species = "Mm", translate.ids = TRUE)
 
 \item{translate.ids}{Logical; whether to translate GO IDs into terms (default TRUE)}
 }
-\value{
-
-}
 \description{
 getGOgenes
 }

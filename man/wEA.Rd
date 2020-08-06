@@ -4,7 +4,8 @@
 \alias{wEA}
 \title{wEA}
 \usage{
-wEA(signal, TS, minSize = 5, testOnlyAnnotated = FALSE, method = "Wallenius")
+wEA(signal, TS, minSize = 5, testOnlyAnnotated = FALSE,
+  method = "Wallenius")
 }
 \arguments{
 \item{signal}{A named logical vector indicating which features are differentially-expressed}

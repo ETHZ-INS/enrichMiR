@@ -4,7 +4,8 @@
 \alias{plMod}
 \title{plMod}
 \usage{
-plMod(dea, TS, minSize = 5, var = "sites", correctForLength = (var == "sites"))
+plMod(dea, TS, minSize = 5, var = "sites", correctForLength = (var ==
+  "sites"))
 }
 \arguments{
 \item{dea}{A data.frame of the results of a differential expression analysis, with features (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`}

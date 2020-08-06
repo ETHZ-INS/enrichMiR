@@ -4,22 +4,11 @@
 \alias{enrichMiR}
 \title{enrichMiR}
 \usage{
-enrichMiR(
-  DEA,
-  TS,
-  miRNA.expression = NULL,
-  families = NULL,
-  th.abs.logFC = 0,
-  th.FDR = 0.05,
-  minSize = 5,
-  gsea.maxSize = 1000,
-  gsea.permutations = 2000,
-  gsea.fdr.thres = 0.2,
-  testOnlyAnnotated = FALSE,
-  tests = NULL,
-  cleanNames = FALSE,
-  ...
-)
+enrichMiR(DEA, TS, miRNA.expression = NULL, families = NULL,
+  th.abs.logFC = 0, th.FDR = 0.05, minSize = 5,
+  gsea.maxSize = 1000, gsea.permutations = 2000,
+  gsea.fdr.thres = 0.2, testOnlyAnnotated = FALSE, tests = NULL,
+  cleanNames = FALSE, ...)
 }
 \arguments{
 \item{DEA}{A data.frame of the results of a differential expression analysis, with features
