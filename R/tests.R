@@ -111,10 +111,11 @@ wEA <- function(signal,TS, minSize=5, testOnlyAnnotated=FALSE, method="Wallenius
   ag <- aggregate(TS$sites,by=list(gene=TS$feature),FUN=sum)
   row.names(ag) <- ag$gene
   if(testOnlyAnnotated) signal <- signal[intersect(names(signal), ag$gene)]
-  ag <- ag[names(signal),]
+  #ag <- ag[names(signal),]
+  ag <- ag[ag$gene %in% names(signal),]
   bd <- ag$x
   names(bd) <- ag$gene
-  np <- nullp(signal, bias.data = bd, plot.fit=FALSE)
+  np <- nullp(signal[names(bd)], bias.data = bd, plot.fit=FALSE)
   g2c <- TS[,c("feature","family")]
 
   res <- goseq(np, gene2cat=g2c, method=method, use_genes_without_cat=!testOnlyAnnotated)
@@ -168,6 +169,7 @@ siteMir <- function(signal, TS, minSize=3, testOnlyAnnotated=FALSE){
   allBS.sig <- sum(TS[which(TS$feature %in% significant),"sites"])
   ll <- split(TS,TS$family,drop=F)
   res <- lapply(ll, set1=significant, bs.sig=allBS.sig, bs.bg=allBS.bg, alternative=alternative, FUN=function(x,set1,bs.sig,bs.bg,alternative){
+    x <- as.data.frame(x)
     w <- which(as.character(x$feature) %in% set1)
     xin <- sum(x[w,"sites"])
     xout <- sum(x[which(!(as.character(x$feature) %in% set1)),"sites"])
@@ -351,11 +353,12 @@ geneBasedTest <- function(features, TS){
   names(bgs) <- tmp[,1]
   TS <- TS[which(TS$feature %in% features),]
   
-  res <- sapply(split(TS[,c("family","sites")],TS$feature,drop=F), fams=unique(TS$family), bgs=bgs, FUN=function(x, fams, bgs){
+  res <- sapply(split(TS[,c("family","sites")],as.character(TS$feature),drop=F), fams=unique(TS$family), bgs=bgs, FUN=function(x, fams, bgs){
     p <- rep(1,length(fams))
     names(p) <- fams
     tbs.in <- sum(x$sites)
     tbs <- sum(bgs)
+    x <- as.data.frame(x)
     for(f in 1:nrow(x)){
       y <- x[f,"sites"]
       b <- bgs[x[f,"family"]]
@@ -458,7 +461,11 @@ aREAmir <- function(dea, TS, minSize=5, pleiotropy=FALSE){
 regmir <- function(signal, TS, binary=TRUE, alpha=1, do.plot=FALSE, use.intercept=FALSE,
                    keepAll=FALSE){
   if(is.null(names(signal))) stop("`signal` should be a named vector!")
-  
+  suppressPackageStartupMessages(c(
+    library(glmnet),
+    library(zetadiv)
+    ))
+
   # prepare the target matrix
   if(binary){
     bm <- sapply(split(TS$feature, TS$family), FUN=function(x) names(signal) %in% x)

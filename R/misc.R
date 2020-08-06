@@ -71,7 +71,7 @@ recapitalizeMiRs <- function(x){
     dea$FDR[sign(dea$logFC)!=restrictSign] <- 1
   }
   dea <- dea[order(dea$FDR, dea$PValue),]
-  if(sum(bi <- (dea$FDR<=th & abs(dea$logFC)>=th.alfc)) < min.at.th){
+  if(sum(bi <- (dea$FDR<=th & abs(dea$logFC)>=th.alfc),na.rm=TRUE) < min.at.th){
     if(verbose) message("Insufficient genes passing the defined FDR; will use",
                         "the top ", alt.top, " genes.")
     x <- rep(c(TRUE,FALSE), c(alt.top,nrow(dea)-alt.top))
