@@ -35,10 +35,17 @@
 #' expressed (default 0.05). Ignored if `x` is not a DEA data.frame.
 #' @param minSize The minimum size of a set to be tested (default 5).
 #' @param maxSize The maximum size of a set to be tested (default Inf).
-#' @param gsea.maxSize The maximum number of targets for a miRNA family to be tested using GSEA (default 300).
-#' @param gsea.permutations The number of permutations for GSEA (default 2000). See `?fgsea` for more information.
+#' @param gsea.maxSize The maximum number of targets for a miRNA family to be 
+#' tested using GSEA (default 300).
+#' @param gsea.permutations The number of permutations for GSEA (default 2000).
+#' See `?fgsea` for more information.
 #' @param testOnlyAnnotated Whether to excluded features that are no set from 
 #' the background (default FALSE).
+#' @param field The field of `x` to use as continuous signal. If omitted, 
+#' defaults to `sign(x$logFC)*-log10(x$FDR)`. Ignored if `x` is
+#' not a data.frame.
+#' @param BPPARAM \link{BiocParallel} multithreading parameters. Used to
+#' multithread tests, and also within the `gsea` test.
 #'
 #' @return an enrich.results object.
 #'
@@ -47,8 +54,8 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
                             sets.properties=NULL, th.abs.logFC=0, th.FDR=0.05,
                             minSize=5, maxSize=Inf, gsea.maxSize=1000, 
                             gsea.permutations=2000, testOnlyAnnotated=FALSE, 
-                            keepAnnotation=FALSE, BPPARAM=NULL, 
-                            field=NULL, ...){
+                            keepAnnotation=FALSE, field=NULL, BPPARAM=NULL, 
+                            ...){
   if(is.character(x)){
     if(is.null(background)) 
       stop("If `x` is a character vector, `background` should be given.")
@@ -81,7 +88,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
     tests <- setdiff(atests, c("gsea", "ks", "ks2", "mw"))
   }else{
     if(length(bad.tests <- setdiff(tolower(tests), atests))>0)
-      stop("The following requested tests are not available with this kind of input: ", 
+      stop("The following tests are not available with this kind of input: ", 
            paste(bad.tests, collapse=", "))
   }
   sets.properties <- .filterMatchSets(sets, sets.properties)
@@ -140,6 +147,29 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
 }
 
 
+#' enrichMiR
+#' 
+#' A miRNA wrapper around `testEnrichment`, for continuity with previous 
+#' enrichMiR versions.
+#'
+#' @param DEA A data.frame of the results of a differential expression analysis, with features
+#'  (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`
+#' @param TS A data.frame of miRNA targets, with at least the following columns: 
+#' `family`, `rep.miRNA`, `feature`, `sites`. Alternatiely, the output of an 
+#' aggregated scan of miRNA kdModels, with columns `transcript`, `seed`, 
+#' `score` (or `log_kd`), `n.8mer`, etc.
+#' @param miRNA.expression A named vector of miRNAs expression values. 
+#' miRNAs not in this vector are assumed to be not expressed in the system, and are not tested.
+#' @param families A named vector of miRNA families, with individual miRNAs as names. 
+#' If not given, internal data from the package will be used (mouse miRNA families from targetScan).
+#' @param cleanNames Logical; whether to remove prefix from all miRNA names (default FALSE).
+#' @param ... Passed to `testEnrichment`
+#'
+#' @return an enrich.results object.
+#'
+#' @export
+#'
+#' @examples
 enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, cleanNames=FALSE, ...){
   if(is.null(families)){
     data("miR_families")
@@ -147,11 +177,22 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, cleanNames
   }
   if(cleanNames) names(families) <- sapply(names(families),FUN=.cleanMiRname)
   if(!is.null(miRNA.expression)){
-    if(is.matrix(miRNA.expression) | is.data.frame(miRNA.expression)) miRNA.expression <- rowMeans(miRNA.expression,na.rm=T)
+    if(is.matrix(miRNA.expression) | is.data.frame(miRNA.expression))
+      miRNA.expression <- rowMeans(miRNA.expression,na.rm=T)
     if(cleanNames) names(miRNA.expression) <- sapply(names(miRNA.expression),FUN=.cleanMiRname)
     miRNA.expression <- miRNA.expression[which(miRNA.expression>0)]
   }
-  colnames(TS) <- gsub("^family$","set", colnames(TS))
+  if(all(c("family", "feature") %in% colnames(TS))){
+    colnames(TS) <- gsub("^family$","set", colnames(TS))
+    TS <- DataFrame(TS)
+    metadata(TS)$alternativeNames <- families
+  }else if(all(c("seed","transcript","n.8mer") %in% colnames(TS))){
+    TS$sites <- rowSums(TS[,grep("^n\\.", colnames(TS)),drop=FALSE], na.rm=TRUE)
+    scoreField <- intersect(c("score", "repression", "log_kd"), colnames(TS))[1]
+    TS <- TS[,c("seed","transcript","sites", scoreField)]
+    colnames(TS) <- c("set","feature","sites","score")
+    if(all(head(TS$score)>0)) TS$score <- -TS$score
+  }
   TS <- DataFrame(TS)
   metadata(TS)$alternativeNames <- families
   testEnrichment(DEA, TS, sets.properties=miRNA.expression, ...)

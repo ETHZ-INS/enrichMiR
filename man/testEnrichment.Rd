@@ -8,7 +8,7 @@ testEnrichment(x, sets, background = NULL, tests = NULL,
   sets.properties = NULL, th.abs.logFC = 0, th.FDR = 0.05,
   minSize = 5, maxSize = Inf, gsea.maxSize = 1000,
   gsea.permutations = 2000, testOnlyAnnotated = FALSE,
-  keepAnnotation = FALSE, BPPARAM = NULL, field = NULL, ...)
+  keepAnnotation = FALSE, field = NULL, BPPARAM = NULL, ...)
 }
 \arguments{
 \item{x}{The signature in which to look for a signal. This can be either:
@@ -53,12 +53,21 @@ expressed (default 0.05). Ignored if `x` is not a DEA data.frame.}
 
 \item{maxSize}{The maximum size of a set to be tested (default Inf).}
 
-\item{gsea.maxSize}{The maximum number of targets for a miRNA family to be tested using GSEA (default 300).}
+\item{gsea.maxSize}{The maximum number of targets for a miRNA family to be 
+tested using GSEA (default 300).}
 
-\item{gsea.permutations}{The number of permutations for GSEA (default 2000). See `?fgsea` for more information.}
+\item{gsea.permutations}{The number of permutations for GSEA (default 2000).
+See `?fgsea` for more information.}
 
 \item{testOnlyAnnotated}{Whether to excluded features that are no set from 
 the background (default FALSE).}
+
+\item{field}{The field of `x` to use as continuous signal. If omitted, 
+defaults to `sign(x$logFC)*-log10(x$FDR)`. Ignored if `x` is
+not a data.frame.}
+
+\item{BPPARAM}{\link{BiocParallel} multithreading parameters. Used to
+multithread tests, and also within the `gsea` test.}
 }
 \value{
 an enrich.results object.
