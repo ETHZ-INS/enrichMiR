@@ -12,19 +12,18 @@ overlap <- function(signal, sets){
   tested <- names(signal)
   significant <- names(signal)[signal]
   significant <- intersect(significant,tested)
-  sets <- split(sets$feature,sets$set)
-  res <- as.data.frame(t(vapply(sets, set1=significant, universe=tested, 
-                FUN.VALUE=numeric(5), FUN=function(x,set1,universe){
-    set2 <- unique(as.character(x$feature))
-    set2 <- intersect(set2,universe)
-    expected <- length(set1)*length(set2)/length(universe)
+  res <- vapply( split(sets$feature,sets$set), set1=significant, 
+                FUN.VALUE=numeric(5), FUN=function(set2,set1){
+    expected <- length(set1)*length(set2)/length(tested)
+    ov <- length(intersect(set1,set2))
     c(annotated=length(set2),
-      overlap=length(ov),
-      enrichment=round(log2((length(ov)+0.1)/expected),2),
-      under.pvalue=.overlap.prob(set1,set2,universe,lower=T),
-      over.pvalue=.overlap.prob(set1,set2,universe)
+      overlap=ov,
+      enrichment=round(log2((ov+0.5)/expected),2),
+      under.pvalue=.overlap.prob(set1,set2,tested,lower=T),
+      over.pvalue=.overlap.prob(set1,set2,tested)
     )
-  })))
+  })
+  res <- as.data.frame(t(res))
   res$FDR <- p.adjust(res$over.pvalue,method="fdr")
   res[order(res$FDR,res$over.pvalue),]
 }
@@ -43,19 +42,19 @@ overlap <- function(signal, sets){
 #' @export
 plMod <- function(signature, sets, var="sites", correctForLength=NULL){
   if(is.null(correctForLength)) 
-    correctForLength <- (var=="sites" && 'sites')
+    correctForLength <- (var=="sites" && 'sites' %in% colnames(sets))
   if(correctForLength){
-    ag <- aggregate(sets$sets, by=list(feature=sets$feature), FUN=sum)
+    ag <- aggregate(sets$sites, by=list(feature=sets$feature), FUN=sum)
     cfl <- ag[,2]
     names(cfl) <- ag[,1]
-    cfl <- cfl[names(fcs)]
+    cfl <- cfl[names(signature)]
     cfl[which(is.na(cfl))] <- 0
-    names(cfl) <- names(fcs)
+    names(cfl) <- names(signature)
   }else{
     cfl <- NULL
   }
   sets$family <- as.character(sets$set)
-  res <- t(vapply(split(sets,sets$set), fcs=signature, cfl=cfl, 
+  res <- as.data.frame(t(vapply(split(sets,sets$set), fcs=signature, cfl=cfl, 
                   FUN.VALUE=numeric(2), FUN=function(x,fcs, minSize, cfl){
     x <- x[!duplicated(x),]
     row.names(x) <- x$feature
@@ -69,16 +68,17 @@ plMod <- function(signature, sets, var="sites", correctForLength=NULL){
     if(!is(mod,"try-error"))
       return(c(coef(mod)["x2"], summary(aov(mod))[[1]]["x2","Pr(>F)"]))
     return(rep(NA_real_,2))
-  }))
+  })))
   colnames(res) <- c("coefficient","pvalue")
   res$FDR <- p.adjust(res$pvalue)
   res[order(res$FDR,res$pvalue),]
 }
 
-modsites <- function(x, correctForLength=TRUE, ...)
-  plMod(x, correctForLength=correctForLength)
+modsites <- function(x, sets, correctForLength=TRUE, ...){
+  plMod(x, sets, correctForLength=correctForLength, ...)
+}
 
-modscore <- function(x, ...) plMod(x, var="score", ...)
+modscore <- function(x, sets, ...) plMod(x, sets, var="score", ...)
 
 
 #' woverlap
@@ -104,7 +104,7 @@ woverlap <- function(signal, sets, method="Wallenius"){
     bd[ag$gene] <- ag$x
   }
   np <- nullp(signal[names(bd)], bias.data = bd, plot.fit=FALSE)
-  g2c <- TS[,c("feature","set")]
+  g2c <- split(sets$feature, sets$set)
 
   res <- goseq(np, gene2cat=g2c, method=method, use_genes_without_cat=TRUE)
   row.names(res) <- res[,1]
@@ -143,29 +143,29 @@ siteoverlap <- function(signal, sets){
   significant <- names(signal)[signal]
   allBS.bg <- sum(sets[which(!(sets$feature %in% significant)),"sites"])
   allBS.sig <- sum(sets[which(sets$feature %in% significant),"sites"])
-  ll <- split(sets,sets$set)
-  res <- t(vapply(ll, set1=significant, bs.sig=allBS.sig, bs.bg=allBS.bg, 
-                  alternative=alternative, FUN.VALUE=numeric(9), 
-                  FUN=function(x,set1,bs.sig,bs.bg,alternative){
+  res <- t(vapply(split(sets,sets$set), set1=significant, bs.sig=allBS.sig, 
+                  bs.bg=allBS.bg, FUN.VALUE=numeric(9), 
+                  FUN=function(x,set1,bs.sig,bs.bg){
     x <- as.data.frame(x)
     w <- which(as.character(x$feature) %in% set1)
     xin <- sum(x[w,"sites"])
     xout <- sum(x[which(!(as.character(x$feature) %in% set1)),"sites"])
-    mm <- matrix(c(xin,bs.sig-xin,xout,bs.bg-xout),nrow=2)
+    mm <- matrix(round(c(xin,bs.sig-xin,xout,bs.bg-xout)),nrow=2)
     p1 <- fisher.test(mm,alternative="greater")$p.value[[1]]
     p2 <- fisher.test(mm,alternative="less")$p.value[[1]]
-    list(   annotated=nrow(x),
-            overlap=length(unique(x[w,"feature"])),
-            BS.in=xin,
-            otherBS.in=bs.sig-xin,
-            BS.inBG=xout,
-            enrichment=log2((xin/(bs.sig-xin))/(xout/(bs.bg-xout))),
-            otherBS.inBG=bs.bg-xout,
-            under.pvalue=p2,
-            fisher.pvalue=p1
+    c(  annotated=nrow(x),
+        overlap=length(unique(x[w,"feature"])),
+        BS.in=xin,
+        otherBS.in=bs.sig-xin,
+        BS.inBG=xout,
+        enrichment=log2((xin/(bs.sig-xin))/(xout/(bs.bg-xout))),
+        otherBS.inBG=bs.bg-xout,
+        under.pvalue=p2,
+        fisher.pvalue=p1
     )
   }))
-  res <- as.data.frame(res[order(res$fisher.pvalue),])
+  res <- as.data.frame(res)
+  res <- res[order(res$fisher.pvalue),]
   for(i in 1:5) res[[i]] <- as.integer(res[[i]])
   res$FDR <- p.adjust(res$fisher.pvalue,method="fdr")
 }
@@ -293,8 +293,8 @@ geneBasedTest <- function(features, TS){
 
 .censorScore <- function(x){
   x <- 0.1-x
-  w <- which(x>0.9)
-  x[w] <- 0.9+ecdf(x[w])(x[w])/10
+  if(length(w <- which(x>0.9))>0)
+    x[w] <- 0.9+ecdf(x[w])(x[w])/10
   x
 }
 
@@ -305,13 +305,13 @@ TS2regulon <- function(x, likelihood="score"){
   }else{
     x$likelihood <- x[[likelihood]]
   }
-  lapply(split(x,x$family, drop=TRUE), FUN=function(x){
+  lapply(split(x,x$set, drop=TRUE), FUN=function(x){
     y <- list(  tfmode=rep(-1,nrow(x)),
                 likelihood=x$likelihood )
     lapply(y, FUN=function(a){
       names(a) <- x$feature
       a
-    })	
+    })
   })
 }
 
