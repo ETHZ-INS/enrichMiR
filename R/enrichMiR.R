@@ -47,7 +47,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
                             sets.properties=NULL, th.abs.logFC=0, th.FDR=0.05,
                             minSize=5, maxSize=Inf, gsea.maxSize=1000, 
                             gsea.permutations=2000, testOnlyAnnotated=FALSE, 
-                            keepAnnotation=FALSE, BPPARAM=SerialParam(), 
+                            keepAnnotation=FALSE, BPPARAM=NULL, 
                             field=NULL, ...){
   if(is.character(x)){
     if(is.null(background)) 
@@ -76,26 +76,27 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   }
   if(is.null(U)) stop("`x` should be named.")
 
-  atest <- availableTests(x, sets)
+  atests <- availableTests(x, sets)
   if(is.null(tests)){
-    tests <- setdiff(atest, c("gsea", "ks", "ks", "mw"))
+    tests <- setdiff(atests, c("gsea", "ks", "ks2", "mw"))
   }else{
     if(length(bad.tests <- setdiff(tolower(tests), atests))>0)
       stop("The following requested tests are not available with this kind of input: ", 
            paste(bad.tests, collapse=", "))
   }
-
   sets.properties <- .filterMatchSets(sets, sets.properties)
   # restrict sets according to properties and sizes
-  sets <- sets[sets$set %in% row.names(sets.properties)]
+  sets <- sets[sets$set %in% row.names(sets.properties),]
   sets.properties$size <- table(sets$set)[row.names(sets.properties)]
   sets.properties <- sets.properties[sets.properties$size >= minSize & 
-                                       sets.properties$size <= maxSize,]
-  sets <- sets[sets$set %in% row.names(sets.properties)]
-  
+                                       sets.properties$size <= maxSize,
+                                     , drop=FALSE]
+  sets <- sets[sets$set %in% row.names(sets.properties),]
+  if(is.factor(sets$set)) sets$set <- droplevels(sets$set)
+
   binary.signatures <- list()
   signature <- NULL
-  if(is.data.frame(x) || is(x,"DataFrame")){
+  if(!is.null(dim(x))){
     binary.signatures <- list(
       down=.dea2binary(x, th=th.FDR, th.alfc=th.abs.logFC, restrictSign=-1, ...),
       up=.dea2binary(x, th=th.FDR, th.alfc=th.abs.logFC, restrictSign=1, ...)
@@ -112,18 +113,28 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   
   o <- new("enrich.results", input=list(x=x, sets.properties=sets.properties), 
            binary.signatures=binary.signatures, info=list(call=match.call()))
-  o$overlaps <- lapply(binary.signatures, FUN=function(x){
+  o@overlaps <- lapply(binary.signatures, FUN=function(x){
     lapply(split(sets$feature, sets$set), y=names(x)[x], FUN=intersect)
   })
   if(keepAnnotation) o@input$sets <- sets
-  
-  o@res <- unlist( bplapply(setdiff(tests, "gsea"), sig=signature, sets=sets, 
+
+  message("Running the following tests: ", paste( tests, collapse=", "))
+  names(tests2) <- tests2 <- setdiff(tests, "gsea")
+  if(is.null(BPPARAM)){
+    o@res <- unlist( lapply(tests2, sig=signature, sets=sets, 
+                              binary.signatures=binary.signatures, 
+                              FUN=.dispatchTest),
+                     recursive=FALSE)
+  }else{
+    o@res <- unlist( bplapply(tests2, sig=signature, sets=sets, 
                             binary.signatures=binary.signatures, 
                             BPPARAM=BPPARAM, FUN=.dispatchTest),
                    recursive=FALSE)
+  }
   if("gsea" %in% tests)
     o@res$gsea <- gsea(signature, sets, maxSize=gsea.maxSize, 
-                       nperm=gsea.permutations, BPPARAM=BPPARAM)
+                       nperm=gsea.permutations, 
+                       BPPARAM=ifelse(is.null(BPPARAM), SerialParam(), BPPARAM))
   
   return(o)
 }
@@ -141,7 +152,7 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, cleanNames
     miRNA.expression <- miRNA.expression[which(miRNA.expression>0)]
   }
   colnames(TS) <- gsub("^family$","set", colnames(TS))
-  TS <- as(TS, "DataFrame")
+  TS <- DataFrame(TS)
   metadata(TS)$alternativeNames <- families
   testEnrichment(DEA, TS, sets.properties=miRNA.expression, ...)
 }
@@ -196,28 +207,24 @@ getResults <- function(object, test=NULL, nameCleanFun=function(x){x}){
 availableTests <- function(x=NULL, sets=NULL){
   sigBinary <- sigContinuous <- setsScore <- TRUE
   if(!is.null(x)){
-    sigBinary <- is.data.frame(x) || is(x,"DataFrame") || is.logical(x) || 
-                  is.character(x)
-    sigContinuous <- is.data.frame(x) || is(x,"DataFrame") || is.numeric(x)
+    sigBinary <- !is.null(dim(x)) || is.logical(x) || is.character(x)
+    sigContinuous <- !is.null(dim(x)) || is.numeric(x)
   }
   if(!is.null(sets)){
-    setsScore <- (is.data.frame(sets) || is(sets, "data.table")) && 
-                  "score" %in% colnames(sets)
-    setsSites <- (is.data.frame(sets) || is(sets, "data.table")) && 
-      "sites" %in% colnames(sets)
+    setsScore <- !is.null(dim(sets)) && "score" %in% colnames(sets)
+    setsSites <- !is.null(dim(sets)) && "sites" %in% colnames(sets)
   }
-  tests <- c()
+  tests <- c("regmirb")
   if(sigBinary) tests <- c(tests, c("overlap","siteoverlap","woverlap"))
   if(sigContinuous) tests <- c(tests, c("mw","ks","ks2","gsea","areamir"))
   if(sigContinuous && setsScore) tests <- c(tests, c("modscore"))
   if(sigContinuous && setsSites) tests <- c(tests, c("modsites"))
-  tests <- c(tests, "regmirb")
   if(setsScore) tests <- c(tests, c("regmir"))
-  tests
+  sort(tests)
 }
 
 .filterMatchSets <- function(sets, props, tryPrefixRemoval){
-  if(is.null(props)) return(data.frame(row.names=sets$set))
+  if(is.null(props)) return(data.frame(row.names=unique(sets$set)))
   if(is.null(dim(props))){
     if(is.null(names(props))){
       if(!is.character(props)) stop("Unrecognized set properties")
@@ -293,6 +300,5 @@ availableTests <- function(x=NULL, sets=NULL){
     if(!is.null(dim(sig))) sig <- .dea2sig(sig, ...)
     ll[["continuous"]] <- get(test)(sig, sets)
   }
-  if(length(ll)==1) ll <- ll[[1]]
   ll
 }
