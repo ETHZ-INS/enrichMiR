@@ -4,20 +4,18 @@
 \alias{plMod}
 \title{plMod}
 \usage{
-plMod(dea, TS, minSize = 5, var = "sites", correctForLength = (var ==
-  "sites"))
+plMod(signature, sets, var = "sites", correctForLength = NULL)
 }
 \arguments{
-\item{dea}{A data.frame of the results of a differential expression analysis, with features (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`}
+\item{signature}{A named numeric vector}
 
-\item{TS}{A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.}
-
-\item{minSize}{The minimum number of targets for a miRNA family to be tested (default 5).}
+\item{sets}{A data.frame with at least the following columns: 'set', 
+'feature', and the variable specified by `var`.}
 
 \item{var}{The independent variable to use, either 'sites' or 'score'.}
 
-\item{correctForLength}{Logical; whether to correct for UTR size (using total bindings as a proxy). 
-Defaults to TRUE if `var='sites'`, FALSE otherwise.}
+\item{correctForLength}{Logical; whether to correct for length (i.e. total
+sites). Defaults to TRUE if `var='sites'`, FALSE otherwise.}
 }
 \value{
 a data.frame

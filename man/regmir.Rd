@@ -4,16 +4,16 @@
 \alias{regmir}
 \title{regmir}
 \usage{
-regmir(signal, TS, binary = TRUE, alpha = 1, do.plot = FALSE,
-  use.intercept = FALSE, keepAll = FALSE)
+regmir(signal, sets, binary = NULL, alpha = 1, do.plot = FALSE,
+  use.intercept = FALSE, keepAll = TRUE)
 }
 \arguments{
 \item{signal}{A vector of logical or numeric values, with gene symbols as names.}
 
-\item{TS}{The targetscan target predictions object}
+\item{sets}{A data.frame with at least the following columns: 
+'set', 'feature', and (if binary=FALSE) 'score'.}
 
-\item{binary}{Logical; whether to consider target prediction as binary (default). The
-alternative is to use the score.}
+\item{binary}{Logical; whether to consider target prediction as binary.}
 
 \item{alpha}{elastic net mixing param (0=ridge, 1=lasso)}
 
@@ -21,7 +21,7 @@ alternative is to use the score.}
 
 \item{use.intercept}{Logical, whether to use an intercept in the model.}
 
-\item{keepAll}{Logical, whether to return all families (default FALSE)}
+\item{keepAll}{Logical, whether to return all families.}
 }
 \value{
 A DataFrame.
