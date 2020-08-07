@@ -13,11 +13,10 @@ overlap <- function(signal, sets){
   significant <- names(signal)[signal]
   significant <- intersect(significant,tested)
   res <- vapply( split(sets$feature,sets$set), set1=significant, 
-                FUN.VALUE=numeric(5), FUN=function(set2,set1){
+                FUN.VALUE=numeric(4), FUN=function(set2,set1){
     expected <- length(set1)*length(set2)/length(tested)
     ov <- length(intersect(set1,set2))
-    c(annotated=length(set2),
-      overlap=ov,
+    c(overlap=ov,
       enrichment=round(log2((ov+0.5)/expected),2),
       under.pvalue=.overlap.prob(set1,set2,tested,lower=T),
       over.pvalue=.overlap.prob(set1,set2,tested)
@@ -144,7 +143,7 @@ siteoverlap <- function(signal, sets){
   allBS.bg <- sum(sets[which(!(sets$feature %in% significant)),"sites"])
   allBS.sig <- sum(sets[which(sets$feature %in% significant),"sites"])
   res <- t(vapply(split(sets,sets$set), set1=significant, bs.sig=allBS.sig, 
-                  bs.bg=allBS.bg, FUN.VALUE=numeric(9), 
+                  bs.bg=allBS.bg, FUN.VALUE=numeric(8), 
                   FUN=function(x,set1,bs.sig,bs.bg){
     x <- as.data.frame(x)
     w <- which(as.character(x$feature) %in% set1)
@@ -153,21 +152,20 @@ siteoverlap <- function(signal, sets){
     mm <- matrix(round(c(xin,bs.sig-xin,xout,bs.bg-xout)),nrow=2)
     p1 <- fisher.test(mm,alternative="greater")$p.value[[1]]
     p2 <- fisher.test(mm,alternative="less")$p.value[[1]]
-    c(  annotated=nrow(x),
-        overlap=length(unique(x[w,"feature"])),
+    c(  overlap=length(unique(x[w,"feature"])),
         BS.in=xin,
         otherBS.in=bs.sig-xin,
         BS.inBG=xout,
         enrichment=log2((xin/(bs.sig-xin))/(xout/(bs.bg-xout))),
         otherBS.inBG=bs.bg-xout,
         under.pvalue=p2,
-        fisher.pvalue=p1
+        pvalue=p1
     )
   }))
   res <- as.data.frame(res)
-  res <- res[order(res$fisher.pvalue),]
-  for(i in 1:5) res[[i]] <- as.integer(res[[i]])
-  res$FDR <- p.adjust(res$fisher.pvalue,method="fdr")
+  res <- res[order(res$pvalue),]
+  for(i in 1:4) res[[i]] <- as.integer(res[[i]])
+  res$FDR <- p.adjust(res$pvalue,method="fdr")
 }
 
 #' ks
@@ -179,15 +177,16 @@ siteoverlap <- function(signal, sets){
 #'
 #' @return a data.frame.
 ks <- function(signal, sets){
-  res <- t(vapply(split(sets$feature,sets$set), FUN.VALUE=numeric(2), FUN=function(x){
+  res <- vapply(split(sets$feature,sets$set), FUN.VALUE=numeric(1), FUN=function(x){
+    x <- intersect(x, names(signal))
+    if(length(x)==0 || length(x)==length(signal)) return(NA_real_)
     ks <- suppressWarnings(try(ks.test(signal[x], signal[setdiff(names(signal),x)])$p.value, silent=T))
-    if(is(ks,"try-error")) ks <- NA
-    c( annotated=length(set),
-       ks.pvalue=ks )
-  }))
-  res <- as.data.frame(res)
-  res$FDR <- p.adjust(res$ks.pvalue,method="fdr")
-  res[order(res$FDR,res$ks.pvalue),]
+    if(is(ks,"try-error")) return(NA_real_)
+    ks
+  })
+  res <- data.frame(row.names = names(res), pvalue=as.numeric(res))
+  res$FDR <- p.adjust(res$pvalue,method="fdr")
+  res[order(res$FDR,res$pvalue),]
 }
 
 #' mw
@@ -199,16 +198,15 @@ ks <- function(signal, sets){
 #'
 #' @return a data.frame.
 mw <- function(signal, sets){
-  signal <- names(signal)[signal]
-  res <- t(vapply(split(sets$feature,sets$set), FUN.VALUE=numeric(2), FUN=function(x){
-    set <- intersect(unique(as.character(x$feature)),names(signal))
-    mw <- suppressWarnings(try(wilcox.test(signal[set], signal[setdiff(names(signal),set)])$p.value, silent=T))
-    if(is(mw,"try-error")) mw <- NA
-    c( annotated=length(set), ks.pvalue=ks )
-  }))
-  res <- as.data.frame(res)
-  res$FDR <- p.adjust(res$mw.pvalue,method="fdr")
-  res[order(res$FDR,res$mw.pvalue),]
+  res <- vapply(split(sets$feature,sets$set), FUN.VALUE=numeric(1), FUN=function(x){
+    x <- intersect(x, names(signal))
+    ks <- suppressWarnings(try(wilcox.test(signal[x], signal[setdiff(names(signal),x)])$p.value, silent=T))
+    if(is(ks,"try-error")) return(NA)
+    ks
+  })
+  res <- data.frame(row.names = names(res), pvalue=as.numeric(res))
+  res$FDR <- p.adjust(res$pvalue,method="fdr")
+  res[order(res$FDR,res$pvalue),]
 }
 
 
@@ -328,8 +326,8 @@ TS2regulon <- function(x, likelihood="score"){
 #' @export
 areamir <- function(signal, sets, ...){
   vi <- viper::msviper(signal, regulon=TS2regulon(as.data.frame(sets)), ..., verbose=FALSE)
-  vi2 <- as.data.frame(vi$es[c("nes","size","p.value","nes.bt")])
-  colnames(vi2)[2:3] <- c("annotated","pvalue")
+  vi2 <- as.data.frame(vi$es[c("nes","p.value")])
+  colnames(vi2) <- c("enrichment","pvalue")
   vi2$FDR <- p.adjust(vi2$pvalue)
   vi2 <- vi2[order(vi2$pvalue),]
   vi2

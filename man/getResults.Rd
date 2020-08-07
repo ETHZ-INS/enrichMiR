@@ -4,14 +4,12 @@
 \alias{getResults}
 \title{getResults}
 \usage{
-getResults(object, test = NULL, nameCleanFun = function(x) {     x })
+getResults(object, test = NULL)
 }
 \arguments{
-\item{object}{An object of class `enrichMiR`, as produced by the enrichMiR function.}
+\item{object}{An object of class `enrich.results`.}
 
 \item{test}{The name of a test, or a vector of such names. If ommitted (default), all available tests are returned. Note that more detailed results are returned when looking at a specific test.}
-
-\item{nameCleanFun}{A function to clean the name of miRNAs. By default, nothing is done; you can try `nameCleanFun=.cleanMiRname` to remove prefixes.}
 }
 \value{
 a data.frame.

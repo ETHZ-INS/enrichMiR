@@ -161,22 +161,22 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, cleanNames
 #'
 #' Returns the results table of an enrich.results object.
 #'
-#' @param object An object of class `enrichMiR`, as produced by the enrichMiR function.
+#' @param object An object of class `enrich.results`.
 #' @param test The name of a test, or a vector of such names. If ommitted (default), all available tests are returned. Note that more detailed results are returned when looking at a specific test.
-#' @param nameCleanFun A function to clean the name of miRNAs. By default, nothing is done; you can try `nameCleanFun=.cleanMiRname` to remove prefixes.
 #' 
 #' @return a data.frame.
 #'
 #' @export
-getResults <- function(object, test=NULL, nameCleanFun=function(x){x}){
-  if(!is(object,"enrichMiR")) stop("object should be of class `enrichMiR'")
+getResults <- function(object, test=NULL){
+  if(!is(object,"enrich.results")) stop("object should be of class `enrich.results'")
   if(!is.null(test) && !all(test %in% names(object@res))) 
-    stop(paste("Required test not in the object's results. Available tests are:",paste(names(object@res),collapse=", ")))
+    stop(paste("Required test not in the object's results. Available tests are:",
+               paste(names(object@res),collapse=", ")))
   if(is.null(test) || length(test)==0) test <- names(object@res)
   ll <- object@res[test]
   if(length(ll)>1){
     ll <- lapply(ll,FUN=function(x){
-      x[,grep("pvalue|FDR|enrichment|nes|beta|overlap",colnames(x)),drop=FALSE]
+      x[,grep("pvalue|FDR|enrichment|nes|beta|coefficient|overlap",colnames(x)),drop=FALSE]
     })
     res <- .plMergeList(ll,all=T)
     rm(ll)
@@ -184,26 +184,32 @@ getResults <- function(object, test=NULL, nameCleanFun=function(x){x}){
     res <- ll[[1]]
   }
 
-  ff <- split(names(object@families),object@families)
-  ff <- sapply(ff,FUN=function(x){ paste(sapply(x,nameCleanFun),collapse=", ") })
-  ff <- as.data.frame(ff,row.names=names(ff))
-  colnames(ff) <- "miRNAs"
-  ff <- ff[row.names(res),,drop=F]
+  res <- cbind(object@input$sets.properties[row.names(res),,drop=FALSE], res)
 
-  if(!is.null(object@miRNA.expression[[1]])){
-    ff$expression <- object@miRNA.expression$family[row.names(ff)]
-  }
-  res <- cbind(ff,res)
   fdr <- grep("FDR",colnames(res))
   if(length(fdr)==1){
-    fdr <- res[[fdr]]
+    ob <- res[[fdr]]
   }else{
-    fdr <- rowMeans(log10(as.matrix(res[,fdr])),na.rm=T)
+    ob <- 10^rowMeans(log10(10^-16+as.matrix(res[,fdr])),na.rm=T)
+    res$FDR.mean <- rowMeans(as.matrix(res[,fdr]),na.rm=T)
+    res$FDR.geomean <- ob
   }
-  res[order(fdr),]
+  dround(res[order(ob),])
 }
 
 
+#' availableTests
+#'
+#' Returns the available enrichment tests, for the given inputs (if specified)
+#'
+#' @param x Optional `x` input for `testEnrichment`
+#' @param sets Optional `sets` input for `testEnrichment`
+#'
+#' @return A character vector of available tests
+#' @export
+#'
+#' @examples
+#' availableTests()
 availableTests <- function(x=NULL, sets=NULL){
   sigBinary <- sigContinuous <- setsScore <- TRUE
   if(!is.null(x)){
@@ -298,7 +304,13 @@ availableTests <- function(x=NULL, sets=NULL){
   }
   if(!is.null(sig) && !(test %in% c("overlap","siteoverlap","woverlap"))){
     if(!is.null(dim(sig))) sig <- .dea2sig(sig, ...)
-    ll[["continuous"]] <- get(test)(sig, sets)
+    res <- get(test)(sig, sets)
+    if(test %in% c("regmir","regmirb")){
+      ll[["continuous"]] <- res
+    }else{
+      ll <- c(ll, list(res))
+    }
+    ll
   }
   ll
 }
