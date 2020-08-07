@@ -1,48 +1,43 @@
 #' @export
 setClass(
-	"enrichMiR",
+	"enrich.results",
 	slots=representation(
-    DEA="data.frame",
-		TS="data.frame",
-		res="list",
-		info="list",
-		miRNA.expression="list",
-		families="character",
-		created="Date"
+      input="list",
+  		binary.signatures="list",
+  		overlaps="list",
+  		res="list",
+  		info="list",
+  		created="Date"
 		),
-    prototype=prototype(res=list(), info=list(objvers=1), miRNA.expression=list(family=NULL, miRNA=NULL), families=NA_character_, created=Sys.Date()),
-    validity=function(object){
-        if(!all(c("logFC","FDR") %in% colnames(object@DEA))) stop("The `DEA` slot should have at least the following columns: 'logFC', 'FDR'.")
-        if(!all(c("family","feature") %in% colnames(object@TS))) stop("The `TS` slot should have at least the following columns: 'family', 'feature'.")
-        #if(!any(as.character(object@TS$feature) %in% row.names(object@DEA))) stop("The row names of the `DEA` slot don't seem to match the `feature` column of the `TS` slot!")
-        return(TRUE)
-    }
+    prototype=prototype( res=list(), info=list(objvers=2), input=list(), 
+                         binary.signatures=list(), overlaps=list(), 
+                         created=Sys.Date() )
 )
 
-setMethod("initialize", "enrichMiR", function(.Object, ...) {
+setMethod("initialize", "enrich.results", function(.Object, ...) {
     o <- callNextMethod(.Object, ...)
     validObject(o)
     return(o)
 })
 
-setMethod("as.data.frame", "enrichMiR", function (x, row.names = NULL, optional = FALSE, ...){
-  x <- enrichMiR.results(x)
+setMethod("as.data.frame", "enrich.results", function (x, row.names = NULL, optional = FALSE, ...){
+  x <- getResults(x)
   if(!is.null(row.names)) row.names(x) <- row.names
   x
 })
 
 #' @export
-setMethod("show", "enrichMiR", function(object){
-    message("An `enrichMiR` object with the following analyses:")
+setMethod("show", "enrich.results", function(object){
+    message("An `enrich.results` object with the following analyses:")
     print(lapply(object@res, FUN=function(x){
         head(x[,grep("miRNA|pvalue|FDR|enrichment",colnames(x)),drop=FALSE])
     }))
 })
 
 #' @export
-setMethod("summary", "enrichMiR", function(object){
-  message(paste("An `enrichMiR` object with",length(object@res),"tests.\nAggregated top results:"))
-  res <- enrichMiR.results(object)
+setMethod("summary", "enrich.results", function(object){
+  message(paste("An `enrich.results` object with",length(object@res),"tests.\nAggregated top results:"))
+  res <- getResults(object)
   if(!("enrichment" %in% colnames(en))){
     if("EN.combined.enrichment" %in% colnames(res)){
       res$enrichment <- res$EN.combined.enrichment
@@ -57,7 +52,7 @@ setMethod("summary", "enrichMiR", function(object){
 })
 
 #' @export
-setMethod("$", "enrichMiR", definition = function(x, name) {
-    enrichMiR.results(x,name)
+setMethod("$", "enrich.results", definition = function(x, name) {
+  getResults(x,name)
   }
 )

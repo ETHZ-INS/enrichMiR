@@ -1,114 +1,154 @@
-#' enrichMiR
+#' testEnrichment
 #'
-#' Creates an enrichMiR object and performs miRNA target enrichment analyses
+#' Creates an enrich.results object and performs enrichment analysis
 #'
-#' @param DEA A data.frame of the results of a differential expression analysis, with features
-#'  (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`
-#' @param TS A data.frame of miRNA targets, with at least the following columns: 
-#' `family`, `rep.miRNA`, `feature`, `sites`.
-#' @param miRNA.expression A named vector of miRNAs expression values. 
-#' miRNAs not in this vector are assumed to be not expressed in the system, and are not tested.
-#' @param families A named vector of miRNA families, with individual miRNAs as names. 
-#' If not given, internal data from the package will be used (mouse miRNA families from targetScan).
-#' @param th.abs.logFC The minimum absolute log2-foldchange threshold for a feature/gene to be 
-#' considered differentially-expressed (default 0).
-#' @param th.FDR The maximum FDR for a feature/gene to be considered differentially-expressed (default 0.05).
-#' @param minSize The minimum number of targets for a miRNA family to be tested (default 5).
+#' @param x The signature in which to look for a signal. This can be either:
+#' \itemize{
+#' \item A data.frame of the results of a differential expression analysis, 
+#' with features (e.g. genes) as row names and with at least the following 
+#' columns: `logFC`, `FDR`;
+#' \item A numeric vector of the signal with feature (e.g. genes) as names, in
+#' which case only tests based on a continuous signal will be possible;
+#' \item A logical vector of membership to the geneset of interest, with feature
+#' (e.g. genes) as names, in which case only tests based on a binary signal will
+#' be available.
+#' \item A vector of feature names; in this case the \code{background} argument will
+#' also be required, and only tests based on a binary signal will be available.
+#' }
+#' @param sets Either a named list (or SimpleList) of features, or a data.frame
+#' (or DataFrame) with at least the columns `set` and `feature` (if the columns 
+#' `score` and `sites` are also present, they will be used by the 
+#' appropriate tests).
+#' @param background A character vector of background; ignored if `x` is not a
+#' character vector.
+#' @param tests Character vector of the tests to perform. See 
+#' \link{\code{availableTests}} for the options.
+#' @param sets.properties Any further information about the sets; this can 
+#' either be a data.frame (or DataFrame), with row.names corresponding to names
+#' of `sets` (or to alternative names), or a named vector (e.g. miRNA expression
+#'  values). If this is given, sets not included within this object will be 
+#'  discarded.
+#' @param th.abs.logFC The minimum absolute log2-foldchange threshold for a 
+#' feature to be considered differentially-expressed (default 0). Ignored if `x`
+#' is not a DEA data.frame.
+#' @param th.FDR The maximum FDR for a feature to be considered differentially-
+#' expressed (default 0.05). Ignored if `x` is not a DEA data.frame.
+#' @param minSize The minimum size of a set to be tested (default 5).
+#' @param maxSize The maximum size of a set to be tested (default Inf).
 #' @param gsea.maxSize The maximum number of targets for a miRNA family to be tested using GSEA (default 300).
 #' @param gsea.permutations The number of permutations for GSEA (default 2000). See `?fgsea` for more information.
-#' @param gsea.fdr.thres The FDR threshold for inclusion in GSEA (default 0.2).
-#' @param testOnlyAnnotated Whether to excluded features that are bound by no miRNA (default FALSE).
-#' @param tests Character vector of the tests to perform. Any combination of: 
-#' `overlap`, `wo` (weighted overlap), `siteMir`, `KS`, `KS2`, `MW`, `GSEA`, `modSites`, `modScore`, 
-#' or NULL to perform all tests (default).
-#' @param cleanNames Logical; whether to remove prefix from all miRNA names (default FALSE).
+#' @param testOnlyAnnotated Whether to excluded features that are no set from 
+#' the background (default FALSE).
 #'
-#' @return an enrichMiR object.
+#' @return an enrich.results object.
 #'
 #' @export
-enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, 
-                       th.abs.logFC=0, th.FDR=0.05, minSize=5, gsea.maxSize=1000,
-                       gsea.permutations=2000, gsea.fdr.thres=0.2, 
-                       testOnlyAnnotated=FALSE, tests=NULL, cleanNames=FALSE, ...){
-    if(!is.null(tests)) tests <- match.arg(tolower(tests), choices=c("overlap","sitemir","wo","mw","ks","ks2","gsea","modscore","modsites","areamir","areamirp","regmir","regmirb"), several.ok = T)
-    if(is.null(families)){
-        data("miR_families")
-        families <- miR_families
-        if(cleanNames) names(families) <- sapply(names(families),FUN=.cleanMiRname)
-    }
-    if(!is.null(miRNA.expression)){
-        if(is.matrix(miRNA.expression) | is.data.frame(miRNA.expression)) miRNA.expression <- rowMeans(miRNA.expression,na.rm=T)
-        if(cleanNames) names(miRNA.expression) <- sapply(names(miRNA.expression),FUN=.cleanMiRname)
-        miRNA.expression <- miRNA.expression[which(miRNA.expression>0)]
-        families <- .filterFamilies(names(miRNA.expression), families)
-        tmp <- aggregate(miRNA.expression[names(families)],by=list(family=families),na.rm=T,FUN=sum)
-        fam.expr <- tmp[,2]
-        names(fam.expr) <- tmp[,1]
-        miRNA.expression <- list(family=fam.expr, miRNA=miRNA.expression)
-    }else{
-        miRNA.expression <- list(family=NULL, miRNA=NULL)
-    }
-    down <- .dea2binary(DEA, th=th.FDR, th.alfc=th.abs.logFC, restrictSign=-1, ...)
-    up <- .dea2binary(DEA, th=th.FDR, th.alfc=th.abs.logFC, restrictSign=1, ...)
-
-    TS <- TS[which(as.character(TS$family) %in% families),]
-    o <- new("enrichMiR", DEA=DEA, TS=as.data.frame(TS), families=families, miRNA.expression=miRNA.expression, info=list(call=match.call()))
-    if(is.null(tests) || "areamir" %in% tests) o@res$aREAmir=aREAmir(DEA, TS, minSize, pleiotropy=FALSE)
-    if(is.null(tests) || "areamirp" %in% tests) o@res$aREAmir2=aREAmir(DEA, TS, minSize, pleiotropy=TRUE)
-    TS <- as.data.frame(TS)
-    if(is.null(tests) || "overlap" %in% tests) o@res$EN.up <- EA(up, TS, minSize, testOnlyAnnotated)
-    if(is.null(tests) || "overlap" %in% tests) o@res$EN.down <- EA(down, TS, minSize, testOnlyAnnotated)
-    #if(is.null(tests) || "overlap" %in% tests) o@res$EN.combined <- .combTests(o@res$EN.up, o@res$EN.down)    
-    if(is.null(tests) || "wo" %in% tests) o@res$wEN.up <- wEA(up, TS, minSize, testOnlyAnnotated)
-    if(is.null(tests) || "wo" %in% tests) o@res$wEN.down <- wEA(down, TS, minSize, testOnlyAnnotated)
-    #if(is.null(tests) || "wo" %in% tests) o@res$wEN.combined <- .combTests(o@res$wEN.up, o@res$wEN.down)
-    if(is.null(tests) || "sitemir" %in% tests) o@res$siteMir.up <- siteMir(up, TS, minSize, testOnlyAnnotated)
-    if(is.null(tests) || "sitemir" %in% tests) o@res$siteMir.down <- siteMir(down, TS, minSize, testOnlyAnnotated)
-    #if(is.null(tests) || "sitemir" %in% tests) o@res$siteMir.combined <- .combTests(o@res$siteMir.up, o@res$siteMir.down)
-    if(is.null(tests) || "mw" %in% tests) o@res$MW=MW(DEA, TS, minSize)
-    if(is.null(tests) || "ks" %in% tests) o@res$KS=KS(DEA, TS, minSize)
-    if(is.null(tests) || "ks2" %in% tests) o@res$KS2=KS2(DEA, TS, minSize)
-    if(is.null(tests) || "gsea" %in% tests) o@res$GSEA=gsea(DEA, TS, minSize, maxSize=gsea.maxSize, nperm=gsea.permutations, fdr.thres=gsea.fdr.thres)
-    if(is.null(tests) || "modsites" %in% tests) o@res$modSites=plMod(DEA, TS, minSize, var="sites", correctForLength=T)
-    if(is.null(tests) || "modscore" %in% tests) o@res$modScore=plMod(DEA, TS, minSize, var="score", correctForLength=F)
-    if(is.null(tests) || "regmir" %in% tests) o@res$regmir.down=regmir(down, TS, binary=FALSE, keepAll=TRUE)
-    if(is.null(tests) || "regmir" %in% tests) o@res$regmir.up=regmir(up, TS, binary=FALSE, keepAll=TRUE)
-    if(is.null(tests) || "regmirb" %in% tests) o@res$regmirb.down=regmir(down, TS, binary=TRUE, keepAll=TRUE)
-    if(is.null(tests) || "regmirb" %in% tests) o@res$regmirb.up=regmir(up, TS, binary=TRUE, keepAll=TRUE)
-    return(o)
-}
-
-.combTests <- function(up,down){
-  library(aggregation)
-  if( !identical(colnames(up),colnames(down)) || !identical(dim(up),dim(down)) ){
-    stop("The tests should be of the same kind and have the same rows.")
+testEnrichment <- function( x, sets, background=NULL, tests=NULL, 
+                            sets.properties=NULL, th.abs.logFC=0, th.FDR=0.05,
+                            minSize=5, maxSize=Inf, gsea.maxSize=1000, 
+                            gsea.permutations=2000, testOnlyAnnotated=FALSE, 
+                            keepAnnotation=FALSE, BPPARAM=SerialParam(), 
+                            field=NULL, ...){
+  if(is.character(x)){
+    if(is.null(background)) 
+      stop("If `x` is a character vector, `background` should be given.")
+    x <- background %in% x
+    names(x) <- background
+  }else{
+    if(!is.null(background)) warning("`background` ignored.")
   }
-  ff <- intersect(c("overlap","enrichment","over.pvalue","under.pvalue","features"),colnames(up))
-  m <- merge( down[,c("annotated",ff)], 
-              up[,ff], by="row.names", all=T, suffixes=c(".down",".up"))
-  row.names(m) <- m[,1]
-  m$enrichment <- apply(m[,c("enrichment.down","enrichment.up")],1,FUN=function(x){ 
-    x <- mean(c(-x[1],x[2]),na.rm=T)
-    if(is.na(x)) return(0)
-    x
-  })
-  m$overlap <- rowSums(as.matrix(m[,grep("overlap",colnames(m))]))
-  m$comb.pvalue <- suppressWarnings(apply(m[,c("enrichment",colnames(m)[grep("pvalue",colnames(m))])],1,FUN=function(x){ 
-    if(x["enrichment"]>0){
-      x <- x[c("under.pvalue.down","over.pvalue.up")]
+  sets <- .list2DF(sets)
+  
+  if(is.null(dim(x))){
+    if(testOnlyAnnotated) x <- x[names(x) %in% unique(sets$feature)]
+    U <- names(x)
+  }else{
+    if(testOnlyAnnotated) x <- x[row.names(x) %in% unique(sets$feature),]
+    U <- row.names(x)
+    if(is.null(field)){
+      if(!all(c("logFC","FDR") %in% colnames(x)))
+        stop("`x` does not contain a 'logFC' and 'FDR' columns. Either rename ",
+             "the columns or specify the `field` argument.")
     }else{
-      x <- x[c("over.pvalue.down","under.pvalue.up")]
+      if(!("field" %in% colnames(x)))
+        stop("The `field` selected is not available in `x`.")
     }
-    fisher(x)
-  }))
-  m <- m[,grep("under.pvalue|over.pvalue",colnames(m),invert=T)]
-  m$FDR <- p.adjust(m$comb.pvalue,method="fdr")
-  m[order(m$FDR,m$comb.pvalue),-1]
+  }
+  if(is.null(U)) stop("`x` should be named.")
+
+  atest <- availableTests(x, sets)
+  if(is.null(tests)){
+    tests <- setdiff(atest, c("gsea", "ks", "ks", "mw"))
+  }else{
+    if(length(bad.tests <- setdiff(tolower(tests), atests))>0)
+      stop("The following requested tests are not available with this kind of input: ", 
+           paste(bad.tests, collapse=", "))
+  }
+
+  sets.properties <- .filterMatchSets(sets, sets.properties)
+  # restrict sets according to properties and sizes
+  sets <- sets[sets$set %in% row.names(sets.properties)]
+  sets.properties$size <- table(sets$set)[row.names(sets.properties)]
+  sets.properties <- sets.properties[sets.properties$size >= minSize & 
+                                       sets.properties$size <= maxSize,]
+  sets <- sets[sets$set %in% row.names(sets.properties)]
+  
+  binary.signatures <- list()
+  signature <- NULL
+  if(is.data.frame(x) || is(x,"DataFrame")){
+    binary.signatures <- list(
+      down=.dea2binary(x, th=th.FDR, th.alfc=th.abs.logFC, restrictSign=-1, ...),
+      up=.dea2binary(x, th=th.FDR, th.alfc=th.abs.logFC, restrictSign=1, ...)
+    )
+    signature <- .dea2sig(x, field=field)
+  }else if(is.logical(x)){
+    binary.signatures <- list(x)
+  }else if(is.numeric(x)){
+    signature <- x
+  }
+  signature <- signature[!is.na(signature)]
+  if(length(w <- which(is.infinite(signature)))>0)
+    signature[w] <- max(abs(signature[-w]))*sign(signature[w])
+  
+  o <- new("enrich.results", input=list(x=x, sets.properties=sets.properties), 
+           binary.signatures=binary.signatures, info=list(call=match.call()))
+  o$overlaps <- lapply(binary.signatures, FUN=function(x){
+    lapply(split(sets$feature, sets$set), y=names(x)[x], FUN=intersect)
+  })
+  if(keepAnnotation) o@input$sets <- sets
+  
+  o@res <- unlist( bplapply(setdiff(tests, "gsea"), sig=signature, sets=sets, 
+                            binary.signatures=binary.signatures, 
+                            BPPARAM=BPPARAM, FUN=.dispatchTest),
+                   recursive=FALSE)
+  if("gsea" %in% tests)
+    o@res$gsea <- gsea(signature, sets, maxSize=gsea.maxSize, 
+                       nperm=gsea.permutations, BPPARAM=BPPARAM)
+  
+  return(o)
 }
 
-#' enrichMiR.results
+
+enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, cleanNames=FALSE, ...){
+  if(is.null(families)){
+    data("miR_families")
+    families <- miR_families
+  }
+  if(cleanNames) names(families) <- sapply(names(families),FUN=.cleanMiRname)
+  if(!is.null(miRNA.expression)){
+    if(is.matrix(miRNA.expression) | is.data.frame(miRNA.expression)) miRNA.expression <- rowMeans(miRNA.expression,na.rm=T)
+    if(cleanNames) names(miRNA.expression) <- sapply(names(miRNA.expression),FUN=.cleanMiRname)
+    miRNA.expression <- miRNA.expression[which(miRNA.expression>0)]
+  }
+  colnames(TS) <- gsub("^family$","set", colnames(TS))
+  TS <- as(TS, "DataFrame")
+  metadata(TS)$alternativeNames <- families
+  testEnrichment(DEA, TS, sets.properties=miRNA.expression, ...)
+}
+
+#' getResults
 #'
-#' Returns the results table of an enrichMiR object.
+#' Returns the results table of an enrich.results object.
 #'
 #' @param object An object of class `enrichMiR`, as produced by the enrichMiR function.
 #' @param test The name of a test, or a vector of such names. If ommitted (default), all available tests are returned. Note that more detailed results are returned when looking at a specific test.
@@ -117,9 +157,10 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL,
 #' @return a data.frame.
 #'
 #' @export
-enrichMiR.results <- function(object, test=NULL, nameCleanFun=function(x){x}){
+getResults <- function(object, test=NULL, nameCleanFun=function(x){x}){
   if(!is(object,"enrichMiR")) stop("object should be of class `enrichMiR'")
-  if(!is.null(test) && !all(test %in% names(object@res))) stop(paste("Required test not in the object's results. Available tests are:",paste(names(object@res),collapse=", ")))
+  if(!is.null(test) && !all(test %in% names(object@res))) 
+    stop(paste("Required test not in the object's results. Available tests are:",paste(names(object@res),collapse=", ")))
   if(is.null(test) || length(test)==0) test <- names(object@res)
   ll <- object@res[test]
   if(length(ll)>1){
@@ -149,4 +190,109 @@ enrichMiR.results <- function(object, test=NULL, nameCleanFun=function(x){x}){
     fdr <- rowMeans(log10(as.matrix(res[,fdr])),na.rm=T)
   }
   res[order(fdr),]
+}
+
+
+availableTests <- function(x=NULL, sets=NULL){
+  sigBinary <- sigContinuous <- setsScore <- TRUE
+  if(!is.null(x)){
+    sigBinary <- is.data.frame(x) || is(x,"DataFrame") || is.logical(x) || 
+                  is.character(x)
+    sigContinuous <- is.data.frame(x) || is(x,"DataFrame") || is.numeric(x)
+  }
+  if(!is.null(sets)){
+    setsScore <- (is.data.frame(sets) || is(sets, "data.table")) && 
+                  "score" %in% colnames(sets)
+    setsSites <- (is.data.frame(sets) || is(sets, "data.table")) && 
+      "sites" %in% colnames(sets)
+  }
+  tests <- c()
+  if(sigBinary) tests <- c(tests, c("overlap","siteoverlap","woverlap"))
+  if(sigContinuous) tests <- c(tests, c("mw","ks","ks2","gsea","areamir"))
+  if(sigContinuous && setsScore) tests <- c(tests, c("modscore"))
+  if(sigContinuous && setsSites) tests <- c(tests, c("modsites"))
+  tests <- c(tests, "regmirb")
+  if(setsScore) tests <- c(tests, c("regmir"))
+  tests
+}
+
+.filterMatchSets <- function(sets, props, tryPrefixRemoval){
+  if(is.null(props)) return(data.frame(row.names=sets$set))
+  if(is.null(dim(props))){
+    if(is.null(names(props))){
+      if(!is.character(props)) stop("Unrecognized set properties")
+      props <- data.frame(row.names=props)
+    }else{
+      props <- as.data.frame(props)
+    }
+  }
+  if(all(row.names(props) %in% sets$set)) return(props)
+  
+  if(isS4(sets) && !is.null(an <- metadata(sets)$alternativeNames) &&
+     length(w <- which(row.names(props) %in% names(an)))>0){
+    props <- aggregate(rbind(props[w,,drop=FALSE],props[-w,,drop=FALSE]),
+                       by=list(set=c(an[row.names(props)[w]],row.names(props)[-w])),
+                       FUN=function(x){
+                         if(length(x)==1) return(x)
+                         if(is.numeric(x)) return(x[which.max(abs(x),na.rm=TRUE)])
+                         paste(sort(x), collapse=";")
+                       })
+    row.names(props) <- props[,1]
+    props[,1] <- NULL
+  }
+  
+  if(isS4(sets) && !any(row.names(props) %in% sets$set) && tryPrefixRemoval){
+    names(an) <- sapply(strsplit(names(an),"-",fixed=T),FUN=function(x){ paste(x[-1],collapse="-") })
+    metadata(sets)$alternativeNames <- an
+    row.names(props) <- sapply(strsplit(row.names(props),"-",fixed=T),FUN=function(x){ paste(x[-1],collapse="-") })
+    return(.filterMatchSets(sets, props, tryPrefixRemoval=FALSE))
+  }
+
+  if(!any(row.names(props) %in% sets$set))
+    stop("The set properties do not correspond to the sets!")
+
+  warning(sum(!(row.names(props) %in% sets$set)), " sets in the set.properties object",
+          " are not in the sets...")
+  props[intersect(row.names(props),sets$set),]
+}
+
+.list2DF <- function(sets){
+  if(is(sets, "DataFrame")) return(sets)
+  if(is.data.frame(sets)) return(DataFrame(sets))
+  if(is.null(names(sets))) stop("The sets should be named!")
+  if(is.list(sets[[1]])){
+    if(all(names(sets[[1]]) %in% c("tfmode","likelihood"))){
+      # regulon object
+      sets <- lapply(sets, FUN=function(x){
+        data.frame(feature=names(x[[1]]), score=x$tfmode*x$likelihood)
+      })
+      return(cbind(set=rep(names(sets),sapply(sets,nrow)),
+                   do.call(rbind, sets)))
+    }else{
+      stop("`sets` has an unknown format")
+    }
+  }
+  y <- DataFrame( set=factor(rep(sets, lengths(sets))) )
+  if(!is.null(names(sets[[1]])) && is.numeric(sets[[1]])){
+    y$feature <- unlist(lapply(sets, names))
+    y$score <- unlist(lapply(sets, as.numeric))
+  }else{
+    y$feature <- unlist(lapply(sets, as.character))
+  }
+  y$feature <- as.factor(y$feature)
+  y
+}
+
+.dispatchTest <- function(test, sig, sets, binary.signatures=list(), ...){
+  ll <- list()
+  if(length(binary.signatures)>0 && 
+     test %in% c("overlap","siteoverlap","woverlap","regmir","regmirb")){
+    ll <- lapply(binary.signatures, sets=sets, FUN=test)
+  }
+  if(!is.null(sig) && !(test %in% c("overlap","siteoverlap","woverlap"))){
+    if(!is.null(dim(sig))) sig <- .dea2sig(sig, ...)
+    ll[["continuous"]] <- get(test)(sig, sets)
+  }
+  if(length(ll)==1) ll <- ll[[1]]
+  ll
 }

@@ -4,19 +4,14 @@
 \alias{gsea}
 \title{gsea}
 \usage{
-gsea(DEA, TS, minSize = 5, maxSize = 300, fdr.thres = 0.5,
-  nperm = 2000)
+gsea(signal, sets, maxSize = 300, nperm = 2000, ...)
 }
 \arguments{
-\item{DEA}{A data.frame of the results of a differential expression analysis, with features (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`}
+\item{signal}{A named logical vector indicating which features are differentially-expressed}
 
-\item{TS}{A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.}
-
-\item{minSize}{The minimum number of elements in a set to be tested (default 5).}
+\item{sets}{A data.frame with at least the following columns: 'set', 'feature'.}
 
 \item{maxSize}{The maximum number of elements in a set to be tested (default 500). If the test takes too long to run, consider setting this.}
-
-\item{fdr.thres}{The FDR threshold below which genes are considered; default 0.2.}
 
 \item{nperm}{The number of permutations, default 2000. The more permutations, the more precise the p-values, in particular for small p-values.}
 }
@@ -24,5 +19,5 @@ gsea(DEA, TS, minSize = 5, maxSize = 300, fdr.thres = 0.5,
 a data.frame.
 }
 \description{
-miRNA target enrichment analysis among differentially-expressed genes using GSEA.
+gsea
 }
