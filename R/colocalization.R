@@ -7,6 +7,8 @@
 # co_dist between 12mers in KD
 
 
+# add if that codist_max has to be bigger than co_dist_min
+
 # For the KDs, include option to work on a Transcript level?
 
 #0) ?berlege Dir 1-2 leichte Analysen um sie Gerhard und den anderen zu zeigen (Syncrip and PTX RBPs + Celf from Postar?)
@@ -114,6 +116,7 @@ findCoLoc <- function(expressed.genes=NULL, expressed.miRNAs=NULL, search.mode =
     }
       
     # include miRnames
+    # sollte auch so gehen vapply(mirvec,FUN.VALUE = character(length = 1),FUN=function(x){ paste(x, collapse = ", ") })
     ff <- sapply(mirvec,FUN=function(x){ paste(x, collapse = ", ") })
     ff <- as.data.frame(ff,row.names=names(ff))
     colnames(ff) <- "miRNAs"
