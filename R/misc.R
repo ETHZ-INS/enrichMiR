@@ -9,9 +9,9 @@
   ll[[1]]
 }
 
-#' recapitalizeMiRs
+#' recapitalizeGenes
 #'
-#' A utility function to reformat miRNA names so that there are no capital letters except the 'miR-'.
+#' A utility function to reformat gene names.
 #'
 #' @param x A character vector or an array (in which case the function will be applied to row.names)
 #' @param gformat The gene format, either 'human' (all caps) or 'mouse' (first letter capitalized)
@@ -119,3 +119,30 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
   y[x==0] <- 0
   y
 }
+
+
+
+# Loading RBP Position files in the correct format
+.loadRBPPos <- function(species = c("human","mouse","rat")) {
+  species <- match.arg(species)
+  message("Only mouse at the moment, will be loaded at every species")
+  RBPPos <- switch( species,
+                    human = data("RBPPos_test"),
+                    mouse = data("RBPPos_test"),
+                    rat = data("RBPPos_test"), 
+                    stop("No matched species"))
+  
+  colnames(RBPPos)[colnames(RBPPos)=="motif_id"] <- "Motif_ID"
+  colnames(RBPPos)[colnames(RBPPos)=="sequence_name"] <- "Transcript ID"
+  RBP_Names <- switch( species,
+                       human = data("RBP_Names_Mus_Sample_CISBP"),
+                       mouse = data("RBP_Names_Mus_Sample_CISBP"),
+                       rat = data("RBP_Names_Mus_Sample_CISBP"), 
+                       stop("No matched species"))
+  RBPPos <- merge(RBPPos,RBP_Names_mus,by = "Motif_ID",all.x = TRUE)
+  RBPPos
+  
+}
+
+
+
