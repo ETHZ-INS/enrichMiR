@@ -34,7 +34,7 @@ enrichMiR.ui <- function(){
                        selectInput("species", "Species",
                                            choices = c("Human", "Mouse", "Rat","Custom - not yet"), selected = "Human", multiple=FALSE, 
                                             width = '98%'),
-                       menuItem("Select Species",  tabName = "tab_species"),
+                       # menuItem("Select Species",  tabName = "tab_species"),
                        menuItem("Upload Expression Info", 
                                 menuSubItem("Upload Background", tabName ="tab_background"),
                                 menuSubItem("Optional: Select expressed miRNAs",tabName = "tab_mirnas")
@@ -54,17 +54,17 @@ enrichMiR.ui <- function(){
     ),
     ## Body Content
     dashboardBody(
-        tabItems(
-          tabItem(tabName = "tab_species",
-                    tags$h3("Select a Species"), tags$br(),
-                    tabBox(id="species_collection", width=12,
-                            tabPanel(title="Pre-built", value="prebuilt",
-                                    selectInput("select_speices", "Select Species",
-                                              choices = c("Human", "Mouse", "Rat"), selected = "Human")),
-                            tabPanel(title="Upload", value="upload", tags$p("Not yet implemented."))
-                          ),
-                  box(width=12, withSpinner(verbatimTextOutput("Species_summary",placeholder = TRUE)))
-                  ),
+          tabItems(
+      #    tabItem(tabName = "tab_species",
+      #              tags$h3("Select a Species"), tags$br(),
+      #              tabBox(id="species_collection", width=12,
+      #                      tabPanel(title="Pre-built", value="prebuilt",
+      #                              selectInput("select_speices", "Select Species",
+      #                                        choices = c("Human", "Mouse", "Rat"), selected = "Human")),
+      #                      tabPanel(title="Upload", value="upload", tags$p("Not yet implemented."))
+      #                    ),
+      #            box(width=12, withSpinner(verbatimTextOutput("Species_summary",placeholder = TRUE)))
+      #            ),
           tabItem(tabName = "tab_background",
                     box(title="Upload the Background", width=12,
                         "Paste a list of expressed genes in 'Ensembl' or 'Gene Symbol' format", br(), br(),
@@ -94,15 +94,23 @@ enrichMiR.ui <- function(){
                     ),
                   box(width = 12, title = "Find enrichment in:",
                     tabBox(id="enrichment_type", width=12,
-                         tabPanel(title="Custom Genes", value="custom",
+                          tabPanel(title = "Upload DEA", value = "dea",
+                                   fileInput(inputId = "dea_input", label = "Upload DEA object as '*.csv' file (see help)",  accept = c(
+                                     "text/csv",
+                                     "text/comma-separated-values,text/plain",
+                                     ".csv")), br(),
+                                   "Upload Differential Expression Analyses (DEAs) as table in the following format: ENSEMBL_ID or Gene Symbol in the first
+                                                      column (use same format as for the background), logFC-values in the second column and FDR-values in the third column"
+                                   ),
+                          tabPanel(title="Custom Genees", value="custom",
                                   textAreaInput("genes_of_interest", 
-                                                label="Genes of Interest", 
+                                                label="Paste genes of interest", 
                                                 rows=5,
                                                 placeholder="Gene_A\nGene_B\nGene_C", 
                                                 resize="vertical"), br(),
                                   "Use the same annotation format as for the background"
-                         ),
-                         tabPanel(title = "GeneSet", value = "geneset",
+                                  ),
+                         tabPanel(title = "GO-Term GeneSet", value = "geneset",
                                   textInput(inputId = "find_go",label = "Find a Go-Term", placeholder = "search with a key word"),
                                   verbatimTextOutput("find_go_result", placeholder = TRUE),
                                   selectizeInput("go-term", "Select Go-Term for enrichment search", choices=c()),))
@@ -217,7 +225,7 @@ enrichMiR.ui <- function(){
 
         )
     )
-)
+  )
 }           
 
 
