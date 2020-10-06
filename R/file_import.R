@@ -1,6 +1,6 @@
-#' loadTargetScan
+#' importTargetScan
 #'
-#' loads a targetScan conserved targets file (conserved site and contextScore).
+#' import a targetScan conserved targets file (conserved site and contextScore).
 #'
 #' @param ts.filepath Path to the targetScan conserved targets file.
 #' @param featureIdentifier The type of feature identifier to use as feature name; either "symbol", "transcript", or "geneid".
@@ -9,7 +9,7 @@
 #' @return a data.frame.
 #'
 #' @export
-loadTargetScan <- function(ts.filepath, featureIdentifier="symbol", recapitalizeGenes=FALSE){
+importTargetScan <- function(ts.filepath, featureIdentifier="symbol", recapitalizeGenes=FALSE){
     featureIdentifier <- match.arg(featureIdentifier, c("symbol","transcript","geneID"))
     ff <- switch( tolower(featureIdentifier),
             "symbol"="Gene.Symbol",
