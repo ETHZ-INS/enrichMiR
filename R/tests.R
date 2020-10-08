@@ -99,8 +99,9 @@ woverlap <- function(signal, sets, method="Wallenius"){
     bd[is.na(bd)] <- 0
   }else{
     bd <- sapply(signal, FUN=function(x) 0)
-    ag <- aggregate(sets$sites, by=list(gene=sets$feature), FUN=sum)
-    bd[ag$gene] <- ag$x
+    ag <- rowsum(sets$sites, sets$feature)
+    ag <- ag[intersect(row.names(ag),names(bd)),]
+    bd[names(ag)] <- ag
   }
   np <- nullp(signal[names(bd)], bias.data = bd, plot.fit=FALSE)
   g2c <- split(sets$feature, sets$set)
@@ -166,6 +167,7 @@ siteoverlap <- function(signal, sets){
   res <- res[order(res$pvalue),]
   for(i in 1:4) res[[i]] <- as.integer(res[[i]])
   res$FDR <- p.adjust(res$pvalue,method="fdr")
+  res
 }
 
 #' ks
