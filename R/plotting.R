@@ -1,76 +1,84 @@
 #' CDplot
 #'
-#' Plots the cumulative foldchange distribution for a given miRNA family or lists of foldchanges.
+#' Creates a cumulative distribution plot, eventually handling division of 
+#' values into bins according to another variable.
 #'
-#' @param x Either and object of class `enrichMiR`, or a list containing vectors of foldchanges.
-#' @param family If `x` is an object of class `enrichMiR`, the family to be plotted.
-#' @param col The vector of colors to be used for the different distributions (defaults to R default colors).
-#' @param xlim The x axis range to be displayed, default `c(-2,2)`.
-#' @param xlab The x axis label, defaults to "log2(foldchange)".
-#' @param main The plot's title, defaults to the family (if given).
-#' @param sub The plot's subtitle, defaults to the representative miRNA if the `x` is an object of calss `enrichMiR`.
-#' @param splitBy Split the genes by number of binding sites (`splitBy='sites'`, default), by targetscan score 
-#' (`splitBy='score'`), or simply into target/non-target (`splitBy=NULL`).
-#' @param ... Any other arguments passed to the plot function.
+#' @param x A named list of numeric values, or a vector of values to be divided
+#' @param by If `ll` is a list, `by` is ignored. If ll vector of values, `by` 
+#' should be a vector of the same length according to which the values should
+#' be divided.
+#' @param k The number of divisions (ignored if `ll` is a list, or if `by` is
+#' logical or a factor).
+#' @param breaks The breaks to use (ignored if `ll` is a list). If NULL, will
+#' be calculated.
+#' @param sameFreq Logical; whether to calculate breaks so thate the groups have
+#' the same frequency (rather than same width)
+#' @param addN Logical; whether to add group sizes to their names
+#' @param dig.lab Number of digits for automatically-generated breaks.
+#' @param minN The minimum number of items per group (groups below this will be
+#' merged if the breaks are numeric).
+#' @param ... Passed to `geom_line` (can for instance be used for `size`, etc.)
 #'
+#' @return A ggplot.
+#' @import ggplot2
+#' @importFrom dplyr bind_rows
+#' 
 #' @export
-CDplot <- function(x, family=NULL, cols=1:8, xlim=c(-2,2), xlab="log2(foldchange)", main="", sub=NULL, splitBy="sites", ...){
-    if(is(x,"enrichMiR")){
-        if(is.null(sub) && !is.na(x@families)) sub <- toString(names(x@families)[which(x@families==family)])
-        if(!any(x@TS$family==family)) stop("miRNA family not found!")
-        if(is.null(main) || main=="") main <- family
-        m <- merge(x@TS[which(x@TS$family==family),], x@DEA, by.x="feature", by.y="row.names",all.y=T)
-        m$sites[which(is.na(m$sites))] <- 0
-        m$score[which(is.na(m$score))] <- 0
-        if(is.null(splitBy)){
-          w <- which(m$sites>0)
-          ll <- list('non-targets'=m$feature[-w], targets=m$feature[w])
-        }else{
-          if(splitBy=="score"){
-            w <- which(m$score>0)
-            q <- unique(quantile(m$score[w],probs=c(0,0.333,0.666,1)))
-            print(q)
-            ll <- split(m$feature[w], cut(m$score[w],q,include.lowest = T))
-            print(names(ll))
-            ll <- c(list('non-targets'=m$feature[-w]),ll)
-          }else{
-            tt <- table(m$sites)
-            bk1 <- unique(c(0,as.numeric(names(tt)[which(tt>8)]),Inf))
-            bk <- cut(m$sites, breaks=bk1, include.lowest=T, right=F)
-            bk1[length(bk1)-1] <- paste0(">",bk1[length(bk1)-1])
-            levels(bk) <- paste(bk1[-length(bk1)], c("site",rep("sites",length(bk1)-2)))
-            ll <- split(m$feature, bk)
-          }
-        }
-        ll <- lapply(ll, dea=x@DEA, FUN=function(x,dea){ dea[x,"logFC"] })
-        CDplot(ll, main=main, sub=sub, xlim=xlim, xlab=xlab, cols=cols, ...)
-    }else{
-        x2 <- lapply(x,FUN=ecdf)
-        p <- sapply(x[-1],a=x[[1]],FUN=function(x,a){ suppressWarnings(ks.test(x,a)$p.value) })
-        plot(x2[[1]],col=cols[1],xlab=xlab,ylab="Cumulative proportion",xlim=xlim,main=main,sub=sub,...)
-        abline(v=0,lty="dashed",col="grey")
-        for(i in 2:length(x)) lines(x2[[i]],col=cols[i])
-        legend("bottomright",bty="n",lwd=3,col=cols,legend=paste(names(x), c("",paste0(" (p~",sapply(p,digits=2,FUN=format),")"))))
-    }
-}
-
-
-CDplot <- function(ll, by=NULL, k=5, ...){
+CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE, 
+                   dig.lab=NULL, minN=10, ...){
+  library(ggplot2)
   if(!is.list(ll)){
     if(is.null(by)) stop("If `ll` is not already a list, `by` should be given.")
     if(length(by)!=length(ll)) stop("Lengths of ll and by differ.")
-    ll <- split(ll, cut(by, k, dig.lab=3-ceiling(log10(abs(mean(by))))))
+    w <- which(!is.na(by) & !is.na(ll))
+    by <- by[w]
+    ll <- ll[w]
+    if(is.factor(by) || is.logical(by) || length(unique(by))<7){
+      ll <- split(ll, by)
+    }else{
+      if(is.null(dig.lab)) dig.lab <- max(c(2,3-ceiling(log10(abs(mean(by))))))
+      if(is.null(breaks)) breaks <- k
+      if(sameFreq)
+        breaks <- unique(quantile(by, prob=seq(from=0, to=1, length.out=k+1),
+                                  na.rm=TRUE))
+      ll <- split(ll, cut(by, breaks, dig.lab=dig.lab))
+    }
   }
-  p <- format(suppressWarnings(ks.test(ll[[1]], rev(ll)[[1]])$p.value), digits=2)
-  message("KS p-value between first and last sets:\n", p)
+  ll <- .mergeSmallerGroups(ll,minN=minN)
   d <- dplyr::bind_rows(lapply(ll, FUN=function(x){
-    data.frame( y=seq_along(x)/length(x),
-                x=sort(x) )
-  }), .id="Genesets")
-  d$Genesets <- factor(d$Genesets, levels=unique(d$Genesets))
-  p <- ggplot(d, aes(x,y,colour=Genesets)) + 
+    data.frame( y=(seq_along(x)-1)/(length(x)-1), x=sort(x) )
+  }), .id="Sets")
+  d$Sets <- factor(d$Sets, levels=unique(d$Sets))
+  if(addN) levels(d$Sets) <- paste0(levels(d$Sets), " (n=",
+                                    as.numeric(table(d$Sets)), ")")
+  p <- ggplot(d, aes(x,y,colour=Sets)) + 
     geom_vline(xintercept=0, linetype="dashed") + geom_line(...)
   p + ylab("Cumulative proportion")
+}
+
+.mergeSmallerGroups <- function(ll, minN=10){
+  if(all(grepl("^[\\(\\[\\)\\]].+,.+[\\(\\[\\)\\]]$", names(ll), perl=TRUE))){
+    lmf <- function(x){
+      x <- strsplit(x,",")
+      paste(x[[1]][[1]],x[[2]][[2]],sep=",")
+    }
+  }else if(all(grepl("^[0-9]+$", names(ll)))){
+    lmf <- function(x) paste(x,sep="-")
+  }else{
+    return(ll)
+  }
+  while(length(ll)>2 && any(lengths(ll)<minN)){
+    w <- which.min(lengths(ll))
+    if(w==1){ w2 <- 2 }
+    else if(w==length(ll)){ w2 <- length(ll)-1 }
+    else{
+      w2 <- w+which.min(lengths(ll)[w-1],lengths(ll)[w+1])*2-3
+    }
+    ll[[w]] <- sort(c(ll[[w]],ll[[w2]]))
+    names(ll[[w]]) <- lmf(names(ll)[sort(c(w,w2))])
+    ll[[w2]] <- NULL
+  }
+  ll   
 }
 
 
