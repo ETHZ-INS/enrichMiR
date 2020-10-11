@@ -15,7 +15,7 @@
 #' 
 #' 
 #' 
-#' 
+#' @import shiny DT shinydashboard shinycssloaders
 enrichMiR.ui <- function(){
   library(shiny)
   library(DT)

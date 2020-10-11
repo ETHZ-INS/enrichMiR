@@ -38,6 +38,7 @@ overlap <- function(signal, sets){
 #'  sites). Defaults to TRUE if `var='sites'`, FALSE otherwise.
 #'
 #' @return a data.frame
+#' @import stats
 #' @export
 plMod <- function(signature, sets, var="sites", correctForLength=NULL){
   if(is.null(correctForLength)) 
