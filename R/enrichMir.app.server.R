@@ -2,6 +2,7 @@
 #'
 #' @return A shiny server function
 #' @export
+#' @import ggplot2 DT GO.db
 enrichMiR.server <- function(){
   library(DT)
   library(ggplot2)

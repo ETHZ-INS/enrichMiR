@@ -3,10 +3,10 @@
 #' Creates a cumulative distribution plot, eventually handling division of 
 #' values into bins according to another variable.
 #'
-#' @param x A named list of numeric values, or a vector of values to be divided
-#' @param by If `ll` is a list, `by` is ignored. If ll vector of values, `by` 
-#' should be a vector of the same length according to which the values should
-#' be divided.
+#' @param ll A named list of numeric values, or a vector of values to be divided
+#' @param by If `ll` is a list, `by` is ignored. If `ll` is a vector of values, 
+#' `by` should be a numeric/logical/factor vector of the same length according 
+#' to which the values should be divided.
 #' @param k The number of divisions (ignored if `ll` is a list, or if `by` is
 #' logical or a factor).
 #' @param breaks The breaks to use (ignored if `ll` is a list). If NULL, will
@@ -89,127 +89,81 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
 #'
 #' Plots the results of an miRNA enrichment analysis
 #'
-#' @param res The results of an enrichment analysis, as obtained by the `enrichMiR.results` function.
-#' @param size.field The column determining the size of the bubbles (default "overlap").
-#' @param col.field The column determining the color of the bubbles (default "expression" if present, otherwise "overlap").
-#' @param sig.field The column to use as significance (default 'FDR').
-#' @param min.sig.thres The minimum FDR above which to plot (default 0.2).
-#' @param min.enr.thres The minumum fold-enrichment above which to plot (default 1).
-#' @param label.sig.thres The FDR threshold above which to plot the names of the enriched families (default 0.05).
-#' @param label.enr.thres The enrichment threshold above which to plot the names of the enriched families  (default 2).
-#' @param label.field The field to use as labels (default 'family')
+#' @param res The results of an enrichment analysis, as obtained by the 
+#' `getResults` function.
+#' @param enr.field The column determining the x axis.
+#' @param size.field The column determining the size of the circles.
+#' @param col.field The column determining the color of the circles.
+#' @param sig.field The column to use as significance or y axis (default 'FDR').
+#' @param max.sig.thres The maximum FDR below which to plot. Alternatively, if
+#' a number > 1, indicates the number of top points to plot.
+#' @param min.enr.thres The minumum (absolute) fold-enrichment above which to plot.
+#' @param label.sig.thres The FDR threshold above which to plot the names of the
+#'  enriched sets (default 0.05).
+#' @param label.enr.thres The (absolute) enrichment threshold above which to 
+#' plot the names of the enriched sets.
+#' @param label.field The field to use as labels (defaults to row.names)
 #' @param maxLabels The maximum number of labels to plot (default 10).
 #' @param opacity The opacity of the bubbles, ranging from 0 to 1 (default 0.5).
-#' @param main The title of the plot.
+#' @param repel Logical; whether to plot labels with `ggrepel`. This is the 
+#' default behaviour, but should be turned off if you plan to pass the result
+#' to `ggplotly`. 
 #'
 #' @export
-enrichPlot <- function( res, 
-                        size.field="overlap", 
+#' @import ggplot2
+enrichPlot <- function( res,
+                        enr.field=c("enrichment","normalizedEnrichment","beta","coefficient"),
+                        size.field=c("overlap", "size"),
                         col.field=NULL,
                         sig.field="FDR", 
-                        min.sig.thres=0.2, 
-                        min.enr.thres=1, 
+                        max.sig.thres=100, 
+                        min.enr.thres=NULL, 
                         label.sig.thres=0.05, 
-                        label.enr.thres=2, 
-                        label.field="family", 
+                        label.enr.thres=0, 
+                        label.field=NULL, 
                         maxLabels=10, 
                         opacity=0.5,  
-                        main=""){
-    if(is(res,"enrichMiR")){
-      res <- enrichMiR.results(res)
-      if(!("enrichment" %in% colnames(res))){
-        if("EN.combined.enrichment" %in% colnames(res)){
-          res$enrichment <- res$EN.combined.enrichment
-          res$overlap <- res$EN.combined.overlap
-          min.enr.thres <- -Inf
-          xlab <- "Combined log2(fold-enrichment)"
-        }else{
-          res$enrichment <- apply(abs(log2(as.matrix(res[,grep("enrichment"),drop=F])+0.05)),1,FUN=median)
-          xlab <- "Median absolute log2(fold-enrichment)"
-        }
-      }
-      res$medianP <- apply(res[,grep("pvalue",colnames(res)),drop=F],1,FUN=median)
-      sig.field <- "medianP"
-    }else{
-      xlab <- "Fold enrichment"
-      if(!("enrichment" %in% colnames(res))){
-        if("normalizedEnrichment" %in% colnames(res)){
-          res$enrichment <- res$normalizedEnrichment
-          xlab <- "Normalized enrichment"
-        }else{
-          if("logFC" %in% colnames(res)){
-            res$enrichment <- res$logFC
-            xlab <- "logFC per unit"
-          }else{
-            stop("These results do not seem to contain an enrichment value.")
-          }
-        }
-      }
-    }
-    if(is.null(col.field)){
-      if("expression" %in% colnames(res)){
-        col.field <- "expression"
-      }else{
-        if("overlap" %in% colnames(res)){
-          col.field <- "overlap"
-        }else{
-          col.field <- "enrichment"
-        }
-      }
-    }
-    suppressPackageStartupMessages(library(plotly))
-    if("features" %in% colnames(res)){
-      if(is(res$features, "CharacterList")){
-        res <- res[which(!duplicated(paste(res$features, collapse=""))),]
-      }else{
-        res <- res[which(!duplicated(res$features)),,drop=F]
-      }
-    }
-    if(nrow(res)<=2) stop("Not enough data to plot! Perhaps check the thresholds being used...")
-    res <- res[which( res$enrichment>=min.enr.thres & res[[sig.field]] <= min.sig.thres),]
-    w <- which(res$enrichment>label.enr.thres & res[[sig.field]]<label.sig.thres)
+                        repel=TRUE ){
+  if(length(enr.field <- head(intersect(enr.field,colnames(res)),n=1))==0)
+    stop("`enr.field` not found.")
+  if(length(sig.field <- head(intersect(sig.field,colnames(res)),n=1))==0)
+    stop("`sig.field` not found.")
+  if(!is.null(size.field) && 
+     length(size.field <- head(intersect(size.field,colnames(res)),n=1))==0)
+    stop("`size.field` not found.")
+  if(!is.null(col.field) && 
+     length(col.field <- head(intersect(col.field,colnames(res)),n=1))==0)
+    stop("`col.field` not found.")
+  if(is.null(label.field)){
+    res$set <- row.names(res)
+    label.field <- "set"
+  }else{
+    if(length(label.field<- head(intersect(label.field,colnames(res)),n=1))==0)
+      stop("`label.field` not found.")
+  }
+  if(!is.null(size.field)) res[[size.field]] <- as.numeric(res[[size.field]])
 
-    if("expression" %in% colnames(res)){
-      lab <- paste0(row.names(res)," (expr~",round(res$expression,1),")")
-    }else{
-      lab <- row.names(res)
-    }
-    lab <- paste0(lab,"\n",res$miRNAs,"\n",
-                  round(res$enrichment,2),ifelse(xlab=="Fold enrichment","-"," "),xlab,"\n",
-                  sig.field,"~",format(res[[sig.field]],digits=2))
-    if("overlap" %in% colnames(res)) lab <- paste0(lab, "\n", res$overlap, " target features")
-    if("BS.in" %in% colnames(res)) lab <- paste0(lab, "\n", res$BS.in, " binding sites")
-    
-    if(length(w)>0){
-        if(length(w)>maxLabels) w <- w[seq_len(maxLabels)]
-        if(label.field=="family" | label.field=="row.names"){
-          lab2 <- row.names(res)[w]
-        }else{
-          lab2 <- res[[label.field]][w]
-        }
-        a <- list( x = res$enrichment[w], y=-log10(res[[sig.field]][w]), 
-                   text=breakStrings(lab2),
-                   showarrow = FALSE, ax = 0, ay = 0)
-    }
-
-    ml <- list(opacity=opacity)
-    if(!is.null(size.field)) ml$size <- as.formula(paste0("~",size.field))
-    p <- plot_ly( res, 
-                  x=res$enrichment, 
-                  y=-log10(res[[sig.field]]),
-                  type='scatter',
-                  mode='markers', 
-                  text=lab, 
-                  hoverinfo='text', 
-                  color=as.formula(paste0("~",col.field)), 
-                  marker=ml ) %>% 
-        layout( title = main,
-                xaxis = list(showgrid = FALSE, title=xlab),
-                yaxis = list(showgrid = FALSE, title=paste0("-log10(",sig.field,")"))  )
-
-    if(length(w)>0) p <- p %>% layout(annotations=a, font=list(color="black",size=13))
-
-    p
+  if(!is.null(min.enr.thres)) res <- res[res[[enr.field]]>=min.enr.thres,]
+  if(max.sig.thres>1){
+    res <- res[head(order(res[[sig.field]]),n=max.sig.thres),]
+  }else{
+    res <- res[which(res[[sig.field]] <= max.sig.thres),]
+  }
+  if(nrow(res)<=2) stop("Not enough data to plot using the given thresholds...")
+  w <- which(abs(res[[enr.field]])>=label.enr.thres & 
+               res[[sig.field]]<label.sig.thres)
+  w <- head(w,n=maxLabels)
+  res[[sig.field]] <- -log10(res[[sig.field]])
+  p <- ggplot(res, aes_string(enr.field, sig.field, colour=col.field, 
+                              set=label.field)) +
+        geom_point(aes_string(size=size.field), alpha=opacity) +
+        ylab(paste0("-log10(",sig.field,")"))
+  if(repel){
+    p <- p + geom_text_repel(data=res[w,], aes_string(label=label.field))
+  }else{
+    p <- p + geom_text(data=res[w,], aes_string(label=label.field))
+  }
+  p
 }
 
 
@@ -218,7 +172,8 @@ enrichPlot <- function( res,
 #' Breaks each (long) component of a character vector into two lines.
 #'
 #' @param x A character vector.
-#' @param minSizeForBreak The minimum number of characters for a string to be broken onto two lines (default 20).
+#' @param minSizeForBreak The minimum number of characters for a string to be 
+#' broken onto two lines (default 20).
 #' @param lb The linebreak character to use (default \\n).
 #'
 #' @export

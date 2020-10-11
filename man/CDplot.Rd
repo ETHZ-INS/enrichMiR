@@ -4,28 +4,38 @@
 \alias{CDplot}
 \title{CDplot}
 \usage{
-CDplot(ll, by = NULL, k = 5, ...)
+CDplot(ll, by = NULL, k = 3, breaks = NULL, sameFreq = FALSE,
+  addN = FALSE, dig.lab = NULL, minN = 10, ...)
 }
 \arguments{
-\item{...}{Any other arguments passed to the plot function.}
+\item{ll}{A named list of numeric values, or a vector of values to be divided}
 
-\item{x}{Either and object of class `enrichMiR`, or a list containing vectors of foldchanges.}
+\item{by}{If `ll` is a list, `by` is ignored. If `ll` is a vector of values, 
+`by` should be a numeric/logical/factor vector of the same length according 
+to which the values should be divided.}
 
-\item{family}{If `x` is an object of class `enrichMiR`, the family to be plotted.}
+\item{k}{The number of divisions (ignored if `ll` is a list, or if `by` is
+logical or a factor).}
 
-\item{col}{The vector of colors to be used for the different distributions (defaults to R default colors).}
+\item{breaks}{The breaks to use (ignored if `ll` is a list). If NULL, will
+be calculated.}
 
-\item{xlim}{The x axis range to be displayed, default `c(-2,2)`.}
+\item{sameFreq}{Logical; whether to calculate breaks so thate the groups have
+the same frequency (rather than same width)}
 
-\item{xlab}{The x axis label, defaults to "log2(foldchange)".}
+\item{addN}{Logical; whether to add group sizes to their names}
 
-\item{main}{The plot's title, defaults to the family (if given).}
+\item{dig.lab}{Number of digits for automatically-generated breaks.}
 
-\item{sub}{The plot's subtitle, defaults to the representative miRNA if the `x` is an object of calss `enrichMiR`.}
+\item{minN}{The minimum number of items per group (groups below this will be
+merged if the breaks are numeric).}
 
-\item{splitBy}{Split the genes by number of binding sites (`splitBy='sites'`, default), by targetscan score 
-(`splitBy='score'`), or simply into target/non-target (`splitBy=NULL`).}
+\item{...}{Passed to `geom_line` (can for instance be used for `size`, etc.)}
+}
+\value{
+A ggplot.
 }
 \description{
-Plots the cumulative foldchange distribution for a given miRNA family or lists of foldchanges.
+Creates a cumulative distribution plot, eventually handling division of 
+values into bins according to another variable.
 }
