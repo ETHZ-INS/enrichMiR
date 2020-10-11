@@ -1,21 +1,21 @@
-#' @export
-#' 
-#' 
-#' ######## EnrichMir App Notes
+# 
+# 
+# ######## EnrichMir App Notes
 ## Species Collection
 #0) Which one to take?
 #1) We provide Targetscan and KD files for human/mouse/rat
 #2) The corresponding miR_family names schould be automatically chosen (at the moment there is an option to choose yourself in the EnrichMir function)
-#' 
-#' 
+# 
+# 
 ## Notes
 #1) In general go for the KD-sites. Select that Targetscan can be only done with mice and human?
 #2) Think about a colocalization plot
-#' 
-#' 
-#' 
-#' 
+# 
+# 
+# 
+#
 #' @import shiny DT shinydashboard shinycssloaders
+#' @export
 enrichMiR.ui <- function(){
   library(shiny)
   library(DT)
