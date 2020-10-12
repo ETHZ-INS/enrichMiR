@@ -53,6 +53,7 @@ recapitalizeMiRs <- function(x){
 
 .dea2binary <- function( dea, th=0.05, th.alfc=0, min.at.th=20, alt.top=50, 
                          restrictSign=NULL, verbose=TRUE ){
+  dea <- .homogenizeDEA(dea)
   if(!is.null(restrictSign)){
     if(!(restrictSign %in% c(-1,1)))
       stop("`restrictSign`, if given, should be -1 or 1.")
@@ -73,11 +74,38 @@ recapitalizeMiRs <- function(x){
 
 .dea2sig <- function( dea, field=NULL ){
   if(is.null(field)){
+    dea <- .homogenizeDEA(dea)
     x <- sign(dea$logFC)*-log10(dea$FDR)
   }else{
     x <- dea[[field]]
   }
   names(x) <- row.names(dea)
+  x
+}
+
+.homogenizeDEA <- function(x){
+  if(is.null(row.names(x)) && 
+     (is.character(x[,1]) || !any(duplicated(x[,1]))))
+    row.names(x) <- x[,1]
+  colnames(x) <- gsub("log2FoldChange|log2FC", "logFC", colnames(x))
+  abf <- colnames(df)[which(colnames(df) %in% c("meanExpr", "AveExpr", 
+                                                "baseMean", "logCPM"))]
+  if (length(abf) == 1) {
+    x$meanExpr <- df[, abf]
+    if (abf == "baseMean") 
+      x$meanExpr <- log(x$meanExpr + 1)
+  }
+  colnames(x) <- gsub("P\\.Value|pvalue", "PValue", colnames(x))
+  colnames(x) <- gsub("padj|adj\\.P\\.Val", "FDR", colnames(x))
+  if (!("FDR" %in% colnames(x))) 
+    x$FDR <- p.adjust(x$PValue, method = "fdr")
+  f <- grep("^logFC$",colnames(x),value=TRUE)
+  if(length(f)==0) f <- grep("logFC",colnames(x),value=TRUE)
+  if(length(f)==0) warning("No logFC found.")
+  if(length(f)>1){
+    message("Using ",f[1])
+    x[["logFC"]] <- x[[f[1]]]
+  }
   x
 }
 
