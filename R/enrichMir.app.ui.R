@@ -30,147 +30,113 @@ enrichMiR.ui <- function(){
     
     ## Sidebar content
     dashboardSidebar(width = "300px",
-                     sidebarMenu(
-                       #Either like this or as an own tab
-                       selectInput(inputId = "species", "Species",
-                                           choices = c("Human", "Mouse", "Rat","Custom - not yet"), selected = "Human", multiple=FALSE, 
-                                            width = '98%'),
-                       # menuItem("Select Species",  tabName = "tab_species"),
-                       menuItem("Upload Expression Info", 
-                                menuSubItem("Upload Background or DEA", tabName ="tab_background"),
-                                menuSubItem("Optional: Select expressed miRNAs",tabName = "tab_mirnas")
-                       ),
-                       menuItem("Select Genes to test", tabName = "tab_set"),
-                       menuItem("EnrichMir", 
-                                menuSubItem("Enrichment Options", tabName = "tab_options"),
-                                menuSubItem("enrich", "tab_enrich"),
-                                menuSubItem("CD Plot", "tab_cdplot")
-                       ),
-                       menuItem("CoMir", 
-                                menuSubItem("colocalization mode", "tab_co_mode"),
-                                menuSubItem("options","tab_co_options"),
-                                menuSubItem("colocalize", "tab_colocalize")
-                       ),
-                       menuItem("About", tabName="tab_about")
-                     )
+      sidebarMenu(
+        #Either like this or as an own tab
+        menuItem("Species and miRNAs", tabName = "tab_species"),
+        menuItem("Input genes/DEA", tabName = "tab_input"),
+        menuItem("Enrichment analysis",
+          menuSubItem("Enrichment Options", tabName = "tab_options"),
+          menuSubItem("enrich", tabName = "tab_enrich"),
+          menuSubItem("CD Plot", tabName = "tab_cdplot")
+        ),
+       menuItem("Co-localization", 
+                menuSubItem("colocalization mode", tabName = "tab_co_mode"),
+                menuSubItem("options",tabName = "tab_co_options"),
+                menuSubItem("colocalize", tabName = "tab_colocalize")
+       ),
+       menuItem("About", tabName="tab_about")
+      )
     ),
     ## Body Content
     dashboardBody(
-          tabItems(
-      #    tabItem(tabName = "tab_species",
-      #              tags$h3("Select a Species"), tags$br(),
-      #              tabBox(id="species_collection", width=12,
-      #                      tabPanel(title="Pre-built", value="prebuilt",
-      #                              selectInput("select_speices", "Select Species",
-      #                                        choices = c("Human", "Mouse", "Rat"), selected = "Human")),
-      #                      tabPanel(title="Upload", value="upload", tags$p("Not yet implemented."))
-      #                    ),
-      #            box(width=12, withSpinner(verbatimTextOutput("Species_summary",placeholder = TRUE)))
-      #            ),
-          tabItem(tabName = "tab_background",
-                    box(title="Upload Background or DEA", width=12,
-                      tabBox(id="upload_background", width=12,
-                             tabPanel(title = "Upload Background", value = "upload",
-                                      "Paste a list of expressed genes in 'Ensembl' or 'Gene Symbol' format", br(), br(),
-                                      textAreaInput(inputId = "background_genes", 
-                                                    label="Gene List", 
-                                                    rows=5,
-                                                    placeholder="Gene_1\nGene_2\nGene_3", 
-                                                    resize="vertical"),br(),
-                                      footer = "Note: If you want to use the Targetscan miRNA annotations together with rat genes, use the 'Gene Symbol' format"),
-                             tabPanel(title = "Upload DEA", value = "dea",
-                                      fileInput(inputId = "dea_input", label = "Upload DEA object as '*.csv' file (see help)",  accept = c(
-                                        "text/csv",
-                                        "text/comma-separated-values,text/plain",
-                                        ".csv")),
-                                      checkboxInput("header", "Header", TRUE), br(),
-                                      "Upload Differential Expression Analyses (DEAs) as table in the following format: ENSEMBL_ID or Gene Symbol in the first
-                                                      column (use same format as for the background), logFC-values in the second column and FDR-values in the third column"
-                             ))
-                    )
-                  ),
-          tabItem(tabName = "tab_mirnas",
-                  box(title="Upload expressed microRNAs", width=12,
-                      "Paste a list of expressed miRNAs in 'miRBase' format", br(), br(),
-                      textAreaInput(inputId = "expressed_mirnas", 
-                                    label="miRNA List", 
-                                    rows=5,
-                                    placeholder="miRNA_1\nmiRNA_2\nmiRNA_3", 
-                                    resize="vertical"),br(),
-                      footer = "Note: If no miRNAs are uploaded, enrichment searches will be performed with all microRNAs of the given species")
-                  ),
-          tabItem(tabName = "tab_set",
-                  tags$style(HTML("
-                      .tabbable > .nav > li[class=active]    > a {background-color: dimgrey; color:white}
-                      .tabbable > .nav > li > a                  {background-color: gray75;  color: black}
-                                      ")),
-                  box(width = 12, title = "Choose Gene Set:",
-                      tabsetPanel(id="choose_gene_set", 
-                                  tabPanel(title = "Custom Geen Sets", value = "custom_gene_sets",
-                                           br(),
-                                           tags$h4("Select parameters:"),
-                                           tabBox(id="cust_enrichment_type", width=12,
-                                                  tabPanel(title="Genes of Interest", value="custom_genes",
-                                                           textAreaInput(inputId = "genes_of_interest", 
-                                                                         label="Paste genes of interest", 
-                                                                         rows=5,
-                                                                         placeholder="Gene_A\nGene_B\nGene_C", 
-                                                                         resize="vertical"), br(),
-                                                           "Use the same annotation format as for the background"
-                                                  ),
-                                                  tabPanel(title = "GO-Term GeneSet", value = "go_genes",
-                                                           fluidRow(
-                                                           box(title = "Find a Go-Term",width = 12, collapsible = TRUE,collapsed = TRUE,
-                                                           textInput(inputId = "find_go",label = "Type in keyword", placeholder = "search with a key word"),
-                                                           column(6,radioButtons(inputId = "ontology",label = "Ontology:", choices = c("Biological Process" = "BP",
-                                                                                                                                       "Cellular Component" = "CC",
-                                                                                                                                       "Molecular Function" = "MF"),
-                                                                                 selected = "CC")), br(),
-                                                           column(6,actionButton(inputId = "find_go_button", "Find GO!", icon = icon("search"))),
-                                                           br(),
-                                                           column(12,"The first 20 results of the search are displayed"),
-                                                           column(12,verbatimTextOutput("find_go_result", placeholder = TRUE)),
-                                                           ),
-                                                           column(12,radioButtons(inputId = "go_genes_format",label = "Background Gene Format:", choices = c("Ensembl" = "Ens",
-                                                                                                                                                      "Gene Symbol" = "GS"),
-                                                                                  selected = "Ens")),
-                                                           column(12,selectizeInput(inputId = "go_term", "Select Go-Term for enrichment search", choices=c()))
-                                                           )
-                                                  ))
-                                           
-                                  ),
-                                  tabPanel(title = "DEA Sets", value = "dea_sets",
-                                           br(),
-                                           tags$h4("Set threshhold for binary enrichment tests:"), br(),
-                                           sliderInput(inputId = "binary_fdr", label = "Select a FDR cut-off",
-                                                       min = 0.05,max = 0.5,value = 0.05, step = 0.05,width = "80%")
-                                  )
-                      )) 
-                  ),
-          tabItem(tabName = "tab_options",
-                  tags$h3("Select enrichment options:"), tags$br(),
-                  box(width = 12, title = "Collections",
-                    selectInput("collection", label = "",
-                              choices = c("scanMir miRNA BS", "Targetscan miRNA BS", "CISBP RBP motif sites","Custom - not yet"), selected = "scanMir miRNA BS", multiple=FALSE, 
-                              width = '98%'),
-                    "Until now only Targetscan"
+      tabItems(
+        tabItem(tabName = "tab_species",
+          tags$h3("Select a Species"), tags$br(),
+          selectInput(inputId = "species", "Species", width = "400px", multiple=FALSE, 
+                choices = c("Human", "Mouse", "Rat","Custom - not yet"), 
+                selected = "Human"), tags$br(),
+           # tabBox(id="species_collection", width=12,
+           #         tabPanel(title="Pre-built", value="prebuilt",
+           #                 selectInput("select_speices", "Select Species",
+           #                           choices = c("Human", "Mouse", "Rat"), selected = "Human")),
+           #         tabPanel(title="Upload", value="upload", tags$p("Not yet implemented."))
+           #       ),
+           #     box(width=12, withSpinner(verbatimTextOutput("Species_summary",placeholder = TRUE)))
+          selectInput("collection", label = "Select a binding sites collection", width = '98%',
+                      choices = c("scanMir miRNA BS", "Targetscan miRNA BS", "CISBP RBP motif sites","Custom - not yet"),
+                      selected = "Targetscan miRNA BS", multiple=FALSE),
+          box(title = "Expressed miRNAs", collapsible=TRUE, collapsed=TRUE, width=12,
+              "Paste a list of expressed miRNAs in 'miRBase' format", br(), br(),
+              textAreaInput(inputId = "expressed_mirnas", 
+                            label="miRNA List", 
+                            rows=5,
+                            placeholder="miRNA_1\nmiRNA_2\nmiRNA_3", 
+                            resize="vertical"),br(),
+              footer = "Note: If no miRNAs are uploaded, enrichment searches will be performed with all microRNAs of the given species")
+          # eventually enable this as upload or selection from pre-loaded tissues?
+        ),
+        tabItem("tab_input",
+          tabBox(id="input_type", width=12,
+            tabPanel(title = "Select geneset & background", 
+                     tags$p("In this mode, your genes of interest are compared against a background of genes."),
+                     tags$h3("Genes of interest"),
+                     tabsetPanel(id="GOI",
+                       tabPanel(title = "Custom set", value = "GOI_custom",
+                                "Paste a list of expressed genes in 'Ensembl' or 'Gene Symbol' format", br(), br(),
+                                 textAreaInput(inputId = "genes_of_interest", 
+                                               label="Gene List", 
+                                               rows=5,
+                                               placeholder="Gene_1\nGene_2\nGene_3", 
+                                               resize="vertical"),
+                       ),
+                       tabPanel(title = "From Gene Ontology", value="GOI_GO",
+                                # selectizeInput(inputID="go_type", "Select GO collection", 
+                                #                choices=c("Cellular component"="CC",
+                                #                          "Biological process"="BP",
+                                #                          "Molecular function"="MF")),
+                                radioButtons(inputId = "go_genes_format", label = "Gene Format:", 
+                                             choices = c("Ensembl" = "Ens",
+                                                         "Gene Symbol" = "GS"),
+                                                       selected = "Ens"),
+                                selectizeInput(inputId="go_term", "Select GO-Term", choices=c()),
+                                textOutput("GOI_nb"))
+                     ),br(),tags$hr(),br(),tags$h3("Background"),
+                     textAreaInput(inputId = "background_genes", 
+                                   label="Gene List", 
+                                   rows=5,
+                                   placeholder="Gene_1\nGene_2\nGene_3", 
+                                   resize="vertical"),br(),
+                     footer = "Note: If you want to use the Targetscan miRNA annotations together with rat genes, use the 'Gene Symbol' format"
                     ),
-                  tabBox(id="test_type", width=12,
-                         tabPanel(title = "Binary Test", value = "binary",
-                                  sliderInput(inputId = "minsize", label = "Select the minium number of targets to be considered for testing",
-                                              min = 1,max = 20,value = 5, step = 1),
-                                  br(),
-                                  "Brief description of binary test"),
-                         tabPanel(title = "Continuous Test",value = "continous",
-                                  radioButtons(inputId = "cont_test_buttons", label = "Choose to perform a continuous enrichment test based on:",
-                                               choices = c("Site Scores (only miRNAs)" = "SC",
-                                                           "logFC" = "LFC"), 
-                                               selected = "SC"),
-                                  br(),
-                                  "In continuous testing mode, all genes get used for enrichment analysis. Brief explanation of continuous test")
-                         
-                        )
-                  ),
+            tabPanel(title = "Upload DEA results", value = "dea",
+                    fileInput(inputId = "dea_input", label = "Upload DEA object as '*.csv' file (see help)",  accept = c(
+                      "text/csv",
+                      "text/comma-separated-values,text/plain",
+                      ".csv")),
+                    checkboxInput("header", "Header", TRUE), br(),
+                    "Upload Differential Expression Analyses (DEAs) as table in the following format: ENSEMBL_ID or Gene Symbol in the first
+                                          column (use same format as for the background), logFC-values in the second column and FDR-values in the third column"
+            )
+          )
+        ),
+        tabItem(tabName = "tab_options",
+                tags$h3("Select enrichment options:"), tags$br(),
+                tabBox(id="test_type", width=12,
+                       tabPanel(title = "Binary Test", value = "binary",
+                                sliderInput(inputId = "minsize", label = "Select the minium number of targets to be considered for testing",
+                                            min = 1,max = 20,value = 5, step = 1),
+                                br(),
+                                "Brief description of binary test"),
+                       tabPanel(title = "Continuous Test",value = "continous",
+                                radioButtons(inputId = "cont_test_buttons", label = "Choose to perform a continuous enrichment test based on:",
+                                             choices = c("Site Scores (only miRNAs)" = "SC",
+                                                         "logFC" = "LFC"), 
+                                             selected = "SC"),
+                                br(),
+                                "In continuous testing mode, all genes get used for enrichment analysis. Brief explanation of continuous test")
+                       
+                      )
+                ),
           tabItem(tabName = "tab_enrich",
                     column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
                     column(10, tags$h5(textOutput("search for enrichments"))),
@@ -184,8 +150,10 @@ enrichMiR.ui <- function(){
                         withSpinner(DTOutput("hits_table")))
                   ),
           tabItem(tabName = "tab_cdplot",
-                    column(12,selectInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
-                    box(width=12, title="CD Plot", collapsible = TRUE, collapsed = TRUE,
+                    box(width=12, title="CD Plot", 
+                        column(6,selectizeInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
+                        column(6,tags$p("(CD plots require a DEA input.)"),
+                               selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
                         withSpinner(plotOutput("cd_plot"))
                         )
                   ),
@@ -275,10 +243,6 @@ enrichMiR.ui <- function(){
   )
 }           
 
-
-enrichMiR.server <- function(input,output){}          
-    
-shinyApp(enrichMiR.ui,enrichMiR.server)  
     
     
     
