@@ -153,15 +153,17 @@ enrichPlot <- function( res,
   w <- which(abs(res[[enr.field]])>=label.enr.thres & 
                res[[sig.field]]<label.sig.thres)
   w <- head(w,n=maxLabels)
-  res[[sig.field]] <- -log10(res[[sig.field]])
-  p <- ggplot(res, aes_string(enr.field, sig.field, colour=col.field, 
-                              set=label.field)) +
-        geom_point(aes_string(size=size.field), alpha=opacity) +
-        ylab(paste0("-log10(",sig.field,")"))
+  sig.field2 <- paste0("-log10(",sig.field,")")
+  res[[sig.field2]] <- -log10(res[[sig.field]])
+  ll <- list(label=label.field, x=enr.field, y=sig.field2)
+  if(!is.null(size.field)) ll$size <- size.field
+  if(!is.null(col.field)) ll$colour <- col.field
+  for(f in setdiff(colnames(res), unlist(ll))) ll[[f]] <- f
+  p <- ggplot(res, do.call(aes_string, ll)) + geom_point(alpha=opacity)
   if(repel){
-    p <- p + geom_text_repel(data=res[w,], aes_string(label=label.field))
+    p <- p + geom_text_repel(data=res[w,])
   }else{
-    p <- p + geom_text(data=res[w,], aes_string(label=label.field))
+    p <- p + geom_text(data=res[w,])
   }
   p
 }
