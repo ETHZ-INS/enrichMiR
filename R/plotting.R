@@ -38,9 +38,14 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
     }else{
       if(is.null(dig.lab)) dig.lab <- max(c(2,3-ceiling(log10(abs(mean(by))))))
       if(is.null(breaks)) breaks <- k
-      if(sameFreq)
-        breaks <- unique(quantile(by, prob=seq(from=0, to=1, length.out=k+1),
+      if(sameFreq){
+        breaks <- 1
+        while(length(breaks)<3){
+          k <- k+1
+          breaks <- unique(quantile(by, prob=seq(from=0, to=1, length.out=k+1),
                                   na.rm=TRUE))
+        }
+      }
       ll <- split(ll, cut(by, breaks, dig.lab=dig.lab))
     }
   }
@@ -54,6 +59,55 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
   p <- ggplot(d, aes(x,y,colour=Sets)) + 
     geom_vline(xintercept=0, linetype="dashed") + geom_line(...)
   p + ylab("Cumulative proportion")
+}
+
+#' CDplot2
+#' 
+#' A wrapper around \code{\link{CDplot}} to work directly with DEA results and
+#' a target sets as inputs.
+#'
+#' @param dea A named numeric vector containing the signal for each feature, or
+#' a DEA results data.frame (such as produced by major DEA packages, i.e. edgeR,
+#' DESeq2 or limma).
+#' @param sets The target sets object.
+#' @param setName The name of the set to plot in `sets`.
+#' @param k The number of groups to form.
+#' @param by The variable by which to form the groups; either "sites" or "score"
+#' @param sameFreq Logical; whether to divide so as to obtained groups with 
+#' similar frequencies (rather than groups of similar width)
+#' @param line.size Size of the line.
+#' @param point.size Size of the points.
+#' @param ... Any other argument passed to \code{\link{CDplot}}.
+#'
+#' @return A ggplot.
+#' @export
+CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"), 
+                    sameFreq=NULL, line.size=1.2, point.size=0.8, ...){
+  sets <- .list2DF(sets)
+  sets <- sets[sets$set==setName,]
+  if(is.null(sets$sites)) sets$sites <- 1
+  by <- match.arg(by)
+  if(!(by %in% colnames(sets))) stop("`by` not available in `sets`.")
+  if(nrow(sets)==0) stop("setName not found in `sets`.")
+  if(is.null(dim(dea))){
+    if(!is.numeric(dea) || is.null(names(dea)))
+      stop("`dea` should be a named numeric vector or a data.frame containing ",
+           "the results of a differential expression analysis.")
+  }else{
+    dea <- .dea2sig(.homogenizeDEA(dea), "logFC")
+  }
+  if(!any(sets$feature %in% names(dea)))
+    stop("There seems to be no overlap between the rows of `dea` and the ",
+         "features of `sets`.")
+  if(is.null(sameFreq)) sameFreq <- by=="score"
+  
+  by <- rowsum(sets[[by]], sets$feature)[,1]
+  by2 <- by[names(dea)]
+  by2[is.na(by2)] <- 0
+  p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size, ...) +
+    xlab("logFC") + ggtitle(setName)
+  if(point.size>0) p <- p + geom_point(size=point.size)
+  p
 }
 
 .mergeSmallerGroups <- function(ll, minN=10){
