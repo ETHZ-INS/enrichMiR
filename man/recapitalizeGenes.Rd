@@ -2,7 +2,7 @@
 % Please edit documentation in R/misc.R
 \name{recapitalizeGenes}
 \alias{recapitalizeGenes}
-\title{recapitalizeMiRs}
+\title{recapitalizeGenes}
 \usage{
 recapitalizeGenes(x, gformat = "mouse")
 }
@@ -15,5 +15,5 @@ recapitalizeGenes(x, gformat = "mouse")
 An object of the same type and dimensions as `x`.
 }
 \description{
-A utility function to reformat miRNA names so that there are no capital letters except the 'miR-'.
+A utility function to reformat gene names.
 }
