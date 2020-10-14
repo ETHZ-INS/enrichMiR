@@ -4,7 +4,8 @@
 \alias{getGOgenes}
 \title{getGOgenes}
 \usage{
-getGOgenes(go_ids, species = "Mm", translate.ids = TRUE)
+getGOgenes(go_ids, species = "Mm", translate.ids = TRUE,
+  ensembl_ids = FALSE)
 }
 \arguments{
 \item{go_ids}{A vector of GO IDs.}
@@ -12,6 +13,8 @@ getGOgenes(go_ids, species = "Mm", translate.ids = TRUE)
 \item{species}{A two-letter code indicating the species, such as `Mm` (default) or `Hs`.}
 
 \item{translate.ids}{Logical; whether to translate GO IDs into terms (default TRUE)}
+
+\item{ensembl_ids}{Logical; whether to translate Gene Symbols into Ensembl IDs}
 }
 \description{
 getGOgenes
