@@ -151,7 +151,7 @@ enrichMiR.ui <- function(){
                   tags$h3("Select enrichment options:"), tags$br(),
                   box(width = 12, title = "Collections",
                     selectInput("collection", label = "",
-                              choices = c("scanMir miRNA BS", "Targetscan miRNA BS", "CISBP RBP motif sites","Custom - not yet"), selected = "scanMir miRNA BS", multiple=FALSE, 
+                              choices = c("scanMir miRNA BS", "Targetscan miRNA BS", "CISBP RBP motif sites","Custom - not yet"), selected = "Targetscan miRNA BS", multiple=FALSE, 
                               width = '98%'),
                     "Until now only Targetscan"
                     ),
