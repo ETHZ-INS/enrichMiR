@@ -54,7 +54,7 @@ enrichMiR.server <-function(input, output, session){
       updf
       })
     
-    
+    ## Include , and "" gsub
     Back <- reactive({ #initalize the background
       if(input$upload_background=="upload"){
         return(unlist(strsplit(input$background_genes, "\n")))
