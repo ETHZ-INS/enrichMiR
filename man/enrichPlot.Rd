@@ -4,35 +4,44 @@
 \alias{enrichPlot}
 \title{enrichPlot}
 \usage{
-enrichPlot(res, size.field = "overlap", col.field = NULL,
-  sig.field = "FDR", min.sig.thres = 0.2, min.enr.thres = 1,
-  label.sig.thres = 0.05, label.enr.thres = 2,
-  label.field = "family", maxLabels = 10, opacity = 0.5, main = "")
+enrichPlot(res, enr.field = c("enrichment", "normalizedEnrichment",
+  "beta", "coefficient"), size.field = c("overlap", "size"),
+  col.field = NULL, sig.field = "FDR", max.sig.thres = 100,
+  min.enr.thres = NULL, label.sig.thres = 0.05, label.enr.thres = 0,
+  label.field = NULL, maxLabels = 10, opacity = 0.5, repel = TRUE)
 }
 \arguments{
-\item{res}{The results of an enrichment analysis, as obtained by the `enrichMiR.results` function.}
+\item{res}{The results of an enrichment analysis, as obtained by the 
+`getResults` function.}
 
-\item{size.field}{The column determining the size of the bubbles (default "overlap").}
+\item{enr.field}{The column determining the x axis.}
 
-\item{col.field}{The column determining the color of the bubbles (default "expression" if present, otherwise "overlap").}
+\item{size.field}{The column determining the size of the circles.}
 
-\item{sig.field}{The column to use as significance (default 'FDR').}
+\item{col.field}{The column determining the color of the circles.}
 
-\item{min.sig.thres}{The minimum FDR above which to plot (default 0.2).}
+\item{sig.field}{The column to use as significance or y axis (default 'FDR').}
 
-\item{min.enr.thres}{The minumum fold-enrichment above which to plot (default 1).}
+\item{max.sig.thres}{The maximum FDR below which to plot. Alternatively, if
+a number > 1, indicates the number of top points to plot.}
 
-\item{label.sig.thres}{The FDR threshold above which to plot the names of the enriched families (default 0.05).}
+\item{min.enr.thres}{The minumum (absolute) fold-enrichment above which to plot.}
 
-\item{label.enr.thres}{The enrichment threshold above which to plot the names of the enriched families  (default 2).}
+\item{label.sig.thres}{The FDR threshold above which to plot the names of the
+enriched sets (default 0.05).}
 
-\item{label.field}{The field to use as labels (default 'family')}
+\item{label.enr.thres}{The (absolute) enrichment threshold above which to 
+plot the names of the enriched sets.}
+
+\item{label.field}{The field to use as labels (defaults to row.names)}
 
 \item{maxLabels}{The maximum number of labels to plot (default 10).}
 
 \item{opacity}{The opacity of the bubbles, ranging from 0 to 1 (default 0.5).}
 
-\item{main}{The title of the plot.}
+\item{repel}{Logical; whether to plot labels with `ggrepel`. This is the 
+default behaviour, but should be turned off if you plan to pass the result
+to `ggplotly`.}
 }
 \description{
 Plots the results of an miRNA enrichment analysis

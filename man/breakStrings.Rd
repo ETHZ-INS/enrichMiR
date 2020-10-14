@@ -9,7 +9,8 @@ breakStrings(x, minSizeForBreak = 20, lb = "\\n")
 \arguments{
 \item{x}{A character vector.}
 
-\item{minSizeForBreak}{The minimum number of characters for a string to be broken onto two lines (default 20).}
+\item{minSizeForBreak}{The minimum number of characters for a string to be 
+broken onto two lines (default 20).}
 
 \item{lb}{The linebreak character to use (default \\n).}
 }

@@ -2,6 +2,7 @@
 #'
 #' @return A shiny server function
 #' @export
+#' @import ggplot2 DT GO.db
 enrichMiR.server <- function(){
   library(DT)
   library(ggplot2)
@@ -26,20 +27,25 @@ enrichMiR.server <- function(){
   
    
   
-enrichMiR.server <-function(input, output, session){
+  function(input, output, session){
     
     
     ##############################
     ## Select Species
     
+    # this should be replaced by the TS object
+    all_fams <- readRDS("/mnt/schratt/enrichMiR/data/20201006_Targetscan_Human_miRFamilies.rds")
     Species_fam <- reactive({
-      fam <- readRDS("data/20201006_Targetscan_Human_miRFamilies.rds")
+      # to be replaced with data()
       spec <- switch( input$species,
                       "Human" = 9606,
                       "Mouse" = 10090,
                       "Rat" = 10116,
                       "Custom - not yet" = 9606)
-      fam[fam$`Species ID` == spec, c("miR family","Seed+m8","MiRBase ID")]
+      fam <- all_fams[all_fams$`Species ID` == spec,]
+      x <- fam$`Seed+m8`
+      names(x) <- fam$`MiRBase ID`
+      x
     })
     
     
@@ -49,24 +55,28 @@ enrichMiR.server <-function(input, output, session){
     
     DEA <- reactive({ #initialize dea
       upFile <- input$dea_input
-      if (is.null(upFile)) return(NULL)
-      updf <- read.csv(upFile$datapath, header = input$header)
-      updf
-      })
+      #if (is.null(upFile)) return(NULL)
+      if (is.null(upFile)){ ## TEMPORARY - BECAUSE I'M LAZY
+        updf <- readRDS("/mnt/schratt/enrichMiR_benchmark/data/bartel_HEK.deaList.rds")[[1]]
+      }else{
+        updf <- read.csv(upFile$datapath, header = input$header, row.names=1)
+      }
+      enrichMiR:::.homogenizeDEA(updf)
+    })
     
     ## Include , and "" gsub
     Back <- reactive({ #initalize the background
-      if(input$upload_background=="upload"){
-        return(unlist(strsplit(input$background_genes, "\n")))
+      if(input$input_type == "dea"){
+        row.names(DEA())
       }else{
-        DEA()[,1]
+        return(unlist(strsplit(input$background_genes, "\n")))
       }
     })
         
     miRNA <- reactive({ #initialize expressed miRNAS
       if (is.null(input$expressed_mirnas)) return(NULL)
       return(unlist(strsplit(input$expressed_mirnas, "\n")))
-        })
+    })
         
     
     
@@ -74,54 +84,30 @@ enrichMiR.server <-function(input, output, session){
     ## initialize reactive inputs
     
     # miRNA families
-    # As long as I have a "data.frame" as input, one has to stay with 'selectInput'
-    # >> Can be changed
-    observe(updateSelectInput(session, "mir_fam", choices=Species_fam()))
+    observe(updateSelectizeInput(session, "mir_fam", choices=Species_fam(), server=TRUE))
     
     
-    # Find GO Terms and update the input list
-    GO <- eventReactive(input$find_go_button, {
-      a <- suppressWarnings(enrichMiR::findGO(expr = as.character(input$find_go), ontology = as.character(input$ontology)))
-      if(is.null(a)) return("Nothing Found")
-      a
-    })
-    
-    output$find_go_result <- renderPrint({
-      if(is.null(GO())) return(NULL)
-      head(GO(),20)
-      })
-
+    # Add GO Terms to input list
     
     GO_all <- as.data.frame(GO.db::GOTERM)
-    GO_all_vec <- paste0(GO_all$go_id," (",GO_all$Term,")")
+    GO_all_vec <- GO_all$go_id
+    names(GO_all_vec) <- paste0(GO_all$go_id," (",GO_all$Term,")")
     GO_all_vec <- GO_all_vec[!duplicated(GO_all_vec)]
-    names(GO_all_vec) <- GO_all_vec
-
-    GO_Input <- reactive({
-      if(input$find_go_button == 0){
-      return(GO_all_vec)
-      }else{
-      paste0(names(GO())," (",as.character(GO()),")")
-      }
-    })
-    
-    observe(updateSelectizeInput(session, "go_term", choices=GO_Input(),server = TRUE))
-    
+    updateSelectizeInput(session, "go_term", choices=GO_all_vec, server=TRUE)
     
     
     ##############################
     ## Initialize Genes of Interest
     
-    Gene_Subset <- eventReactive(input$enrich | input$colocalize, {#Get the genes of interest
-      if(input$choose_gene_set == "dea_sets"){
+    Gene_Subset <- reactive({
+      if(input$input_type == "dea"){
         if(is.null(input$dea_input)) return(NULL)
-        {d <- DEA()
-        d[d[[3]] <= input$binary_fdr , 1]}
+        d <- DEA()
+        return(row.names(d)[d$FDR<input$binary_fdr])
       }else{
-          if(input$cust_enrichment_type == "custom_genes"){
-            return(unlist(strsplit(input$genes_of_interest, "\n")))
-          }else{
-            a <- unlist(strsplit(input$go_term, " "))[1]
+        if(input$GOI == "GOI_custom"){
+          return(unlist(strsplit(input$genes_of_interest, "\n")))
+        }else{
             Sp <- switch(input$species,
                                  "Human" = "Hs",
                                  "Mouse" = "Mm",
@@ -130,35 +116,55 @@ enrichMiR.server <-function(input, output, session){
             ens <- switch(input$go_genes_format,
                                   "Ens" = TRUE,
                                   "GS" = FALSE)
-            return(as.character(unlist(getGOgenes(go_ids = a,species = Sp,ensembl_ids = ens))))
+            return(as.character(unlist(getGOgenes(go_ids = input$go_term, species = Sp,ensembl_ids = ens))))
           }
         }
     })
     
-    
-    observeEvent(input$enrich | input$colocalize,{
-      print(head(Gene_Subset()))
+    output$GOI_nb <- renderText({
+      genes <- Gene_Subset()
+      if(is.null(genes)) return(NULL)
+      paste(length(genes), " gene(s)")
     })
     
     ##############################
-    ## Perform the enrichment analysis
+    ## Initialize target predictions
     
-    #if dea == cont, then cont test with dea
-    #everywhen else use binary test with set = goi and back
+    TS <- reactive({
+      # DO SOMETHING HERE
+      # temporary, for testing:
+      TS <- readRDS("/mnt/schratt/enrichMiR_benchmark/data/TargetScan_human.rds")
+      colnames(TS)[1] <- "set"
+      TS
+    })
     
     
+    ##############################
+    ## CD plot
     
+    output$cd_plot <- renderPlot({
+      CDplot2(DEA(), TS(), setName=input$mir_fam, by = input$CD_type)
+    })
     
+    ##############################
+    ## Enrichment analysis
     
-  }  
-  
-
-
-
-shinyApp(enrichMiR.ui,enrichMiR.server) 
-  
-
-
+    ER <- reactive({
+      if(input$input_type == "dea"){
+        if(is.null(DEA())) return(NULL)
+        return(enrichMiR(DEA(), TS = TS(), tests=c("siteoverlap","areamir")))
+      }else{
+        if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
+        return(testEnrichment(Gene_Subset(), TS(), background=Back(), tests=c("siteoverlap","areamir")))
+      }
+    })
+    
+    output$bubble_plot <- renderPlotly({
+      if(is.null(ER())) return(NULL)
+      ggplotly(enrichPlot(getResults(ER(), "areamir"), repel=FALSE))
+    })    
+    
+  }
 }
 
 
