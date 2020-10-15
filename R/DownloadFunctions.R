@@ -91,7 +91,37 @@
     
     
     
-    
+
+# Download All Targetscan Sites
+.loadTargetscanSitesAll <- function(species = c("human","mouse","rat")) {
+  species <- match.arg(species)
+  # assign species ID
+  spec <- switch( species,
+                  human = 9606,
+                  mouse = 10090,
+                  rat = 10116, 
+                  stop("No matched species"))
+  
+  # download TargetScan conserved miRNA sites
+  tmp <- tempfile()
+  if (species == "human"){
+    #Downlaod Targetscan Species specific site file
+    download.file(
+      "http://www.targetscan.org/vert_72/vert_72_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
+    AllSites <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
+  }else if(any(species %in% c("mouse","rat"))){
+    #Downlaod Targetscan Species specific site file
+    download.file(
+      "http://www.targetscan.org/mmu_72/mmu_72_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
+    AllSites <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
+  }
+  unlink(tmp)
+  
+  #filter for the miRNA species
+  AllSites <- AllSites[AllSites$`Species ID` == spec,]
+  AllSites$`Transcript ID` = substr(AllSites$`Transcript ID`,1,15)
+  AllSites
+}    
     
     
     

@@ -1,18 +1,3 @@
-# 
-# 
-# ######## EnrichMir App Notes
-## Species Collection
-#0) Which one to take?
-#1) We provide Targetscan and KD files for human/mouse/rat
-#2) The corresponding miR_family names schould be automatically chosen (at the moment there is an option to choose yourself in the EnrichMir function)
-# 
-# 
-## Notes
-#1) In general go for the KD-sites. Select that Targetscan can be only done with mice and human?
-#2) Think about a colocalization plot
-# 
-# 
-# 
 #
 #' @import shiny DT shinydashboard shinycssloaders
 #' @export
@@ -51,8 +36,8 @@ enrichMiR.ui <- function(){
     dashboardBody(
       tabItems(
         tabItem(tabName = "tab_species",
-          tags$h3("Select a Species"), tags$br(),
-          selectInput(inputId = "species", "Species", width = "400px", multiple=FALSE, 
+          box(title = "Select a Species & Enrichment option",width = 12,
+          selectInput(inputId = "species", "Species", multiple=FALSE, 
                 choices = c("Human", "Mouse", "Rat","Custom - not yet"), 
                 selected = "Human"), tags$br(),
            # tabBox(id="species_collection", width=12,
@@ -62,10 +47,11 @@ enrichMiR.ui <- function(){
            #         tabPanel(title="Upload", value="upload", tags$p("Not yet implemented."))
            #       ),
            #     box(width=12, withSpinner(verbatimTextOutput("Species_summary",placeholder = TRUE)))
-          selectInput("collection", label = "Select a binding sites collection", width = '98%',
-                      choices = c("scanMir miRNA BS", "Targetscan miRNA BS", "CISBP RBP motif sites","Custom - not yet"),
-                      selected = "Targetscan miRNA BS", multiple=FALSE),
-          box(title = "Expressed miRNAs", collapsible=TRUE, collapsed=TRUE, width=12,
+          selectInput(inputId = "collection", label = "Select a binding sites collection",
+                      choices = c("scanMir miRNA BS", "Targetscan conserved miRNA BS","Targetscan all miRNA BS", "CISBP RBP motif sites","Custom - not yet"),
+                      selected = "Targetscan conserved miRNA BS", multiple=FALSE)
+          ),
+          box(title = "Optional: Expressed miRNAs", collapsible=TRUE, collapsed=TRUE,width = 12,
               "Paste a list of expressed miRNAs in 'miRBase' format", br(), br(),
               textAreaInput(inputId = "expressed_mirnas", 
                             label="miRNA List", 
@@ -73,7 +59,7 @@ enrichMiR.ui <- function(){
                             placeholder="miRNA_1\nmiRNA_2\nmiRNA_3", 
                             resize="vertical"),br(),
               footer = "Note: If no miRNAs are uploaded, enrichment searches will be performed with all microRNAs of the given species")
-          # eventually enable this as upload or selection from pre-loaded tissues?
+          # eventually enable this as upload or selection from pre-loaded tissues? >> good idea (at least have mouse / rat HC)
         ),
         tabItem("tab_input",
           tabBox(id="input_type", width=12,
@@ -151,11 +137,12 @@ enrichMiR.ui <- function(){
                   ),
           tabItem(tabName = "tab_cdplot",
                     box(width=12, title="CD Plot", 
+                        "(CD plots require a DEA input.)",
+                        br(),br(),
                         column(6,selectizeInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
-                        column(6,tags$p("(CD plots require a DEA input.)"),
-                               selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
+                        column(6,selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
                         withSpinner(plotOutput("cd_plot"))
-                        )
+                    )
                   ),
           tabItem(tabName = "tab_co_mode",
                     tags$h3("Find miRNA colocalizations"), tags$br(),
