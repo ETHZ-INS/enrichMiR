@@ -88,10 +88,6 @@
   ConSites
 }
 
-    
-    
-    
-    
 
 # Download All Targetscan Sites
 .loadTargetscanSitesAll <- function(species = c("human","mouse","rat")) {
@@ -126,7 +122,6 @@
     
    
   
-
 
 #' importFrom Matrix sparseMatrix
 .fetch_mirtarbase <- function(species, returnType=c("dataframe","matrix")){
