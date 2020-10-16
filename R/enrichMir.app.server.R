@@ -27,6 +27,7 @@ enrichMiR.server <- function(){
   
    
 
+  
   function(input, output, session){
 
     
@@ -132,7 +133,7 @@ enrichMiR.server <- function(){
     
     ##############################
     ## Initialize target predictions
-    
+
 
     ### here I have to subset for the expressed miRNAs
     
@@ -204,6 +205,7 @@ enrichMiR.server <- function(){
     
     output$cd_plot <- renderPlot({
 
+
       CDplot2(DEA(), EN_Object(), setName=input$mir_fam, by = input$CD_type)
 
     })
@@ -219,6 +221,7 @@ enrichMiR.server <- function(){
       }else{
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
         return(testEnrichment(Gene_Subset(), EN_Object(), background=Back(), tests=c("siteoverlap","areamir")))
+
       }
     })
     
