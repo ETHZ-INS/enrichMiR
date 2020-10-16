@@ -87,6 +87,7 @@
   ConSites$`Transcript ID` = substr(ConSites$`Transcript ID`,1,15)
   ConSites
 }
+<<<<<<< HEAD
     
     
     
@@ -135,3 +136,26 @@
     
     
     
+=======
+
+
+#' importFrom Matrix sparseMatrix
+.fetch_mirtarbase <- function(species, returnType=c("dataframe","matrix")){
+  returnType <- match.arg(returnType)
+  species <- switch(species, human="hsa", mouse="mmu", rat="rno", species)
+  tmp <- tempfile()
+  download.file(paste0("http://mirtarbase.cuhk.edu.cn/cache/download/8.0/", 
+                       species, "_MTI.xls"), destfile = tmp)
+  e <- readxl::read_excel(tmp)
+  e <- e[,c(2,4)]
+  e <- as.data.frame(e)
+  e[,1] <- as.factor(e[,1])
+  e[,2] <- as.factor(e[,2])
+  if(returnType=="dataframe"){
+    colnames(e) <- c("set","feature")
+    return(e)
+  }
+  sparseMatrix( as.numeric(e[,2]), as.numeric(e[,1]), 
+                dimnames=list(levels(e[,2]), levels(e[,1])) )
+}
+>>>>>>> c326fc9f3a4fa45d32f539a7bd39c68b2e94afba
