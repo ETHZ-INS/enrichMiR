@@ -20,7 +20,6 @@ enrichMiR.ui <- function(){
         menuItem("Species and miRNAs", tabName = "tab_species"),
         menuItem("Input genes/DEA", tabName = "tab_input"),
         menuItem("Enrichment analysis",
-          menuSubItem("Enrichment Options", tabName = "tab_options"),
           menuSubItem("enrich", tabName = "tab_enrich"),
           menuSubItem("CD Plot", tabName = "tab_cdplot")
         ),
@@ -105,25 +104,23 @@ enrichMiR.ui <- function(){
             )
           )
         ),
-        tabItem(tabName = "tab_options",
-                tags$h3("Select enrichment options:"), tags$br(),
-                tabBox(id="test_type", width=12,
-                       tabPanel(title = "Binary Test", value = "binary",
-                                sliderInput(inputId = "minsize", label = "Select the minium number of targets to be considered for testing",
-                                            min = 1,max = 20,value = 5, step = 1),
-                                br(),
-                                "Brief description of binary test"),
-                       tabPanel(title = "Continuous Test",value = "continous",
-                                radioButtons(inputId = "cont_test_buttons", label = "Choose to perform a continuous enrichment test based on:",
-                                             choices = c("Site Scores (only miRNAs)" = "SC",
-                                                         "logFC" = "LFC"), 
-                                             selected = "SC"),
-                                br(),
-                                "In continuous testing mode, all genes get used for enrichment analysis. Brief explanation of continuous test")
-                       
-                      )
-                ),
-          tabItem(tabName = "tab_enrich",
+        tabItem(tabName = "tab_enrich",
+                  box(title = "Select enrichment options:", collapsible=TRUE, collapsed=TRUE,width = 12,
+                      tabBox(id="test_type", width=12,
+                             tabPanel(title = "Binary Test", value = "binary",
+                                      sliderInput(inputId = "minsize", label = "Select the minium number of targets to be considered for testing",
+                                                  min = 1,max = 20,value = 5, step = 1),
+                                      br(),
+                                      "Brief description of binary test"),
+                             tabPanel(title = "Continuous Test",value = "continous",
+                                      radioButtons(inputId = "cont_test_buttons", label = "Choose to perform a continuous enrichment test based on:",
+                                                   choices = c("Site Scores (only miRNAs)" = "SC",
+                                                               "logFC" = "LFC"), 
+                                                   selected = "SC"),
+                                      br(),
+                                      "In continuous testing mode, all genes get used for enrichment analysis. Brief explanation of continuous test")
+                             )
+                      ),
                     column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
                     column(10, tags$h5(textOutput("search for enrichments"))),
                     box(width=12, title="Enrichment Plot", collapsible=TRUE, collapsed=TRUE,
