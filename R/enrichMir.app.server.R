@@ -65,7 +65,7 @@ enrichMiR.server <- function(){
       enrichMiR:::.homogenizeDEA(updf)
     })
     
-    
+    ## Include , and "" gsub
     Back <- reactive({ #initalize the background
       if(input$input_type == "dea"){
         row.names(DEA())
