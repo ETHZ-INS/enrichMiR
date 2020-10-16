@@ -192,7 +192,6 @@ enrichMiR.ui <- function(){
                 )
                 
         ),
-
         tabItem(tabName = "tab_enrich",
                 
                 box(title = "Select enrichment options:", collapsible=TRUE, collapsed=TRUE, width=12,
@@ -226,7 +225,6 @@ enrichMiR.ui <- function(){
                            
                            
                     )),
-                
                 column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
                 
                 column(10, tags$h5(textOutput("search for enrichments"))),
@@ -252,12 +250,14 @@ enrichMiR.ui <- function(){
         tabItem(tabName = "tab_cdplot",
                 
                 box(width=12, title="CD Plot", 
+
                     "(CD plots require a DEA input.)",
                     br(), br(),
                     
                     column(6,selectizeInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
                     
                     column(6,selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
+
                     
                     withSpinner(plotOutput("cd_plot"))
                     
