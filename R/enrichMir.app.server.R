@@ -25,9 +25,7 @@ enrichMiR.server <- function(){
   
   
   
-   
 
-  
   function(input, output, session){
 
     
@@ -37,6 +35,7 @@ enrichMiR.server <- function(){
     
     # this should be replaced by the TS object
     # MS>: the TS only contains repr. miRNAs, therefore I wanted this one to display all
+
 
     all_fams <- readRDS("/mnt/schratt/enrichMiR/data/20201006_Targetscan_Human_miRFamilies.rds")
     Species_fam <- reactive({
@@ -135,6 +134,7 @@ enrichMiR.server <- function(){
     ## Initialize target predictions
 
 
+
     ### here I have to subset for the expressed miRNAs
     
     #should this somehow be cached? Wanted to have it as download, because the files are so big
@@ -199,15 +199,13 @@ enrichMiR.server <- function(){
       })
 
 
+
     
     ##############################
     ## CD plot
     
     output$cd_plot <- renderPlot({
-
-
       CDplot2(DEA(), EN_Object(), setName=input$mir_fam, by = input$CD_type)
-
     })
     
     ##############################
@@ -221,7 +219,6 @@ enrichMiR.server <- function(){
       }else{
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
         return(testEnrichment(Gene_Subset(), EN_Object(), background=Back(), tests=c("siteoverlap","areamir")))
-
       }
     })
     

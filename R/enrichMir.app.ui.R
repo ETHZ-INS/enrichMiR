@@ -71,8 +71,7 @@ enrichMiR.ui <- function(){
       tabItems(
         
         tabItem(tabName = "tab_species",
-
-                box(title = "Select Species and Collection", width=12,
+                    box(title = "Select Species and Collection", width=12,
                     selectInput(inputId = "species", "Species", width = '98%', multiple=FALSE, 
                                 
                                 choices = c("Human", "Mouse", "Rat","Custom - not yet"), 
@@ -85,6 +84,7 @@ enrichMiR.ui <- function(){
                                 
                                 selected = "Targetscan miRNA BS", multiple=FALSE)
                     ),
+
 
                 
                 box(title = "Expressed miRNAs", collapsible=TRUE, collapsed=TRUE, width=12,
@@ -194,7 +194,6 @@ enrichMiR.ui <- function(){
                 )
                 
         ),
-
         tabItem(tabName = "tab_enrich",
                 
                 box(title = "Select enrichment options:", collapsible=TRUE, collapsed=TRUE, width=12,
@@ -229,6 +228,7 @@ enrichMiR.ui <- function(){
                            
                     )),
 
+
                 column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
                 
                 column(10, tags$h5(textOutput("search for enrichments"))),
@@ -254,7 +254,6 @@ enrichMiR.ui <- function(){
         tabItem(tabName = "tab_cdplot",
                 
                 box(width=12, title="CD Plot", 
-
 
                     "(CD plots require a DEA input.)",
                     br(), br(),
