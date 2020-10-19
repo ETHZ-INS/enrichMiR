@@ -46,19 +46,35 @@
   # download TargetScan miRNA families
   tmp <- tempfile()
   download.file("http://www.targetscan.org/vert_72/vert_72_data_download/miR_Family_Info.txt.zip", tmp)
-  miRFam <- fread(unzip(file.path(tmp)))
+  miRFam <- read.delim(unzip(tmp), header=TRUE)
   unlink(tmp)
   
   #filter for the miRNA species
-  miRFam <- miRFam[miRFam$`Species ID` == spec,]
+  miRFam <- miRFam[miRFam$Species.ID == spec,]
   miRFam
-  
 }
 
+.ens2symbol <- function(species=c("human","mouse","rat")){
+  species <- match.arg(species)
+  symbol <- switch(species,
+                   human="hgnc_symbol",
+                   mouse="mgi_symbol",
+                   "uniprot_gn_symbol")
+  ensembl <- switch(species,
+               human = useMart("ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl"),
+               mouse = useMart("ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl"),
+               rat = useMart("ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl"), 
+               stop("No matched species"))
+  anno <- getBM(attributes=c("ensembl_gene_id",symbol), mart = ensembl)
+  anno <- anno[anno[,2]!="",]
+  anno <- anno[!duplicated(anno[,1]),]
+  e2s <- anno[,2]
+  names(e2s) <- anno[,1]
+  e2s
+}
 
-
-#' Download Targetscan Conserved Sites
-.fetch_TargetscanSites <- function(species = c("human","mouse","rat")) {
+.getTargetScan <- function(species = c("human","mouse","rat"), type=c("conserved","all"), keepMers=FALSE){
+  type <- match.arg(type)
   species <- match.arg(species)
   # assign species ID
   spec <- switch( species,
@@ -67,61 +83,61 @@
                   rat = 10116, 
                   stop("No matched species"))
   
+  fams <- .fetch_Mirfamilies(species)
+  
   # download TargetScan conserved miRNA sites
   tmp <- tempfile()
-  if (species == "human"){
-    #Downlaod Targetscan Species specific site file
-    download.file(
-      "http://www.targetscan.org/vert_72/vert_72_data_download/Summary_Counts.default_predictions.txt.zip", tmp)
-    ConSites <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
-  }else if(any(species %in% c("mouse","rat"))){
-    #Downlaod Targetscan Species specific site file
-    download.file(
-      "http://www.targetscan.org/mmu_72/mmu_72_data_download/Summary_Counts.default_predictions.txt.zip", tmp)
-    ConSites <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
+  a <- fread(unzip("tmp.zip"),drop = c("Aggregate PCT"))
+  if(type=="conserved"){
+    if (species == "human"){
+      #Downlaod Targetscan Species specific site file
+      download.file(
+        "http://www.targetscan.org/vert_72/vert_72_data_download/Summary_Counts.default_predictions.txt.zip", tmp)
+      a <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
+    }else if(any(species %in% c("mouse","rat"))){
+      #Downlaod Targetscan Species specific site file
+      download.file(
+        "http://www.targetscan.org/mmu_72/mmu_72_data_download/Summary_Counts.default_predictions.txt.zip", tmp)
+      a <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
+    }
+    a$sites <- a[["Total num conserved sites"]]
+  }else{
+    if (species == "human"){
+      #Downlaod Targetscan Species specific site file
+      download.file(
+        "http://www.targetscan.org/vert_72/vert_72_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
+      a <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
+    }else if(any(species %in% c("mouse","rat"))){
+      #Downlaod Targetscan Species specific site file
+      download.file(
+        "http://www.targetscan.org/mmu_72/mmu_72_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
+      a <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
+    }
+    a$sites <- a[["Total num conserved sites"]]+a[["Total num nonconserved sites"]]
   }
   unlink(tmp)
-  
+  a <- as.data.frame(a[a$`Species ID` == spec,])
+  a$`Transcript ID` <- gsub("\\..*","",a$`Transcript ID`)
+  keep <- c("miRNA family", "Gene Symbol", "sites", "Cumulative weighted context++ score")
+  tmp <- a[!duplicated(a[,1:2]),1:2]
+  syn <- as.character(tmp[,2])
+  names(syn) <- tmp[,1]
+  syn <- c(syn, .ens2symbol(species))
+  if(keepMers) keep <- c(keep, grep("^Number of", colnames(a), value=TRUE))
+  a <- a[,keep]
+  colnames(a)[1:4] <- c("set","feature","sites","score")
+  a[,1] <- as.factor(a[,1])
+  a[,2] <- as.factor(a[,2])
+  a[,3] <- as.integer(a[,3])
   #filter for the miRNA species
-  ConSites <- ConSites[ConSites$`Species ID` == spec,]
-  ConSites$`Transcript ID` <- gsub("\\..*","",ConSites$`Transcript ID`)
-  ConSites
+  a <- DataFrame(a)
+  
+  metadata(a)$feature.synonyms <- syn
+  metadata(a)$families <- fams[["Seed.m8"]]
+  names(metadata(a)$families) <- fams[["MiRBase.ID"]]
+  a
 }
 
-
-#' Download All Targetscan Sites
-.fetch_TargetscanSitesAll <- function(species = c("human","mouse","rat")) {
-  species <- match.arg(species)
-  # assign species ID
-  spec <- switch( species,
-                  human = 9606,
-                  mouse = 10090,
-                  rat = 10116, 
-                  stop("No matched species"))
-  
-  # download TargetScan conserved miRNA sites
-  tmp <- tempfile()
-  if (species == "human"){
-    #Downlaod Targetscan Species specific site file
-    download.file(
-      "http://www.targetscan.org/vert_72/vert_72_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
-    AllSites <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
-  }else if(any(species %in% c("mouse","rat"))){
-    #Downlaod Targetscan Species specific site file
-    download.file(
-      "http://www.targetscan.org/mmu_72/mmu_72_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
-    AllSites <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
-  }
-  unlink(tmp)
-  
-  #filter for the miRNA species
-  AllSites <- AllSites[AllSites$`Species ID` == spec,]
-  AllSites$`Transcript ID` <- gsub("\\..*","",AllSites$`Transcript ID`)
-  AllSites
-}    
-    
-   
-  
 
 #' importFrom Matrix sparseMatrix miRTarBase
 .fetch_mirtarbase <- function(species, returnType=c("dataframe","matrix")){
