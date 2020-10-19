@@ -26,32 +26,8 @@ enrichMiR.server <- function(){
   
   
 
-  function(input, output, session){
+ function(input, output, session){
 
-    
-    
-    ##############################
-    ## Select Species
-    
-    # this should be replaced by the TS object
-    # MS>: the TS only contains repr. miRNAs, therefore I wanted this one to display all
-
-
-    all_fams <- readRDS("/mnt/schratt/enrichMiR/data/20201006_Targetscan_Human_miRFamilies.rds")
-    Species_fam <- reactive({
-      # to be replaced with data()
-      spec <- switch( input$species,
-                      "Human" = 9606,
-                      "Mouse" = 10090,
-                      "Rat" = 10116,
-                      "Custom - not yet" = 9606)
-      fam <- all_fams[all_fams$`Species ID` == spec,]
-      x <- fam$`Seed+m8`
-      names(x) <- fam$`MiRBase ID`
-      x
-    })
-    
-    
     
     ##############################
     ## initialize expression info
@@ -76,28 +52,38 @@ enrichMiR.server <- function(){
       }
     })
         
-    miRNA <- reactive({ #initialize expressed miRNAS
-      if (is.null(input$expressed_mirnas)) return(NULL)
-      return(unlist(strsplit(input$expressed_mirnas, "\n")))
+    miRNA_exp <- reactive({ #initialize expressed miRNAS
+      miRNA_up <- input$miRNA_exp_input
+      if (is.null(upFile)){return(NULL)
+      }else{
+        mirup <- read.csv(miRNA_up$datapath, header = input$header_mir, row.names=1)
+      }
+      mirup <- mirup[order(mirup[[2]]),]
+      mirup <- mirup[1:((input$mir_cut_off/100)*nrow(mirup)),]
+      mirup
     })
         
     
+    miRNA_exp_list <-reactive({ #initialize custom list of expressed miRNAS 
+      if (is.null(input$expressed_mirnas)) return(NULL)
+      return(unlist(strsplit(input$expressed_mirnas, "\n")))
+    })
     
     ##############################
     ## initialize reactive inputs
-    
-    # miRNA families
-    observe(updateSelectizeInput(session, "mir_fam", choices=Species_fam(), server=TRUE))
-    
-    
+  
     # Add GO Terms to input list
-    
     GO_all <- as.data.frame(GO.db::GOTERM)
     GO_all_vec <- GO_all$go_id
     names(GO_all_vec) <- paste0(GO_all$go_id," (",GO_all$Term,")")
     GO_all_vec <- GO_all_vec[!duplicated(GO_all_vec)]
     updateSelectizeInput(session, "go_term", choices=GO_all_vec, server=TRUE)
     
+    output$GOI_nb <- renderText({
+      genes <- Gene_Subset()
+      if(is.null(genes)) return(NULL)
+      paste(length(genes), " gene(s)")
+    })
     
     ##############################
     ## Initialize Genes of Interest
@@ -124,42 +110,60 @@ enrichMiR.server <- function(){
         }
     })
     
-    output$GOI_nb <- renderText({
-      genes <- Gene_Subset()
-      if(is.null(genes)) return(NULL)
-      paste(length(genes), " gene(s)")
-    })
+
+    
     
     ##############################
-    ## Initialize target predictions
-
-
-
-    ### here I have to subset for the expressed miRNAs
+    ## Load En_Objects based on species
     
-    #should this somehow be cached? Wanted to have it as download, because the files are so big
+    
+    ### Include here the miRNA filtering
+    
+ #    if (is.null(input$exp_mirna_list)){
+ #      if(is.null(input$exp_mirna_file)){
+ #        return(EN_Object)
+ #      }else{
+ #        #include expression to family metadata and filter for exp. miRNAs  
+ #      }
+ #    }else{
+ #      #filter for expressed miRNAs in list
+ #    }
+ # })
+    
     TS_nonC <- reactive({
-      sp <- switch(input$species,
-                   "Human" = "human",
-                   "Mouse" = "mouse",
-                   "Rat" = "rat",
-                   "Custom - not yet" = "human")
-      TS_nonC <- .loadTargetscanSitesAll(species = sp)
-      TS_nonC$sites <- TS_nonC$`Total num conserved sites` + TS_nonC$`Total num nonconserved sites`
-      TS_nonC <- TS_nonC[,c("Gene Symbol","miRNA family","Cumulative weighted context++ score","sites")]
-      colnames(TS_nonC) <- c("feature","set","score","sites")
+      if(input$genes_format == "Ens"){
+        TS_nonC <- switch(input$species,
+                          "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Human_AllSites_human_InE_Fam.rds"),
+                          "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Mouse_AllSites_mouse_InE_Fam.rds"),
+                          "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Mouse_AllSites_rat_InE_Fam.rds"),
+                          "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Human_AllSites_human_InE_Fam.rds"))
+      }
+      if(input$genes_format == "GS"){
+        TS_nonC <- switch(input$species,
+                          "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Human_AllSites_human_InS_Fam.rds"),
+                          "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Mouse_AllSites_mouse_InS_Fam.rds"),
+                          "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Mouse_AllSites_rat_InS_Fam.rds"),
+                          "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Human_AllSites_human_InS_Fam.rds"))
+      }
       TS_nonC
     })
     
     TS_con <- reactive({
-      TS_con <- switch(input$species,
-                   "Human" = readRDS("/mnt/schratt/enrichMiR/data/20201006_Targetscan_Human_ConSites_Human.rds"),
-                   "Mouse" = readRDS("/mnt/schratt/enrichMiR/data/20201006_Targetscan_Mouse_ConSites_Mouse.rds"),
-                   "Rat" = readRDS("/mnt/schratt/enrichMiR/data/20201006_Targetscan_Mouse_ConSites_Rat.rds"),
-                   "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR/data/20201006_Targetscan_Human_ConSites_Human.rds"))
-      TS_con$sites <- TS_con$`Total num conserved sites`
-      TS_con <- TS_con[,c("Gene Symbol","miRNA family","Cumulative weighted context++ score","sites")]
-      colnames(TS_nonC) <- c("feature","set","score","sites")
+      if(input$genes_format == "Ens"){
+        TS_con <- switch(input$species,
+                         "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Human_ConSites_human_InE_Fam.rds"),
+                         "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Mouse_ConSites_mouse_InE_Fam.rds"),
+                         "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Mouse_ConSites_rat_InE_Fam.rds"),
+                         "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Human_ConSites_human_InE_Fam.rds"))
+      }
+      if(input$genes_format == "GS"){
+        TS_con <- switch(input$species,
+                         "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Human_ConSites_human_InS_Fam.rds"),
+                         "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Mouse_ConSites_mouse_InS_Fam.rds"),
+                         "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Mouse_ConSites_rat_InS_Fam.rds"),
+                         "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Human_ConSites_human_InS_Fam.rds"))
+      }
+      print(head(TS_con))
       TS_con
     })
     
@@ -171,59 +175,86 @@ enrichMiR.server <- function(){
       detail <- "not yet..."
     })
     
-    #mirTarbas
+    miRTarBase <- reactive({
+      detail <- "not yet..."
+    })
     
     Custom <- reactive({
       detail <- "not yet..."
     })
-      
-    EN_Object <- reactive({
-      EN_Object <- switch(input$collection,
-                          "scanMir miRNA BS" = Scan_Mir(),
-                          "Targetscan conserved miRNA BS" = TS_con(),
-                          "Targetscan all miRNA BS"= TS_nonC(),
-                          "CISBP RBP motif sites" = RBPs(),
-                          "Custom - not yet" = Custom())
-      
-      if (is.null(input$expressed_mirnas)) return(EN_Object)
-      if(input$collection == "Targetscan conserved miRNA BS" | input$collection == "Targetscan all miRNA BS"){
-        EN_Object <- EN_Object[EN_Object$set %in% 
-                                 
-                                 
-      #############
-      #continue here with the miRNA filtering
-      #built the miRNA family + name + motif data.frame up where I initalize miRNAs 
-                                 
-                                 
-                       
-      })
-
-
-
+    
+    
+    
+    
+    
     
     ##############################
+    ## Initialize target predictions
+
+    
+    EN_Object <- reactive({
+      switch(input$collection,
+             "scanMir miRNA BS"=switch(input$species,
+                                       ))
+      # switch(input$collection,
+      #         "scanMir miRNA BS" = Scan_Mir(),
+      #         "Targetscan conserved miRNA BS" = TS_con(),
+      #         "Targetscan all miRNA BS"= TS_nonC(),
+      #         "CISBP RBP motif sites" = RBPs(),
+      #         "miRTarBase" = miRTarBase(),
+      #         "Custom - not yet" = Custom())
+      readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201017_Targetscan_Mouse_ConSites_rat_InE_Fam.rds")
+    })
+                                 
+   
+    
+   
+    ##############################
     ## CD plot
+      
+    ### Include here the S4 metadata!!
+    observe({
+      print(head(EN_Object()))
+      if(!is.null(EN_Object())){
+        message("EN not null")
+        if(!is.null(m <- metadata(EN_Object())$families)){
+          ids <- m[["Seed+m8"]]
+          names(ids) <- [["MiRBase ID"]]
+          updateSelectizeInput(session, "mir_fam", choices=unique(ids), server=TRUE)
+        }
+      }
+    }) 
+              
+        
+              
     
     output$cd_plot <- renderPlot({
+      if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
       CDplot2(DEA(), EN_Object(), setName=input$mir_fam, by = input$CD_type)
     })
     
     ##############################
     ## Enrichment analysis
     
+    ## include options from continuous tab??
+    ## Decide between continuous and binary test already in ER or only in plotting / data.table
+    
+    
     ER <- reactive({
       if(input$collection == "Targetscan all miRNA BS") detail <- "This will take a while..."
       if(input$input_type == "dea"){
         if(is.null(DEA())) return(NULL)
-        return(enrichMiR(DEA(), TS = EN_Object(), tests=c("siteoverlap","areamir")))
+        return(enrichMiR(DEA(), TS = EN_Object(), tests=c("siteoverlap","areamir"), minSize=input$minsize))
       }else{
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
-        return(testEnrichment(Gene_Subset(), EN_Object(), background=Back(), tests=c("siteoverlap","areamir")))
+        return(testEnrichment(Gene_Subset(), EN_Object(), background=Back(), tests=c("siteoverlap","areamir"),minSize=input$minsize))
       }
     })
     
     output$bubble_plot <- renderPlotly({
       if(is.null(ER())) return(NULL)
+      
+      
       ggplotly(enrichPlot(getResults(ER(), "areamir"), repel=FALSE))
     })    
     

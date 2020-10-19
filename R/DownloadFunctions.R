@@ -1,6 +1,6 @@
 
-# Downlaod Targetscan Position Files
-.loadTargetscanPos <- function(species = c("human","mouse","rat")) {
+#' Downlaod Targetscan Position Files
+.fetch_TargetscanPos <- function(species = c("human","mouse","rat")) {
   species <- match.arg(species)
   # assign species ID
   spec <- switch( species,
@@ -26,15 +26,15 @@
   
   #filter for the miRNA species
   miRPos <- miRPos[miRPos$`Species ID` == spec,]
-  miRPos$`Gene ID` = substr(miRPos$`Gene ID`,1,18)
-  miRPos$`Transcript ID` = substr(miRPos$`Transcript ID`,1,18)
+  miRPos$`Gene ID` <- gsub("\\..*","",miRPos$`Gene ID`)
+  miRPos$`Transcript ID` <- gsub("\\..*","",miRPos$`Transcript ID`)
   miRPos
 }
 
 
 
-# Download Targetscan miRNA families
-.getMirfamilies <- function(species = c("human","mouse","rat")) {
+#' Download Targetscan miRNA families
+.fetch_Mirfamilies <- function(species = c("human","mouse","rat")) {
   species <- match.arg(species)
   # assign species ID
   spec <- switch( species,
@@ -51,14 +51,14 @@
   
   #filter for the miRNA species
   miRFam <- miRFam[miRFam$`Species ID` == spec,]
-  
+  miRFam
   
 }
 
 
 
-# Download Targetscan Conserved Sites
-.loadTargetscanSites <- function(species = c("human","mouse","rat")) {
+#' Download Targetscan Conserved Sites
+.fetch_TargetscanSites <- function(species = c("human","mouse","rat")) {
   species <- match.arg(species)
   # assign species ID
   spec <- switch( species,
@@ -84,13 +84,13 @@
   
   #filter for the miRNA species
   ConSites <- ConSites[ConSites$`Species ID` == spec,]
-  ConSites$`Transcript ID` = substr(ConSites$`Transcript ID`,1,15)
+  ConSites$`Transcript ID` <- gsub("\\..*","",ConSites$`Transcript ID`)
   ConSites
 }
 
 
-# Download All Targetscan Sites
-.loadTargetscanSitesAll <- function(species = c("human","mouse","rat")) {
+#' Download All Targetscan Sites
+.fetch_TargetscanSitesAll <- function(species = c("human","mouse","rat")) {
   species <- match.arg(species)
   # assign species ID
   spec <- switch( species,
@@ -116,14 +116,14 @@
   
   #filter for the miRNA species
   AllSites <- AllSites[AllSites$`Species ID` == spec,]
-  AllSites$`Transcript ID` = substr(AllSites$`Transcript ID`,1,15)
+  AllSites$`Transcript ID` <- gsub("\\..*","",AllSites$`Transcript ID`)
   AllSites
 }    
     
    
   
 
-#' importFrom Matrix sparseMatrix
+#' importFrom Matrix sparseMatrix miRTarBase
 .fetch_mirtarbase <- function(species, returnType=c("dataframe","matrix")){
   returnType <- match.arg(returnType)
   species <- switch(species, human="hsa", mouse="mmu", rat="rno", species)
