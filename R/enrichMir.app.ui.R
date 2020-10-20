@@ -39,7 +39,7 @@ enrichMiR.ui <- function(){
                                 choices = c("Human", "Mouse", "Rat","Custom - not yet"), 
                                 selected = "Human"), tags$br(),
                     selectInput(inputId="collection", label = "Select a binding sites collection", width = '98%',
-                                choices = c("scanMir miRNA BS", "Targetscan miRNA BS", "CISBP RBP motif sites","miRTarBase", "Custom - not yet"),
+                                choices = c("scanMir miRNA BS", "Targetscan miRNA BS","Targetscan all miRNA BS", "CISBP RBP motif sites","miRTarBase", "Custom - not yet"),
                                 selected = "Targetscan miRNA BS", multiple=FALSE)
                     ),
                 box(title = "Expressed miRNAs", collapsible=TRUE, collapsed=TRUE, width=12,
@@ -69,14 +69,15 @@ enrichMiR.ui <- function(){
                 # eventually enable this as upload or selection from pre-loaded tissues?
         ),
         tabItem("tab_input",
-                box(id = "GeneFormat",title = "Gene Format",  width = 12,
-                    radioButtons(inputId = "genes_format", label = "Select:", 
-                                 choices = c("Ensembl" = "Ens",
-                                             "Gene Symbol" = "GS"),
-                                 selected = "Ens")),
                 tabBox(id="input_type", width=12,
                        tabPanel(title = "Select geneset & background", 
                                 tags$p("In this mode, your genes of interest are compared against a background of genes."),
+                                tags$h3("Gene Format"),
+                                radioButtons(inputId = "genes_format", label = "Select:", 
+                                                 choices = c("Ensembl" = "Ens",
+                                                             "Gene Symbol" = "GS"),
+                                                 selected = "Ens"),
+                                br(),tags$hr(),
                                 tags$h3("Genes of interest"),
                                 tabsetPanel(id="GOI",
                                             tabPanel(title = "Custom set", value = "GOI_custom",
@@ -94,7 +95,7 @@ enrichMiR.ui <- function(){
                                                      #                          "Molecular function"="MF")),
                                                      selectizeInput(inputId="go_term", "Select GO-Term", choices=c()),
                                                      textOutput("GOI_nb"))
-                                ),br(),tags$hr(),br(),tags$h3("Background"),
+                                ),br(),tags$hr(),tags$h3("Background"),
                                 textAreaInput(inputId = "background_genes", 
                                               label="Gene List", 
                                               rows=5,
@@ -108,6 +109,8 @@ enrichMiR.ui <- function(){
                                   "text/comma-separated-values,text/plain",
                                   ".csv")),
                                 checkboxInput("header", "Header", TRUE), br(),
+                                sliderInput(inputId = "dea_sig_th", label = "Select significance thresshold",
+                                            min = 0.01, max = 0.5, value = 0.05, step = 0.01),
                                 "Upload Differential Expression Analyses (DEAs) as table with at least following information: Provide ENSEMBL_ID or Gene Symbol as identifier
                                 in the first column (same format as for the background), as well as logFC-values and FDR-values"
                        )
@@ -120,23 +123,28 @@ enrichMiR.ui <- function(){
                     br(),
                     tabBox(id="test_type", width=12,
                            tabPanel(title = "Binary Test", value = "binary",
+                                    radioButtons(inputId = "up_down", label = "Interested in up- or downregulated genes:",
+                                                 choices = c("Up" = ".up",
+                                                             "Down" = ".down"),
+                                                 selected = "SC"),
                                     "A hypergeometric test on the number of binding sites will be performed to calculate significance"),
                            tabPanel(title = "Continuous Test",value = "continous",
                                     tags$h4(em("Only with DEA-Input")),br(),
-                                    radioButtons(inputId = "cont_test_buttons", label = "Choose to perform a continuous enrichment test based on:",
-                                                 choices = c("Site Scores (only miRNAs)" = "SC",
-                                                             "logFC" = "LFC"), 
-                                                 selected = "SC"),
+                                    # radioButtons(inputId = "cont_test_buttons", label = "Choose to perform a continuous enrichment test based on:",
+                                    #              choices = c("Site Scores (only miRNAs)" = "SC",
+                                    #                          "logFC" = "LFC"),
+                                    #              selected = "SC"),
                                     br(),
-                                    "In continuous testing mode, all genes get used for enrichment analysis. Brief explanation of continuous test")
+                                    "In continuous testing mode, all genes get used for enrichment analysis.Here, we employ an analytic 
+                                    rank-based enrichment analysis using a conversion of the scores as weights.")
                     )),
                 column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
                 column(10, tags$h5(textOutput("search for enrichments"))),
                 box(width=12, title="Enrichment Plot", collapsible=TRUE, collapsed=TRUE,
                     withSpinner(plotlyOutput("bubble_plot")),
-                    column(6,sliderInput("label.sig.thres","Significance threshold to display labels",min = 0,max = 0.25,value = 0.05,step = 0.01)),
-                    column(6,sliderInput("label.enr.thres","Enrichment threshold to display labels",min = 0.5,max = 10,value = 2,step = 0.5)),
-                    column(6, numericInput("label_n", "Max number of Labels", value=10, min=1, max=50))
+                    column(6,sliderInput(inputId = "label.sig.thres","Significance threshold to display labels",min = 0,max = 0.25,value = 0.05,step = 0.01)),
+                    column(6,sliderInput(inputId = "label.enr.thres","Enrichment threshold to display labels",min = 0.5,max = 10,value = 2,step = 0.5)),
+                    column(6, numericInput(inputId = "label_n", "Max number of Labels", value=10, min=1, max=50))
                 ),
                 box(width=12, title="Table", collapsible=TRUE, collapsed = TRUE,
                     withSpinner(DTOutput("hits_table")))

@@ -87,7 +87,6 @@
   
   # download TargetScan conserved miRNA sites
   tmp <- tempfile()
-  a <- fread(unzip("tmp.zip"),drop = c("Aggregate PCT"))
   if(type=="conserved"){
     if (species == "human"){
       #Downlaod Targetscan Species specific site file
