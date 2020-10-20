@@ -128,6 +128,8 @@ enrichMiR.server <- function(){
                      "miRTarBase" = detail <- "not yet...",
                      "Custom - not yet" = detail <- "not yet...")
       if(is.null(eno)) return(NULL)
+      
+      #This part here is for the miRNA filterin and creating family row.names in the metadata
       if(!is.null(metadata(eno)$families)){
       m <- metadata(eno)$families
       m <- droplevels(m)
@@ -194,6 +196,7 @@ enrichMiR.server <- function(){
     ##############################
     ## Enrichment analysis
     
+    # I would do the Ensembl / Gene Symbol filtering in here since we need to do it seperate for DEAs and Subset / Back
     
     ER <- reactive({
       if(input$collection == "Targetscan all miRNA BS") detail <- "This will take a while..."
