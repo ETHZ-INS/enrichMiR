@@ -176,5 +176,24 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
   
 }
 
-
-
+.agDF <- function(df, new.rn, 
+                  match.names=(!is.null(names(new.rn)) && length(df)!=length(new.rn))){
+  if(match.names){
+    names(a) <- a <- row.names(df)
+    a[names(new.rn)] <- as.character(new.rn)
+    new.rn <- a[row.names(df)]
+  }
+  if(ncol(df)==0) return(data.frame(row.names=unique(new.rn)))
+  if(!any(duplicated(new.rn))){
+    row.names(df) <- new.rn
+    return(df)
+  }
+  df <- aggregate(df, by=list(RN=new.rn), FUN=function(x){
+    if(is.factor(x)) x <- as.character(x)
+    if(length(x)==1) return(x)
+    if(is.numeric(x)) return(x[which.max(abs(x),na.rm=TRUE)])
+    paste(sort(x), collapse=";")
+  })
+  row.names(df) <- df[,1]
+  df[,-1,drop=FALSE]
+}

@@ -66,6 +66,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   }else{
     if(!is.null(background)) warning("`background` ignored.")
   }
+  x <- .applySynonyms(x, sets)
   sets <- .list2DF(sets)
   
   if(is.null(dim(x))){
@@ -272,7 +273,7 @@ availableTests <- function(x=NULL, sets=NULL){
   sort(tests)
 }
 
-.filterMatchSets <- function(sets, props, tryPrefixRemoval){
+.filterMatchSets <- function(sets, props, tryPrefixRemoval=TRUE){
   if(is.null(props)) return(data.frame(row.names=unique(sets$set)))
   if(is.null(dim(props))){
     if(is.null(names(props))){
@@ -282,34 +283,28 @@ availableTests <- function(x=NULL, sets=NULL){
       props <- as.data.frame(props)
     }
   }
-  if(all(row.names(props) %in% sets$set)) return(props)
-  
-  if(isS4(sets) && !is.null(an <- metadata(sets)$alternativeNames) &&
-     length(w <- which(row.names(props) %in% names(an)))>0){
-    props <- aggregate(rbind(props[w,,drop=FALSE],props[-w,,drop=FALSE]),
-                       by=list(set=c(an[row.names(props)[w]],row.names(props)[-w])),
-                       FUN=function(x){
-                         if(length(x)==1) return(x)
-                         if(is.numeric(x)) return(x[which.max(abs(x),na.rm=TRUE)])
-                         paste(sort(x), collapse=";")
-                       })
-    row.names(props) <- props[,1]
-    props[,1] <- NULL
+  usets <- unique(sets$set)
+  if(all(row.names(props) %in% usets)) return(props)
+  if(isS4(sets)){
+    if(is.null(metadata(sets)$alternativeNames) && !is.null(metadata(sets)$families))
+      metadata(sets)$alternativeNames <- metadata(sets)$families
+    if(!is.null(an <- metadata(sets)$alternativeNames)){
+      props <- .agDF(props, an, TRUE)
+      if(all(row.names(props) %in% usets)) return(props)
+    }
+    if(!is.null(an) && tryPrefixRemoval &&
+       !any(row.names(props) %in% usets) ){
+      names(an) <- sapply(strsplit(names(an),"-",fixed=TRUE),FUN=function(x){ paste(x[-1],collapse="-") })
+      metadata(sets)$alternativeNames <- an
+      props <- .agDF(props, sapply(strsplit(row.names(props),"-",fixed=T),FUN=function(x) paste(x[-1],collapse="-") ), FALSE)
+      return(.filterMatchSets(sets, props, tryPrefixRemoval=FALSE))
+    }
   }
-  
-  if(isS4(sets) && !any(row.names(props) %in% sets$set) && tryPrefixRemoval){
-    names(an) <- sapply(strsplit(names(an),"-",fixed=T),FUN=function(x){ paste(x[-1],collapse="-") })
-    metadata(sets)$alternativeNames <- an
-    row.names(props) <- sapply(strsplit(row.names(props),"-",fixed=T),FUN=function(x){ paste(x[-1],collapse="-") })
-    return(.filterMatchSets(sets, props, tryPrefixRemoval=FALSE))
-  }
-
-  if(!any(row.names(props) %in% sets$set))
+  if(!any(row.names(props) %in% usets))
     stop("The set properties do not correspond to the sets!")
-
-  warning(sum(!(row.names(props) %in% sets$set)), " sets in the set.properties object",
+  warning(sum(!(row.names(props) %in% usets)), " sets in the set.properties object",
           " are not in the sets...")
-  props[intersect(row.names(props),sets$set),]
+  props[intersect(row.names(props),usets),]
 }
 
 .list2DF <- function(sets){
@@ -356,4 +351,21 @@ availableTests <- function(x=NULL, sets=NULL){
     ll
   }
   ll
+}
+
+.applySynonyms <- function(x, sets){
+  if(is.null(metadata(sets)) || is.null(metadata(sets)$feature.synonyms)) return(x)
+  ss <- metadata(sets)$feature.synonyms
+  if(is.null(dim(x)) && any(names(x) %in% names(ss))){
+    n <- names(x)
+    w <- which(n %in% names(ss))
+    n[w] <- as.character(ss[n[w]])
+    if((nDup <- sum(duplicated(n)))>0){
+      warning(nDup, " duplicated feature(s) dropped.")
+      w <- which(duplicated(n))
+      x <- x[!w]
+      names(x) <- n[!w]
+    }
+  }
+  return(x)
 }
