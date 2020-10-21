@@ -130,10 +130,10 @@
   a[,3] <- as.integer(a[,3])
   #filter for the miRNA species
   a <- DataFrame(a)
-  
   metadata(a)$feature.synonyms <- syn
   metadata(a)$families <- fams[["Seed.m8"]]
   names(metadata(a)$families) <- fams[["MiRBase.ID"]]
+  metadata(a)$families <- droplevels(metadata(a)$families)
   a
 }
 

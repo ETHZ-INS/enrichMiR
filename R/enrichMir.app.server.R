@@ -132,7 +132,6 @@ enrichMiR.server <- function(){
       #This part here is for the miRNA filterin and creating family row.names in the metadata
       if(!is.null(metadata(eno)$families)){
       m <- metadata(eno)$families
-      m <- droplevels(m)
       if (is.null(input$exp_mirna_list)){
         if(is.null(input$exp_mirna_file)){
           ll <- CharacterList(lapply(split(names(m), m),unique))
