@@ -39,8 +39,8 @@ enrichMiR.ui <- function(){
                                 choices = c("Human", "Mouse", "Rat","Custom - not yet"), 
                                 selected = "Human"), tags$br(),
                     selectInput(inputId="collection", label = "Select a binding sites collection", width = '98%',
-                                choices = c("scanMir miRNA BS", "Targetscan miRNA BS","Targetscan all miRNA BS", "CISBP RBP motif sites","miRTarBase", "Custom - not yet"),
-                                selected = "Targetscan miRNA BS", multiple=FALSE)
+                                choices = c("scanMir miRNA BS", "Targetscan conserved miRNA BS","Targetscan all miRNA BS", "CISBP RBP motif sites","miRTarBase", "Custom - not yet"),
+                                selected = "Targetscan conserved miRNA BS", multiple=FALSE)
                     ),
                 box(title = "Expressed miRNAs", collapsible=TRUE, collapsed=TRUE, width=12,
                     tabBox(id="expressed_mirna_box", width=12,
@@ -85,6 +85,7 @@ enrichMiR.ui <- function(){
                                                      textAreaInput(inputId = "genes_of_interest", 
                                                                    label="Gene List", 
                                                                    rows=5,
+                                                                   value = NULL,
                                                                    placeholder="Gene_1\nGene_2\nGene_3", 
                                                                    resize="vertical"),
                                             ),
@@ -99,6 +100,7 @@ enrichMiR.ui <- function(){
                                 textAreaInput(inputId = "background_genes", 
                                               label="Gene List", 
                                               rows=5,
+                                              value = NULL,
                                               placeholder="Gene_1\nGene_2\nGene_3", 
                                               resize="vertical"),br(),
                                 footer = "Note: If you want to use the Targetscan miRNA annotations together with rat genes, use the 'Gene Symbol' format"
@@ -126,7 +128,7 @@ enrichMiR.ui <- function(){
                                     radioButtons(inputId = "up_down", label = "Interested in up- or downregulated genes:",
                                                  choices = c("Up" = ".up",
                                                              "Down" = ".down"),
-                                                 selected = "SC"),
+                                                 selected = ".down"),
                                     "A hypergeometric test on the number of binding sites will be performed to calculate significance"),
                            tabPanel(title = "Continuous Test",value = "continous",
                                     tags$h4(em("Only with DEA-Input")),br(),
@@ -143,7 +145,7 @@ enrichMiR.ui <- function(){
                 box(width=12, title="Enrichment Plot", collapsible=TRUE, collapsed=TRUE,
                     withSpinner(plotlyOutput("bubble_plot")),
                     column(6,sliderInput(inputId = "label.sig.thres","Significance threshold to display labels",min = 0,max = 0.25,value = 0.05,step = 0.01)),
-                    column(6,sliderInput(inputId = "label.enr.thres","Enrichment threshold to display labels",min = 0.5,max = 10,value = 2,step = 0.5)),
+                    column(6,sliderInput(inputId = "label.enr.thres","Enrichment threshold to display labels",min = 0.5,max = 10,value = 1,step = 0.5)),
                     column(6, numericInput(inputId = "label_n", "Max number of Labels", value=10, min=1, max=50))
                 ),
                 box(width=12, title="Table", collapsible=TRUE, collapsed = TRUE,

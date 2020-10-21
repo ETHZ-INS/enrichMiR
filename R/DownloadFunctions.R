@@ -1,6 +1,6 @@
 
 #' Downlaod Targetscan Position Files
-.fetch_TargetscanPos <- function(species = c("human","mouse","rat")) {
+.fetch_TargetscanPos <- function(species = c("human","mouse","rat"),type=c("conserved","all")) {
   species <- match.arg(species)
   # assign species ID
   spec <- switch( species,
@@ -9,26 +9,32 @@
                   rat = 10116, 
                   stop("No matched species"))
   
-  # download TargetScan miRNA Positions
-  tmp <- tempfile()
-  if (species == "human"){
-    #Downlaod Targetscan Species specific UTR file
-    download.file(
-      "http://www.targetscan.org/vert_72/vert_72_data_download/Predicted_Targets_Info.default_predictions.txt.zip", tmp)
-    miRPos <- fread(unzip(file.path(tmp)),drop = c("MSA start", "MSA end", "PCT") )
-  }else if(any(species %in% c("mouse","rat"))){
-    #Downlaod Targetscan Species specific UTR file
-    download.file(
-      "http://www.targetscan.org/mmu_72/mmu_72_data_download/Conserved_Family_Conserved_Targets_Info.txt.zip", tmp)
-    miRPos <- fread(unzip(file.path(tmp)),drop = c("MSA start", "MSA end", "PCT") )
-  }
-  unlink(tmp)
+  fams <- .fetch_Mirfamilies(species)
   
+  
+  
+  
+  
+  # # download TargetScan miRNA Positions
+  # tmp <- tempfile()
+  # if (species == "human"){
+  #   #Downlaod Targetscan Species specific UTR file
+  #   download.file(
+  #     "http://www.targetscan.org/vert_72/vert_72_data_download/Predicted_Targets_Info.default_predictions.txt.zip", tmp)
+  #   miRPos <- fread(unzip(file.path(tmp)),drop = c("MSA start", "MSA end", "PCT") )
+  # }else if(any(species %in% c("mouse","rat"))){
+  #   #Downlaod Targetscan Species specific UTR file
+  #   download.file(
+  #     "http://www.targetscan.org/mmu_72/mmu_72_data_download/Conserved_Family_Conserved_Targets_Info.txt.zip", tmp)
+  #   miRPos <- fread(unzip(file.path(tmp)),drop = c("MSA start", "MSA end", "PCT") )
+  # }
+  # unlink(tmp)
+  # 
   #filter for the miRNA species
-  miRPos <- miRPos[miRPos$`Species ID` == spec,]
-  miRPos$`Gene ID` <- gsub("\\..*","",miRPos$`Gene ID`)
-  miRPos$`Transcript ID` <- gsub("\\..*","",miRPos$`Transcript ID`)
-  miRPos
+  # miRPos <- miRPos[miRPos$`Species ID` == spec,]
+  # miRPos$`Gene ID` <- gsub("\\..*","",miRPos$`Gene ID`)
+  # miRPos$`Transcript ID` <- gsub("\\..*","",miRPos$`Transcript ID`)
+  # miRPos
 }
 
 
