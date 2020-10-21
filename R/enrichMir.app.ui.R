@@ -140,8 +140,9 @@ enrichMiR.ui <- function(){
                                     "In continuous testing mode, all genes get used for enrichment analysis.Here, we employ an analytic 
                                     rank-based enrichment analysis using a conversion of the scores as weights.")
                     )),
-                column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
-                column(10, tags$h5(textOutput("search for enrichments"))),
+                # column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
+                # column(10, tags$h5(textOutput("search for enrichments"))),
+                selectInput("view_test", "View test", choices = c("")),
                 box(width=12, title="Enrichment Plot", collapsible=TRUE, collapsed=TRUE,
                     withSpinner(plotlyOutput("bubble_plot")),
                     column(6,sliderInput(inputId = "label.sig.thres","Significance threshold to display labels",min = 0,max = 0.25,value = 0.05,step = 0.01)),
