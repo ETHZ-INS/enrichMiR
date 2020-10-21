@@ -96,9 +96,9 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   sets.properties <- .filterMatchSets(sets, sets.properties)
   # restrict sets according to properties and sizes
   sets <- sets[sets$set %in% row.names(sets.properties),]
-  sets.properties$size <- table(sets$set)[row.names(sets.properties)]
-  sets.properties <- sets.properties[sets.properties$size >= minSize & 
-                                       sets.properties$size <= maxSize,
+  sets.properties$fam_size <- table(sets$set)[row.names(sets.properties)]
+  sets.properties <- sets.properties[sets.properties$fam_size >= minSize & 
+                                       sets.properties$fam_size <= maxSize,
                                      , drop=FALSE]
   sets <- sets[sets$set %in% row.names(sets.properties),]
   if(is.factor(sets$set)) sets$set <- droplevels(sets$set)
