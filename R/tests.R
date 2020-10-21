@@ -158,7 +158,7 @@ siteoverlap <- function(signal, sets){
         BS.in=xin,
         otherBS.in=bs.sig-xin,
         BS.inBG=xout,
-        enrichment=log2((xin/(bs.sig-xin))/(xout/(bs.bg-xout))),
+        enrichment=log2(((1+xin)/(bs.sig-xin))/((1+xout)/(bs.bg-xout))),
         otherBS.inBG=bs.bg-xout,
         under.pvalue=p2,
         pvalue=p1
