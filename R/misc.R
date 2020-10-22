@@ -191,7 +191,7 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
   df <- aggregate(df, by=list(RN=new.rn), FUN=function(x){
     if(is.factor(x)) x <- as.character(x)
     if(length(x)==1) return(x)
-    if(is.numeric(x)) return(x[which.max(abs(x),na.rm=TRUE)])
+    if(is.numeric(x)) return(x[which.max(abs(x))])
     paste(sort(x), collapse=";")
   })
   row.names(df) <- df[,1]

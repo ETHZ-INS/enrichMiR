@@ -124,7 +124,8 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   o <- new("enrich.results", input=list(x=x, sets.properties=sets.properties), 
            binary.signatures=binary.signatures, info=list(call=match.call()))
   o@overlaps <- lapply(binary.signatures, FUN=function(x){
-    lapply(split(sets$feature, sets$set), y=names(x)[x], FUN=intersect)
+    FactorList(lapply(split(sets$feature, sets$set), 
+                      FUN=function(y) sort(intersect(y,names(x)[x]))))
   })
   if(keepAnnotation) o@input$sets <- sets
 
@@ -206,13 +207,18 @@ enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, cleanNames
 #' Returns the results table of an enrich.results object.
 #'
 #' @param object An object of class `enrich.results`.
-#' @param test The name of a test, or a vector of such names. If ommitted (default), all available tests are returned. Note that more detailed results are returned when looking at a specific test.
+#' @param test The name of a test, or a vector of such names. If ommitted (default), a 
+#' merge of all available tests is returned. Note that more detailed results are returned
+#'  when looking at a specific test.
+#' @param getFeatures Logical; whether to return overlapping features.
+#' @param flatten Logical; whether to return a normal data.frame instead of a DataFrame.
 #' 
-#' @return a data.frame.
+#' @return a DataFrame or data.frame.
 #'
 #' @export
-getResults <- function(object, test=NULL){
+getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
   if(!is(object,"enrich.results")) stop("object should be of class `enrich.results'")
+  if(is.null(test) && length(object@res)==1) test <- names(object@res)
   if(!is.null(test) && !all(test %in% names(object@res))) 
     stop(paste("Required test not in the object's results. Available tests are:",
                paste(names(object@res),collapse=", ")))
@@ -238,7 +244,19 @@ getResults <- function(object, test=NULL){
     res$FDR.mean <- rowMeans(as.matrix(res[,fdr]),na.rm=T)
     res$FDR.geomean <- ob
   }
-  dround(res[order(ob),])
+  res <- dround(res[order(ob),], roundGreaterThan1=TRUE)
+  if(getFeatures && length(object@overlaps)>0){
+    res <- DataFrame(res)
+    for(f in names(object@overlaps)){
+      if(flatten){
+        res[[paste0("genes.", f)]] <- sapply(object@overlaps[[f]][row.names(res)], collapse=",", FUN=paste)
+      }else{
+        res[[paste0("genes.", f)]] <- FactorList(lapply(row.names(res), FUN=function(x) object@overlaps[[f]][[x]]))
+      }
+    }
+  }
+  if(flatten) res <- as.data.frame(res)
+  res
 }
 
 
@@ -274,7 +292,17 @@ availableTests <- function(x=NULL, sets=NULL){
 }
 
 .filterMatchSets <- function(sets, props, tryPrefixRemoval=TRUE){
-  if(is.null(props)) return(data.frame(row.names=unique(sets$set)))
+  if(is.null(props)){
+    if(is.null(fams <- metadata(sets)$families))
+      return(data.frame(row.names=unique(sets$set)))
+    props <- split(names(fams),fams)
+    props <- data.frame(row.names=names(props),
+                        members=sapply(props, FUN=function(x) paste(sort(x),collapse=";")))
+    if(length(miss <- setdiff(unique(sets$set),row.names(props)))>0){
+      props <- rbind(props, data.frame(row.names = miss, members=miss))
+    }
+    return(props)
+  }
   if(is.null(dim(props))){
     if(is.null(names(props))){
       if(!is.character(props)) stop("Unrecognized set properties")
@@ -365,7 +393,18 @@ availableTests <- function(x=NULL, sets=NULL){
       w <- which(duplicated(n))
       x <- x[!w]
       names(x) <- n[!w]
+    }else{
+      names(x) <- n
     }
+  }else if(!is.null(dim(x)) && any(row.names(x) %in% names(ss))){
+    x <- .homogenizeDEA(x)
+    x <- x[order(x$FDR),]
+    n <- row.names(x)
+    w <- which(n %in% names(ss))
+    n[w] <- as.character(ss[n[w]])
+    w <- duplicated(n)
+    x <- x[!w,]
+    row.names(x) <- n[!w]
   }
   return(x)
 }

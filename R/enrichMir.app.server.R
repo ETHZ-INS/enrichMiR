@@ -167,8 +167,7 @@ enrichMiR.server <- function(){
     observe({
       if(!is.null(EN_Object())){
         if(!is.null(m <- metadata(EN_Object())$families)){
-          ids <- names(m)
-          updateSelectizeInput(session, "mir_fam", choices=unique(ids), server=TRUE)
+          updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
         }
       }
     }) 
@@ -224,11 +223,11 @@ enrichMiR.server <- function(){
       if(is.null(ER())) return(NULL)
       test <- input$view_test
       if(is.null(input$view_test) || input$view_test==""){
-        er <- getResults(ER())
+        er <- getResults(ER(), getFeatures=FALSE, flatten=TRUE)
         er$FDR <- er$FDR.geomean
         er$enrichment <- rowMeans(er[,grep("nrichment|beta|coefficient",colnames(er)),drop=FALSE],na.rm=TRUE)
       }else{
-        er <- getResults(ER(), test=test)
+        er <- getResults(ER(), test=test, getFeatures=FALSE, flatten=TRUE)
       }
       ggplotly(enrichPlot(er, repel=FALSE, label.sig.thres = input$label.sig.thres,
                           min.enr.thres = input$label.enr.thres, maxLabels = input$label_n ))
@@ -238,7 +237,7 @@ enrichMiR.server <- function(){
       if(is.null(ER())) return(NULL)
       test <- input$view_test
       if(is.null(input$view_test) || input$view_test=="") test <- NULL
-      return(dtwrapper(getResults(ER(), test=test)))
+      return(dtwrapper(getResults(ER(), test=test, flatten=TRUE)))
     })
     
     if(isTRUE(getOption("shiny.testmode"))) print("END LOADING")
