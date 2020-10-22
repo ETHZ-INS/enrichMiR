@@ -167,7 +167,7 @@ CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"),
 #' @import ggplot2
 enrichPlot <- function( res,
                         enr.field=c("enrichment","normalizedEnrichment","beta","coefficient"),
-                        size.field=c("overlap", "fam_size"),
+                        size.field=c("overlap", "set_size"),
                         col.field=NULL,
                         sig.field="FDR", 
                         max.sig.thres=100, 
@@ -196,7 +196,7 @@ enrichPlot <- function( res,
       stop("`label.field` not found.")
   }
   if(!is.null(res[["overlap"]])) res[["overlap"]] <- as.numeric(res[["overlap"]])
-  if(!is.null(res[["fam_size"]])) res[["fam_size"]] <- as.numeric(res[["fam_size"]])
+  if(!is.null(res[["set_size"]])) res[["set_size"]] <- as.numeric(res[["set_size"]])
   
   if(!is.null(min.enr.thres)) res <- res[res[[enr.field]]>=min.enr.thres,]
   if(max.sig.thres>1){
