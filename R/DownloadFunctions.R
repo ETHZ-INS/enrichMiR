@@ -65,11 +65,12 @@
   symbol <- switch(species,
                    human="hgnc_symbol",
                    mouse="mgi_symbol",
+                   rat="mgi_symbol",
                    "uniprot_gn_symbol")
   ensembl <- switch(species,
                human = useMart("ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl"),
                mouse = useMart("ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl"),
-               rat = useMart("ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl"), 
+               rat = useMart("ENSEMBL_MART_ENSEMBL",dataset="rnorvegicus_gene_ensembl"), 
                stop("No matched species"))
   anno <- getBM(attributes=c("ensembl_gene_id",symbol), mart = ensembl)
   anno <- anno[anno[,2]!="",]
