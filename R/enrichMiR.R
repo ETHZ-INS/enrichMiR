@@ -66,6 +66,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   }else{
     if(!is.null(background)) warning("`background` ignored.")
   }
+  x <- .homogenizeDEA(x)
   x <- .applySynonyms(x, sets)
   sets <- .list2DF(sets)
   
@@ -397,7 +398,7 @@ availableTests <- function(x=NULL, sets=NULL){
       names(x) <- n
     }
   }else if(!is.null(dim(x)) && any(row.names(x) %in% names(ss))){
-    x <- .homogenizeDEA(x)
+    # x <- .homogenizeDEA(x)
     x <- x[order(x$FDR),]
     n <- row.names(x)
     w <- which(n %in% names(ss))
