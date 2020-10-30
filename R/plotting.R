@@ -201,7 +201,7 @@ enrichPlot <- function( res,
   if(!is.null(min.enr.thres)) res <- res[res[[enr.field]]>=min.enr.thres,]
   res <- res[order(res[[sig.field]]),]
   if(max.sig.thres>1){
-    res <- res[head(res[[sig.field]],n=max.sig.thres),]
+    res <- res[head(order(res[[sig.field]]),n=max.sig.thres),]
   }else{
     res <- res[which(res[[sig.field]] <= max.sig.thres),]
   }

@@ -247,16 +247,20 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
   }
   res <- dround(res[order(ob),], roundGreaterThan1=TRUE)
   if(getFeatures && length(object@overlaps)>0){
-    res <- DataFrame(res)
     for(f in names(object@overlaps)){
       if(flatten){
         res[[paste0("genes.", f)]] <- sapply(object@overlaps[[f]][row.names(res)], collapse=",", FUN=paste)
       }else{
+        res <- DataFrame(res)
         res[[paste0("genes.", f)]] <- FactorList(lapply(row.names(res), FUN=function(x) object@overlaps[[f]][[x]]))
       }
     }
   }
-  if(flatten) res <- as.data.frame(res)
+  if(flatten) {
+    return(res)
+  }else{
+    res <- DataFrame(res) 
+    }
   res
 }
 
