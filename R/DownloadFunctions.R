@@ -135,6 +135,8 @@
   a[,1] <- as.factor(a[,1])
   a[,2] <- as.factor(a[,2])
   a[,3] <- as.integer(a[,3])
+  a[[4]][a[[4]] == "NULL"] <- 0
+  a[,4] <- as.numeric(a[,4])
   #filter for the miRNA species
   a <- DataFrame(a)
   metadata(a)$feature.synonyms <- syn
