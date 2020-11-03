@@ -65,7 +65,7 @@
   symbol <- switch(species,
                    human="hgnc_symbol",
                    mouse="mgi_symbol",
-                   rat="mgi_symbol",
+                   rat="rgd_symbol",
                    "uniprot_gn_symbol")
   ensembl <- switch(species,
                human = useMart("ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl"),

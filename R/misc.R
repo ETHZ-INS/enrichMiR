@@ -84,7 +84,8 @@ recapitalizeMiRs <- function(x){
 }
 
 .homogenizeDEA <- function(x){
-  if(is.null(row.names(x)) && 
+  x <- as.data.frame(x)
+  if(all(row.names(x) == seq_len(nrow(x))) && 
      (is.character(x[,1]) || !any(duplicated(x[,1]))))
     row.names(x) <- x[,1]
   colnames(x) <- gsub("log2FoldChange|log2FC|log2\\(fold_change\\)|log2\\.fold_change\\.",
