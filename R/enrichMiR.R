@@ -332,7 +332,7 @@ availableTests <- function(x=NULL, sets=NULL){
     stop("The set properties do not correspond to the sets!")
   warning(sum(!(row.names(props) %in% usets)), " sets in the set.properties object",
           " are not in the sets...")
-  props[intersect(row.names(props),usets),]
+  props[intersect(row.names(props),usets),,drop=FALSE]
 }
 
 .list2DF <- function(sets){
