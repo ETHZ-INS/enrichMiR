@@ -9,10 +9,12 @@ enrichMiR.server <- function(){
   library(enrichMiR)
   library(GO.db)
   
-  dtwrapper <- function(d, pageLength=25){
+  dtwrapper <- function(d, pageLength=25, hide_cols){
     datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
                options=list(pageLength=pageLength, dom = "fltBip", rownames=FALSE,
-                            colReorder=TRUE, 
+                            colReorder=TRUE,
+                            columnDefs = list(list(visible=FALSE, 
+                                                   targets=na.omit(match(hide_cols, colnames(d))))),
                             buttons=c('copy', 'csv', 'excel', 'csvHtml5') ) )
   }
   
@@ -162,8 +164,6 @@ enrichMiR.server <- function(){
     ##############################
     ## CD plot
     
-    # Doesn't work yet. Error seems to lie above in the metadata assignment
-      
     observe({
       if(!is.null(EN_Object())){
         if(!is.null(m <- metadata(EN_Object())$families)){
@@ -180,25 +180,37 @@ enrichMiR.server <- function(){
     ##############################
     ## Enrichment analysis
     
-    # I would do the Ensembl / Gene Symbol filtering in here since we need to do it seperate for DEAs and Subset / Back
-    # >> I tried but this doesn't work yet, doesn't convert the feature names to Ensembl
+    ViewTest <- reactive({
+      switch(input$test_type,
+             "binary" = switch(input$up_down,
+                               ".up" = "siteoverlap.up",
+                               ".down" = "siteoverlap.down"),
+             "continous" = "areamir",
+             "advanced" = input$view_test)
+    })
     
-    # Include the observeEvent
-    
+    output$test_info <- renderPrint({ # print the test
+      if(is.null(ViewTest()) || ViewTest()=="") return("")
+      out <- capture.output(ViewTest())
+      cat(out)
+    })
+      
+      
     # We would like the the overlap names in the result table
     
     # We would like to have the mir_names in the result table
     
-    
-    ER <- reactive({
+    ER <- eventReactive(input$enrich, {
       if(is.null(input$input_type) || is.null(EN_Object())) return(NULL)
       if(isTRUE(getOption("shiny.testmode"))) print("ER")
-      if(input$collection == "Targetscan all miRNA BS") detail <- "This will take a while..."
       mirexp <- miRNA_exp()
       if(!is.null(mirexp) && is.null(dim(mirexp)))
         mirexp <- data.frame(row.names=mirexp, miRNA=mirexp)
       
-      tests <- c("siteoverlap","areamir")
+      standard_tests <- c("siteoverlap","areamir")
+      tests <- c(standard_tests, input$tests2run)
+      msg <- paste0("Performing enrichment analyses with the following tests: ",paste(tests,collapse=", "))
+      message(msg)
       if(input$input_type == "dea"){
         if(is.null(DEA())) return(NULL)
         sig <- DEA()
@@ -209,20 +221,23 @@ enrichMiR.server <- function(){
         bg <- Back()
       }
       if(length(sig)==0) return(NULL)
+      detail <- NULL
+      if(input$collection == "Targetscan all miRNA BS") detail <- "This will take a while..."
+      withProgress(message=msg, detail=detail, value=1, max=3, {
       testEnrichment(sig, EN_Object(), background=bg, sets.properties = mirexp,
                      tests=tests, minSize=input$minsize, th.FDR=input$dea_sig_th)
+      })
     })
     
     observe({
       if(!is.null(ER())) updateSelectInput(session, "view_test", choices=c("",names(ER())))
     })
 
-    #include width or heigts, whichever was working with renderplotly
     
     output$bubble_plot <- renderPlotly({
       if(is.null(ER())) return(NULL)
-      test <- input$view_test
-      if(is.null(input$view_test) || input$view_test==""){
+      test <- ViewTest()
+      if(is.null(ViewTest()) || ViewTest()==""){
         er <- getResults(ER(), getFeatures=FALSE, flatten=TRUE)
         er$FDR <- er$FDR.geomean
         er$enrichment <- rowMeans(er[,grep("nrichment|beta|coefficient",colnames(er)),drop=FALSE],na.rm=TRUE)
@@ -233,12 +248,54 @@ enrichMiR.server <- function(){
                           min.enr.thres = input$label.enr.thres, maxLabels = input$label_n ))
     })
     
+    # columns2hide <- reactive({
+    #   show_standard <- c("enrichment","pvalue","FDR")
+    #   if(is.null(input$columns2show)) return(setdiff(colnames(output$hits_table),show_standard))
+    #   show_add <- input$columns2show
+    #   if(grepl("genes",show_add)){
+    #     show_add["genes"] <- NULL
+    #     show_add <- c(show_add,"genes.down","genes.up")
+    #   }
+    #   show <- c(show_standard,show_add)
+    #   return(setdiff(colnames(output$hits_table),show))
+    # })
+    
     output$hits_table <- renderDT({ # prints the current hits
       if(is.null(ER())) return(NULL)
-      test <- input$view_test
-      if(is.null(input$view_test) || input$view_test=="") test <- NULL
-      return(dtwrapper(getResults(ER(), test=test, flatten=TRUE)))
+      test <- ViewTest()
+      if(is.null(ViewTest()) || ViewTest()=="") test <- NULL
+      rr <- getResults(ER(), test=test, flatten=TRUE)
+      show_standard <- c("enrichment","pvalue","FDR")
+      if(is.null(input$columns2show)){
+        columns2hide <- setdiff(colnames(rr),show_standard)
+      }else{
+        show_add <- input$columns2show
+          if(any(show_add %in% "genes")){
+            show_add <- c(show_add,"genes.down","genes.up")
+            show_add <- show_add[!show_add %in% "genes"]
+            show <- c(show_standard,show_add)
+          }else{
+            show <- c(show_standard,show_add)
+          }
+        columns2hide <- setdiff(colnames(rr),show)
+      }
+      return(dtwrapper(rr,hide_cols = columns2hide))
     })
+    
+    output$dl_hits <- downloadHandler(
+      filename = function() {
+        if(is.null(ER())) return(NULL)
+        fn <- paste0("EnrichMir_hits_",ViewTest(),"_",Sys.Date(),".csv")
+        fn
+      },
+      content = function(con) {
+        if(is.null(ER())) return(NULL)
+        test <- ViewTest()
+        h <- getResults(ER(), test=test, flatten=TRUE)
+        write.csv(h, con)
+      }
+    )
+      
     
     if(isTRUE(getOption("shiny.testmode"))) print("END LOADING")
     

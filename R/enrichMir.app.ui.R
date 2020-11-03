@@ -4,6 +4,7 @@
 #' @export
 enrichMiR.ui <- function(){
   library(shiny)
+  library(shinyjqui)
   library(DT)
   library(shinydashboard)
   library(shinycssloaders)
@@ -18,7 +19,8 @@ enrichMiR.ui <- function(){
                        menuItem("Species and miRNAs", tabName = "tab_species"),
                        menuItem("Input genes/DEA", tabName = "tab_input"),
                        menuItem("Enrichment analysis",
-                                menuSubItem("enrich", tabName = "tab_enrich"),
+                                menuSubItem("Enrichment Options", tabName = "tab_enrich_op"),
+                                menuSubItem("Enrich!", tabName = "tab_enrich"),
                                 menuSubItem("CD Plot", tabName = "tab_cdplot")
                        ),
                        menuItem("Co-localization", 
@@ -118,11 +120,28 @@ enrichMiR.ui <- function(){
                        )
                 )
         ),
-        tabItem(tabName = "tab_enrich",
-                box(title = "Select enrichment options:", collapsible=TRUE, collapsed=TRUE, width=12,
+        tabItem(tabName = "tab_enrich_op",
+                box(title = "Select enrichment options:", collapsible=TRUE, collapsed=FALSE, width=12,
                     sliderInput(inputId = "minsize", label = "Select the minium number of targets to be considered for testing",
                                 min = 1,max = 20,value = 5, step = 1),
                     br(),
+                    box(title = "Advanced Options", collapsible=TRUE, collapsed=TRUE, width=12,
+                        tags$h5(em("We recommend to only change test settings after reading the EnrichMir manual and the Benchmark descriptions in the paper")),
+                        tags$h5(em("By default, we always perform the 'siteoverlap' and the 'areamir' tests")),
+                        checkboxGroupInput(inputId = "tests2run", label = "Select additional tests to run", choices = list(
+                                                                                                                    "overlap" = "overlap",
+                                                                                                                    "weight.overlap" ="woverlap",
+                                                                                                                    "plMod" = "plMod",
+                                                                                                                    "modscore" = "modscore",
+                                                                                                                    "ks" = "ks",
+                                                                                                                    "mw" = "mw"), selected = NULL, inline = FALSE,width = NULL)
+                        )
+                    )
+                ),
+        tabItem(tabName = "tab_enrich",
+                column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
+                column(10, tags$h5(textOutput("search for enrichments"))),
+                box(width=12, title="Select test to view", collapsible=TRUE, collapsed=TRUE,
                     tabBox(id="test_type", width=12,
                            tabPanel(title = "Binary Test", value = "binary",
                                     radioButtons(inputId = "up_down", label = "Interested in up- or downregulated genes:",
@@ -132,25 +151,31 @@ enrichMiR.ui <- function(){
                                     "A hypergeometric test on the number of binding sites will be performed to calculate significance"),
                            tabPanel(title = "Continuous Test",value = "continous",
                                     tags$h4(em("Only with DEA-Input")),br(),
-                                    # radioButtons(inputId = "cont_test_buttons", label = "Choose to perform a continuous enrichment test based on:",
-                                    #              choices = c("Site Scores (only miRNAs)" = "SC",
-                                    #                          "logFC" = "LFC"),
-                                    #              selected = "SC"),
                                     br(),
                                     "In continuous testing mode, all genes get used for enrichment analysis.Here, we employ an analytic 
-                                    rank-based enrichment analysis using a conversion of the scores as weights.")
-                    )),
-                # column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
-                # column(10, tags$h5(textOutput("search for enrichments"))),
-                selectInput("view_test", "View test", choices = c("")),
+                                    rank-based enrichment analysis using a conversion of the scores as weights."),
+                           tabPanel(title = "Advanced - Select test by name",value = "advanced",
+                                    tags$h4(em("In case you've selected additional tests for the Enrichment Analyses,
+                                               you can select them here. Again, please refer to the manual as 
+                                               well as the benchmark results for individual test infos!")),br(),
+                                    selectInput("view_test", "View test", choices = c(""))
+                           )
+                    ),
+                    tags$h5("Name of chosen test:"),
+                    verbatimTextOutput(outputId = "test_info"),
+                    ),
                 box(width=12, title="Enrichment Plot", collapsible=TRUE, collapsed=TRUE,
-                    withSpinner(plotlyOutput("bubble_plot")),
+                    withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))),
                     column(6,sliderInput(inputId = "label.sig.thres","Significance threshold to display labels",min = 0,max = 0.25,value = 0.05,step = 0.01)),
                     column(6,sliderInput(inputId = "label.enr.thres","Enrichment threshold to display labels",min = 0.5,max = 10,value = 1,step = 0.5)),
                     column(6, numericInput(inputId = "label_n", "Max number of Labels", value=10, min=1, max=50))
                 ),
                 box(width=12, title="Table", collapsible=TRUE, collapsed = TRUE,
-                    withSpinner(DTOutput("hits_table")))
+                    checkboxGroupInput(inputId = "columns2show", label = "Select add. columns to be shown:", choices = list(
+                      "miRNA names" = "members",
+                      "predicted target genes" ="genes"), selected = NULL, inline = TRUE),
+                    withSpinner(DTOutput("hits_table")),
+                    downloadLink('dl_hits', label = "Download all"))
         ),
         tabItem(tabName = "tab_cdplot",
                 box(width=12, title="CD Plot", 
@@ -158,7 +183,7 @@ enrichMiR.ui <- function(){
                     br(), br(),
                     column(6,selectizeInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
                     column(6,selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
-                    withSpinner(plotOutput("cd_plot"))
+                    withSpinner(jqui_resizable(plotOutput("cd_plot")))
                 )
         ),
         tabItem(tabName = "tab_co_mode",
