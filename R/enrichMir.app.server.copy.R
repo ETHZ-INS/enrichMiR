@@ -198,7 +198,7 @@ enrichMiR.server <- function(){
       )
       dea <- DEA()
       TS <- EN_Object()
-      dea <- .applySynonyms(dea, TS)
+      dea <- enrichMiR:::.applySynonyms(dea, TS)
       CDplot2(dea, TS, setName=input$mir_fam, by = input$CD_type, k=input$CD_k) + 
         xlim(-input$CDplot_xaxis, input$CDplot_xaxis)
     })
