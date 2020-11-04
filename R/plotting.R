@@ -17,7 +17,6 @@
 #' @param dig.lab Number of digits for automatically-generated breaks.
 #' @param minN The minimum number of items per group (groups below this will be
 #' merged if the breaks are numeric).
-#' @param x.axis Absolute number of logFC to display on the x-axis
 #' @param ... Passed to `geom_line` (can for instance be used for `size`, etc.)
 #'
 #' @return A ggplot.
@@ -26,7 +25,7 @@
 #' 
 #' @export
 CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE, 
-                   dig.lab=NULL, minN=10, x.axis = 2, ...){
+                   dig.lab=NULL, minN=10, ...){
   library(ggplot2)
   if(!is.list(ll)){
     if(is.null(by)) stop("If `ll` is not already a list, `by` should be given.")
@@ -40,11 +39,19 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
       if(is.null(dig.lab)) dig.lab <- max(c(2,3-ceiling(log10(abs(mean(by))))))
       if(is.null(breaks)) breaks <- k
       if(sameFreq){
-        breaks <- 1
-        while(length(breaks)<3){
-          k <- k+1
-          breaks <- unique(quantile(by, prob=seq(from=0, to=1, length.out=k+1),
+        k <- k+1
+        breaks <- unique(quantile(by, prob=seq(from=0, to=1, length.out=k),na.rm=TRUE))
+        if(length(breaks)<k)
+          breaks <- unique(quantile(c(0,by[by!=0]), prob=seq(from=0, to=1, length.out=k),
+                                    na.rm=TRUE))
+        if(length(breaks)<k){
+          desiredK <- k
+          breaks <- 1
+          while(length(breaks)<desiredK && k<100){
+            k <- k
+            breaks <- unique(quantile(by, prob=seq(from=0, to=1, length.out=k),
                                   na.rm=TRUE))
+          }
         }
       }
       ll <- split(ll, cut(by, breaks, dig.lab=dig.lab))
@@ -59,7 +66,7 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
                                     as.numeric(table(d$Sets)), ")")
   p <- ggplot(d, aes(x,y,colour=Sets)) + 
     geom_vline(xintercept=0, linetype="dashed") + geom_line(...) 
-  p + ylab("Cumulative proportion") + xlim(-x.axis,x.axis)
+  p + ylab("Cumulative proportion")
 }
 
 #' CDplot2
@@ -105,10 +112,15 @@ CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"),
   by <- rowsum(sets[[by]], sets$feature)[,1]
   by2 <- by[names(dea)]
   by2[is.na(by2)] <- 0
-  p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size, ...) +
-    xlab("logFC") + ggtitle(setName)
+  if(k==2){
+    ll <- split(dea, by2!=0)
+    names(ll) <- c("non-targets","targets")
+    p <- CDplot(ll, size=line.size, ...)
+  }else{
+    p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size, ...)
+  }
   if(point.size>0) p <- p + geom_point(size=point.size)
-  p
+  p + xlab("logFC") + ggtitle(setName)
 }
 
 .mergeSmallerGroups <- function(ll, minN=10){
