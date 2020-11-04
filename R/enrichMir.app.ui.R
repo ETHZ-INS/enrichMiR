@@ -188,7 +188,9 @@ enrichMiR.ui <- function(){
                     br(), br(),
                     column(6,selectizeInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
                     column(6,selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
-                    withSpinner(jqui_resizable(plotOutput("cd_plot")))
+                    withSpinner(jqui_resizable(plotOutput("cd_plot",width = '100%', height = '400px'))),
+                    br(),br(),br(),br(),br(),
+                    column(12,sliderInput(inputId = "CDplot_xaxis","logFC to display on x.axis",min = 0.5,max = 5,value = 2,step = 0.5))
                 )
         ),
         tabItem(tabName = "tab_co_mode",

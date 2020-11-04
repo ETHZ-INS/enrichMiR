@@ -41,7 +41,7 @@ enrichMiR.server <- function(){
       }else{
         updf <- read.csv(upFile$datapath, header = input$header, row.names=1)
       }
-      enrichMiR:::.homogenizeDEA(updf)
+      updf <- enrichMiR:::.homogenizeDEA(updf)
     })
     
     ## Include , and "" gsub
@@ -167,14 +167,29 @@ enrichMiR.server <- function(){
     observe({
       if(!is.null(EN_Object())){
         if(!is.null(m <- metadata(EN_Object())$families)){
-          updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
+          if(!is.null(miRNA_exp())) {
+            mirexp <- miRNA_exp()
+              if(is.null(dim(mirexp))) {
+                mirexp <- mirexp
+              }else{
+                mirexp <- mirexp[,1]
+              }
+            m <- m[names(m) %in% mirexp]
+          }
+        updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
         }
       }
     }) 
               
     output$cd_plot <- renderPlot({
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
-      CDplot2(DEA(), EN_Object(), setName=input$mir_fam, by = input$CD_type)
+      validate(
+        need(any(EN_Object()$set %in% input$mir_fam), "This miRNA has no annotated Binding Site")
+      )
+      dea <- DEA()
+      TS <- EN_Object()
+      dea <- .applySynonyms(dea, TS)
+      CDplot2(dea, TS, setName=input$mir_fam, by = input$CD_type, x.axis = input$CDplot_xaxis)
     })
     
     ##############################
@@ -185,7 +200,7 @@ enrichMiR.server <- function(){
       if(!is.null(ER())) updateSelectInput(session, "view_test", choices=c("",names(ER())))
     })
     
-    # Get choices just for siteoverlap
+    # Get user-friendly choices just for siteoverlap
     observe({
       if(!is.null(ER()))
       if(!is.null(names(ER()))) 

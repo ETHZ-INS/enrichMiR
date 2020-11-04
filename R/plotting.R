@@ -17,6 +17,7 @@
 #' @param dig.lab Number of digits for automatically-generated breaks.
 #' @param minN The minimum number of items per group (groups below this will be
 #' merged if the breaks are numeric).
+#' @param x.axis Absolute number of logFC to display on the x-axis
 #' @param ... Passed to `geom_line` (can for instance be used for `size`, etc.)
 #'
 #' @return A ggplot.
@@ -25,7 +26,7 @@
 #' 
 #' @export
 CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE, 
-                   dig.lab=NULL, minN=10, ...){
+                   dig.lab=NULL, minN=10, x.axis = 2, ...){
   library(ggplot2)
   if(!is.list(ll)){
     if(is.null(by)) stop("If `ll` is not already a list, `by` should be given.")
@@ -57,8 +58,8 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
   if(addN) levels(d$Sets) <- paste0(levels(d$Sets), " (n=",
                                     as.numeric(table(d$Sets)), ")")
   p <- ggplot(d, aes(x,y,colour=Sets)) + 
-    geom_vline(xintercept=0, linetype="dashed") + geom_line(...)
-  p + ylab("Cumulative proportion")
+    geom_vline(xintercept=0, linetype="dashed") + geom_line(...) 
+  p + ylab("Cumulative proportion") + xlim(-x.axis,x.axis)
 }
 
 #' CDplot2
