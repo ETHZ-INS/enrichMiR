@@ -34,16 +34,16 @@ enrichMiR.ui <- function(){
     
     ## Body Content
     dashboardBody(
-      tags$head(tags$style(HTML("
-#sel_test_div label {
-  display: table-cell;
-  text-align: center;
-  vertical-align: middle;
-}
-#sel_test_div .form-group {
-  display: table-row;
-}
-"))),
+#       tags$head(tags$style(HTML("
+# #sel_test_div label {
+#   display: table-cell;
+#   text-align: center;
+#   vertical-align: middle;
+# }
+# #sel_test_div .form-group {
+#   display: table-row;
+# }
+# "))),
       tabItems(
         tabItem(tabName = "tab_species",
                     box(title = "Select Species and Collection", width=12,
@@ -150,10 +150,10 @@ enrichMiR.ui <- function(){
                     )
                 ),
         tabItem(tabName = "tab_enrich",
-                column(6,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
-                column(4, id="sel_test_div", selectInput("view_test", "Test:", choices=c(), width="450px")),
-                column(2, checkboxInput("view_all", "advanced")),
-                
+                column(4,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))), 
+                br(), br(), br(),
+                column(9, id="sel_test_div", selectInput("view_test", "View test", choices=c(), width="90%")),
+                column(3, style = "margin-top: 30px;", checkboxInput("view_all", "advanced")),
                 # box(width=12, title="Select test to view", collapsible=TRUE, collapsed=TRUE,
                 #     tabBox(id="test_type", width=12, 
                 #            tabPanel(title = "Binary Test", value = "binary",
