@@ -146,7 +146,8 @@ enrichMiR.ui <- function(){
                                                                                                                     "plMod" = "plMod",
                                                                                                                     "modscore" = "modscore",
                                                                                                                     "ks" = "ks",
-                                                                                                                    "mw" = "mw"), selected = NULL, inline = FALSE,width = NULL)
+                                                                                                                    "mw" = "mw",
+                                                                                                                    "regmir" = "regmir"), selected = NULL, inline = FALSE,width = NULL)
                         )
                     )
                 ),
