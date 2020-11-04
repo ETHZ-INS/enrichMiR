@@ -151,7 +151,7 @@ enrichMiR.ui <- function(){
                 ),
         tabItem(tabName = "tab_enrich",
                 column(6,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
-                column(4, id="sel_test_div", selectInput("view_test", "Test:", choices=c(), width="450px")),
+                column(4, id="sel_test_div", selectInput("view_test", "Test:", choices=c())),
                 column(2, checkboxInput("view_all", "advanced")),
                 
                 # box(width=12, title="Select test to view", collapsible=TRUE, collapsed=TRUE,
@@ -196,13 +196,14 @@ enrichMiR.ui <- function(){
         ),
         tabItem(tabName = "tab_cdplot",
                 box(width=12, title="CD Plot", 
-                    "(CD plots require a DEA input.)",
+                    "(Cumulative distribution plots require a DEA input.)",
                     br(), br(),
                     column(6,selectizeInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
                     column(6,selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
                     withSpinner(jqui_resizable(plotOutput("cd_plot",width = '100%', height = '400px'))),
                     br(),br(),br(),br(),br(),
-                    column(12,sliderInput(inputId = "CDplot_xaxis","logFC to display on x.axis",min = 0.5,max = 5,value = 2,step = 0.5))
+                    column(6,sliderInput(inputId = "CDplot_xaxis","logFC to display on x.axis",min = 0.5,max = 5,value = 2,step = 0.5)),
+                    column(6,sliderInput(inputId = "CD_k","Number of sets",min=2, max=6, value=2, step=1))
                 )
         ),
         tabItem(tabName = "tab_co_mode",
