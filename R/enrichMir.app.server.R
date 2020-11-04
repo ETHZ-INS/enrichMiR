@@ -216,7 +216,6 @@ enrichMiR.server <- function(){
       if(isTRUE(input$view_all)) return(choices)
       choices <- lapply(choices, FUN=function(x) 
         head(grep("siteoverlap|areamir",as.character(x),value=TRUE),1))
-      print(choices)
       choices[lengths(choices)>0]
     })
     
