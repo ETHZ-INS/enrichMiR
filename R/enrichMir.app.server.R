@@ -281,7 +281,7 @@ enrichMiR.server <- function(){
         er <- getResults(ER(), test=test, getFeatures=FALSE, flatten=TRUE)
       }
       ggplotly(enrichPlot(er, repel=FALSE, label.sig.thres = input$label.sig.thres, sig.field = input$sig.field,
-                          min.enr.thres = input$label.enr.thres, maxLabels = input$label_n ))
+                          label.enr.thres = input$label.enr.thres, maxLabels = input$label_n ))
     })
     
     
