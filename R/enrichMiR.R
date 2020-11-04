@@ -66,7 +66,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   }else{
     if(!is.null(background)) warning("`background` ignored.")
   }
-  x <- .homogenizeDEA(x)
+  if(!is.null(dim(x))) x <- .homogenizeDEA(x)
   x <- .applySynonyms(x, sets)
 
   if( (is.null(dim(x)) && !any(names(x) %in% sets$feature)) ||
@@ -402,8 +402,8 @@ availableTests <- function(x=NULL, sets=NULL){
     if((nDup <- sum(duplicated(n)))>0){
       warning(nDup, " duplicated feature(s) dropped.")
       w <- which(duplicated(n))
-      x <- x[!w]
-      names(x) <- n[!w]
+      x <- x[-w]
+      names(x) <- n[-w]
     }else{
       names(x) <- n
     }
