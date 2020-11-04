@@ -34,6 +34,16 @@ enrichMiR.ui <- function(){
     
     ## Body Content
     dashboardBody(
+      tags$head(tags$style(HTML("
+#sel_test_div label {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+}
+#sel_test_div .form-group {
+  display: table-row;
+}
+"))),
       tabItems(
         tabItem(tabName = "tab_species",
                     box(title = "Select Species and Collection", width=12,
@@ -140,32 +150,34 @@ enrichMiR.ui <- function(){
                     )
                 ),
         tabItem(tabName = "tab_enrich",
-                column(2,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
-                column(10, tags$h5(textOutput("search for enrichments"))),
-                box(width=12, title="Select test to view", collapsible=TRUE, collapsed=TRUE,
-                    tabBox(id="test_type", width=12, 
-                           tabPanel(title = "Binary Test", value = "binary",
-                                    selectInput("view_binary", "Interested in up- or downregulated genes:", choices = c("")),
-                                    # radioButtons(inputId = "up_down", label = "Interested in up- or downregulated genes:",
-                                    #              choices = c("Up" = ".up",
-                                    #                          "Down" = ".down"),
-                                    #              selected = ".down"),
-                                    "A hypergeometric test on the number of binding sites will be performed to calculate significance"),
-                           tabPanel(title = "Continuous Test",value = "continous",
-                                    tags$h4(em("Only with DEA-Input")),br(),
-                                    br(),
-                                    "In continuous testing mode, all genes get used for enrichment analysis.Here, we employ an analytic 
-                                    rank-based enrichment analysis using a conversion of the scores as weights."),
-                           tabPanel(title = "Advanced - Select test by name",value = "advanced",
-                                    tags$h4(em("In case you've selected additional tests for the Enrichment Analyses,
-                                               you can select them here. Again, please refer to the manual as 
-                                               well as the benchmark results for individual test infos!")),br(),
-                                    selectInput("view_test", "View test", choices = c(""))
-                           )
-                    ),
-                    tags$h5("Name of chosen test:"),
-                    verbatimTextOutput(outputId = "test_info"),
-                    ),
+                column(6,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
+                column(4, id="sel_test_div", selectInput("view_test", "Test:", choices=c(), width="450px")),
+                column(2, checkboxInput("view_all", "advanced")),
+                
+                # box(width=12, title="Select test to view", collapsible=TRUE, collapsed=TRUE,
+                #     tabBox(id="test_type", width=12, 
+                #            tabPanel(title = "Binary Test", value = "binary",
+                #                     selectInput("view_binary", "Interested in up- or downregulated genes:", choices = c("")),
+                #                     # radioButtons(inputId = "up_down", label = "Interested in up- or downregulated genes:",
+                #                     #              choices = c("Up" = ".up",
+                #                     #                          "Down" = ".down"),
+                #                     #              selected = ".down"),
+                #                     "A hypergeometric test on the number of binding sites will be performed to calculate significance"),
+                #            tabPanel(title = "Continuous Test",value = "continous",
+                #                     tags$h4(em("Only with DEA-Input")),br(),
+                #                     br(),
+                #                     "In continuous testing mode, all genes get used for enrichment analysis.Here, we employ an analytic 
+                #                     rank-based enrichment analysis using a conversion of the scores as weights."),
+                #            tabPanel(title = "Advanced - Select test by name",value = "advanced",
+                #                     tags$h4(em("In case you've selected additional tests for the Enrichment Analyses,
+                #                                you can select them here. Again, please refer to the manual as 
+                #                                well as the benchmark results for individual test infos!")),br(),
+                #                     selectInput("view_test", "View test", choices = c(""))
+                #            )
+                #     ),
+                #     tags$h5("Name of chosen test:"),
+                #     verbatimTextOutput(outputId = "test_info"),
+                #     ),
                 box(width=12, title="Enrichment Plot", collapsible=TRUE, collapsed=TRUE,
                     withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))),
                     column(6,sliderInput(inputId = "label.sig.thres","Significance threshold to display labels",min = 0,max = 0.25,value = 0.05,step = 0.01)),
