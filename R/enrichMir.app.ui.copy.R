@@ -157,10 +157,9 @@ enrichMiR.ui <- function(){
                     )
                 ),
         tabItem(tabName = "tab_enrich",
-                column(4,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))), 
-                br(), br(), br(),
-                column(9, id="sel_test_div", selectInput("view_test", "View test", choices=c(), width="90%")),
-                column(3, style = "margin-top: 30px;", checkboxInput("view_all", "advanced")),
+                column(3,style = "margin-top: 27px;",actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
+                column(7, id="sel_test_div", selectInput("view_test", "View test", choices=c(), width="90%")),
+                column(2, style = "margin-top: 27px;", checkboxInput("view_all", "advanced")),
                 box(width=12, title="Test Info", collapsible=TRUE, collapsed=TRUE,
                     tags$h5(em("By default we perform a binary and a continous test.")),
                     "1) The binary test is a hypergeometric test on the number of binding sites. It's results can be directly 
