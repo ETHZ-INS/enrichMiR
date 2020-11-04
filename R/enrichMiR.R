@@ -68,6 +68,12 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   }
   if(!is.null(dim(x))) x <- .homogenizeDEA(x)
   x <- .applySynonyms(x, sets)
+
+  if( (is.null(dim(x)) && !any(names(x) %in% sets$feature)) ||
+      (!is.null(dim(x)) && !any(row.names(x) %in% sets$feature)) )
+    stop("There is no match between the features of the `sets` and those of `x`. ",
+         "Are you sure that you are using the right annotation for your data?")
+  
   sets <- .list2DF(sets)
   
   if(is.null(dim(x))){

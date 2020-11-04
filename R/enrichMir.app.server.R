@@ -200,35 +200,37 @@ enrichMiR.server <- function(){
       if(!is.null(ER())) updateSelectInput(session, "view_test", choices=c("",names(ER())))
     })
     
+    testsAvailable <- reactive({
+      if(is.null(ER())) return(c())
+      nn <- names(ER())
+      choices <- list()
+      if(any(grepl("\\.up$|\\.down$",nn)))
+        choices <- list("Downregulated genes"=grep("\\.down$",nn,value=TRUE),
+                        "Upregulated genes"=grep("\\.up$",nn,value=TRUE))
+      if(length(tt <- setdiff(grep("overlap|regmir", nn, value=TRUE), unlist(choices)))>0)
+        choices$Binary <- tt
+      if(length(tt <- setdiff(nn, unlist(choices)))>0)
+        choices$Continuous <- tt
+      choices <- lapply(choices, FUN=function(x){ names(x) <- x; x})
+      if(length(nn)>1) choices[["All tests"]] <- c("merged"="")
+      if(isTRUE(input$view_all)) return(choices)
+      choices <- lapply(choices, FUN=function(x) 
+        head(grep("siteoverlap|areamir",as.character(x),value=TRUE),1))
+      choices[lengths(choices)>0]
+    })
+    
     # Get user-friendly choices just for siteoverlap
     observe({
-      if(!is.null(ER()))
-      if(!is.null(names(ER()))) 
-        nn <- names(ER())
-        nn <- nn[grep("siteoverlap",nn)]
-        names(nn)  <- gsub("(.*)(\\.)(.*)","\\3",nn)
-        names(nn)[names(nn) == "siteoverlap"] <- "no expression info in result"
-        so_list <- setNames(as.list(nn),names(nn))
-      updateSelectInput(session, "view_binary", choices=c("",so_list), selected = head(so_list,1))
+      updateSelectInput(session, "view_test", choices=testsAvailable())
     })
     
-    
-    ViewTest <- reactive({
-      switch(input$test_type,
-             "binary" = switch(input$view_binary,
-                               "siteoverlap.down" = "siteoverlap.down",
-                               "siteoverlap.up" = "siteoverlap.up",
-                              "siteoverlap" = "siteoverlap"),
-             "continous" = "areamir",
-             "advanced" = input$view_test)
-    })
-    
-    output$test_info <- renderPrint({ # print the test
-      if(is.null(ViewTest()) || ViewTest()=="") return("")
-      out <- capture.output(ViewTest())
-      cat(out)
-    })
-      
+# 
+#     output$test_info <- renderPrint({ # print the test
+#       if(is.null(ViewTest()) || ViewTest()=="") return("")
+#       out <- capture.output(ViewTest())
+#       cat(out)
+#     })
+#       
     
     ER <- eventReactive(input$enrich, {
       if(is.null(input$input_type) || is.null(EN_Object())) return(NULL)
@@ -261,11 +263,8 @@ enrichMiR.server <- function(){
     
     output$bubble_plot <- renderPlotly({
       if(is.null(ER())) return(NULL)
-      test <- ViewTest()
-      validate(
-        need(test %in% names(ER()), "This test is not available with the given input")
-      )
-      if(is.null(ViewTest()) || ViewTest()==""){
+      test <- input$view_test
+      if(is.null(test) || test==""){
         er <- getResults(ER(), getFeatures=FALSE, flatten=TRUE)
         er$FDR <- er$FDR.geomean
         er$enrichment <- rowMeans(er[,grep("nrichment|beta|coefficient",colnames(er)),drop=FALSE],na.rm=TRUE)
@@ -279,11 +278,8 @@ enrichMiR.server <- function(){
     
     output$hits_table <- renderDT({ # prints the current hits
       if(is.null(ER())) return(NULL)
-      test <- ViewTest()
-      validate(
-        need(test %in% names(ER()), "This test is not available with the given input")
-      )
-      if(is.null(ViewTest()) || ViewTest()=="") test <- NULL
+      test <- input$view_test
+      if(is.null(test) || test=="") test <- NULL
       rr <- getResults(ER(), test=test, flatten=TRUE)
       show_standard <- c("enrichment","pvalue","FDR")
       if(is.null(input$columns2show)){
