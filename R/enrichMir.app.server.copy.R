@@ -312,12 +312,13 @@ enrichMiR.server <- function(){
     output$dl_hits <- downloadHandler(
       filename = function() {
         if(is.null(ER())) return(NULL)
-        fn <- paste0("EnrichMir_hits_",ViewTest(),"_",Sys.Date(),".csv")
+        fn <- paste0("EnrichMir_hits_",input$view_test,"_",Sys.Date(),".csv")
         fn
       },
       content = function(con) {
         if(is.null(ER())) return(NULL)
-        test <- ViewTest()
+        test <- input$view_test
+        if(is.null(test) || test=="") test <- NULL
         h <- getResults(ER(), test=test, flatten=TRUE)
         write.csv(h, con)
       }
