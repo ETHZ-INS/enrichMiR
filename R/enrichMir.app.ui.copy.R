@@ -161,6 +161,13 @@ enrichMiR.ui <- function(){
                 br(), br(), br(),
                 column(9, id="sel_test_div", selectInput("view_test", "View test", choices=c(), width="90%")),
                 column(3, style = "margin-top: 30px;", checkboxInput("view_all", "advanced")),
+                box(width=12, title="Test Info", collapsible=TRUE, collapsed=TRUE,
+                    tags$h5(em("By default we perform a binary and a continous test.")),
+                    "1) The binary test is a hypergeometric test on the number of binding sites. It's results can be directly 
+                    acessed by selecting 'Down-/ Upregulated genes' or via it's name ('siteoverlap') in the advanced mode",br(),
+                    "2) In continuous testing mode, all genes get used for enrichment analysis. As standard, we employ an analytic 
+                    rank-based enrichment analysis using a conversion of the scores as weights.", br(),
+                    "3) We again recommend to only use additional tests after carefully reading the manual."),
                 # box(width=12, title="Select test to view", collapsible=TRUE, collapsed=TRUE,
                 #     tabBox(id="test_type", width=12, 
                 #            tabPanel(title = "Binary Test", value = "binary",
