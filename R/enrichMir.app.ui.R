@@ -151,7 +151,7 @@ enrichMiR.ui <- function(){
                 ),
         tabItem(tabName = "tab_enrich",
                 column(6,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))),
-                column(4, id="sel_test_div", selectInput("view_test", "Test:", choices=c())),
+                column(4, id="sel_test_div", selectInput("view_test", "Test:", choices=c(), width="450px")),
                 column(2, checkboxInput("view_all", "advanced")),
                 
                 # box(width=12, title="Select test to view", collapsible=TRUE, collapsed=TRUE,
