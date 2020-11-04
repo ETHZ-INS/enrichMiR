@@ -115,6 +115,7 @@ enrichMiR.ui <- function(){
                                               value = NULL,
                                               placeholder="Gene_1\nGene_2\nGene_3", 
                                               resize="vertical"),br(),
+                                actionButton("example_GOI", "Example genes"),
                                 footer = "Note: If you want to use the Targetscan miRNA annotations together with rat genes, use the 'Gene Symbol' format"
                        ),
                        tabPanel(title = "Upload DEA results", value = "dea",
