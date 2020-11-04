@@ -262,6 +262,9 @@ enrichMiR.server <- function(){
     output$bubble_plot <- renderPlotly({
       if(is.null(ER())) return(NULL)
       test <- ViewTest()
+      validate(
+        need(test %in% names(ER()), "This test is not available with the given input")
+      )
       if(is.null(ViewTest()) || ViewTest()==""){
         er <- getResults(ER(), getFeatures=FALSE, flatten=TRUE)
         er$FDR <- er$FDR.geomean
@@ -277,6 +280,9 @@ enrichMiR.server <- function(){
     output$hits_table <- renderDT({ # prints the current hits
       if(is.null(ER())) return(NULL)
       test <- ViewTest()
+      validate(
+        need(test %in% names(ER()), "This test is not available with the given input")
+      )
       if(is.null(ViewTest()) || ViewTest()=="") test <- NULL
       rr <- getResults(ER(), test=test, flatten=TRUE)
       show_standard <- c("enrichment","pvalue","FDR")
