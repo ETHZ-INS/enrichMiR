@@ -210,6 +210,7 @@ enrichMiR.ui <- function(){
         ),
         tabItem(tabName = "tab_co_mode",
                 tags$h3("Find miRNA colocalizations"), tags$br(),
+                "We strongly recommend to filter miRNAs, especially when using 'ScanMir Sites' or 'All Targetscan Sites'",
                 tabBox(id="tabbox_co_mode", width=12,
                        tabPanel(title="In expressed genes", value="expression_coloc",
                                 radioButtons(inputId = "expr_coloc_mode",label = "Choose colocalization type:", choices = c("miRNA - miRNA" = "MM",
