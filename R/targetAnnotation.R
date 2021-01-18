@@ -224,7 +224,8 @@ setMethod("[", signature("targetAnnotationMatrix"), function(x, i, j=NULL, ...){
 #' Creates a new targetAnnotation object.
 #'
 #' @param x A names list of items, or a (sparse) matrix with named dimensions,
-#' or a data.frame with at least the columns `feature` and `set`
+#' or a data.frame with at least the columns `feature` and `set`, or a 
+#' (h5/rds) file containing one of these.
 #' @param content The content of the matrix (e.g. 'score' or 'sites'); ignored
 #' if `x` is a data.frame or list.
 #' @param metadata A list of metadata.
@@ -235,9 +236,21 @@ setMethod("[", signature("targetAnnotationMatrix"), function(x, i, j=NULL, ...){
 #' @return An object of class `targetAnnotation`; depending on `x`, either a 
 #' `targetAnnotationMatrix` or a `targetAnnotationDF`.
 #' @rdname targetAnnotation
+#' @importFrom HDF5Array HDF5Array
+#' @import DelayedArray
 #' @export
 targetAnnotation <- function(x, content="score", metadata=list(), set.properties=NULL,
                              feature.synonyms=NULL, sets.synonyms=NULL){
+  if(is.character(x)){
+    stopifnot(length(x)==1)
+    if(grepl("\\.h5$", x)){
+      x <- HDF5Array(x,as.sparse=TRUE)
+    }else if(grepl("\\.rds$", x)){
+      x <- readRDS(x)
+    }else{
+      stop("File format not yet implemented, please read in manually first.")
+    }
+  }
   if(.is.matrix(x)){
     if(is.null(set.properties)) set.properties <- data.frame(row.names=colnames(x))
     if(is.null(feature.synonyms)) feature.synonyms <- factor(c(), levels=row.names(x))
