@@ -4,14 +4,23 @@
 \alias{regmir}
 \title{regmir}
 \usage{
-regmir(signal, sets, binary = NULL, alpha = 1, do.plot = FALSE,
-  use.intercept = FALSE, keepAll = TRUE)
+regmir(
+  signal,
+  sets,
+  binary = NULL,
+  alpha = 1,
+  do.plot = FALSE,
+  use.intercept = FALSE,
+  keepAll = TRUE
+)
 }
 \arguments{
 \item{signal}{A vector of logical or numeric values, with gene symbols as names.}
 
 \item{sets}{A data.frame with at least the following columns: 
-'set', 'feature', and (if binary=FALSE) 'score'.}
+'set', 'feature', and (if binary=FALSE) 'score'. Alternatively, a sparse
+logical (if binary=TRUE) or numeric matrix with features as rows and sets
+as columns.}
 
 \item{binary}{Logical; whether to consider target prediction as binary.}
 

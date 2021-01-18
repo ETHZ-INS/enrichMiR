@@ -7,13 +7,17 @@
 gsea(signal, sets, maxSize = 300, nperm = 2000, ...)
 }
 \arguments{
-\item{signal}{A named logical vector indicating which features are differentially-expressed}
+\item{signal}{A named numeric vector indicating the features' response (e.g. 
+logFC)}
 
-\item{sets}{A data.frame with at least the following columns: 'set', 'feature'.}
+\item{sets}{A data.frame with at least the following columns:
+'set', 'feature'.}
 
-\item{maxSize}{The maximum number of elements in a set to be tested (default 500). If the test takes too long to run, consider setting this.}
+\item{maxSize}{The maximum number of elements in a set to be tested (default 
+500). If the test takes too long to run, consider setting this.}
 
-\item{nperm}{The number of permutations, default 2000. The more permutations, the more precise the p-values, in particular for small p-values.}
+\item{nperm}{The number of permutations, default 2000. The more permutations,
+the more precise the p-values, in particular for small p-values.}
 }
 \value{
 a data.frame.
