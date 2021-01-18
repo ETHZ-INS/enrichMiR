@@ -4,8 +4,17 @@
 \alias{CDplot2}
 \title{CDplot2}
 \usage{
-CDplot2(dea, sets, setName, k = 3, by = c("sites", "score"),
-  sameFreq = NULL, line.size = 1.2, point.size = 0.8, ...)
+CDplot2(
+  dea,
+  sets,
+  setName,
+  k = 3,
+  by = c("sites", "score"),
+  sameFreq = NULL,
+  line.size = 1.2,
+  point.size = 0.8,
+  ...
+)
 }
 \arguments{
 \item{dea}{A named numeric vector containing the signal for each feature, or

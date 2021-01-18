@@ -4,11 +4,26 @@
 \alias{testEnrichment}
 \title{testEnrichment}
 \usage{
-testEnrichment(x, sets, background = NULL, tests = NULL,
-  sets.properties = NULL, th.abs.logFC = 0, th.FDR = 0.05,
-  minSize = 5, maxSize = Inf, gsea.maxSize = 1000,
-  gsea.permutations = 2000, testOnlyAnnotated = FALSE,
-  keepAnnotation = FALSE, field = NULL, BPPARAM = NULL, ...)
+testEnrichment(
+  x,
+  sets,
+  background = NULL,
+  tests = NULL,
+  sets.properties = NULL,
+  th.abs.logFC = 0,
+  th.FDR = 0.05,
+  minSize = 5,
+  maxSize = Inf,
+  gsea.maxSize = 1000,
+  gsea.permutations = 2000,
+  testOnlyAnnotated = FALSE,
+  keepAnnotation = FALSE,
+  field = NULL,
+  BPPARAM = NULL,
+  familyRound = NULL,
+  checkSynonyms = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{The signature in which to look for a signal. This can be either:

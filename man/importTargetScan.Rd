@@ -4,8 +4,12 @@
 \alias{importTargetScan}
 \title{importTargetScan}
 \usage{
-importTargetScan(ts.filepath, featureIdentifier = "symbol",
-  recapitalizeGenes = FALSE)
+importTargetScan(
+  ts.filepath,
+  featureIdentifier = "symbol",
+  recapitalizeGenes = FALSE,
+  species = c("human", "mouse", "rat")
+)
 }
 \arguments{
 \item{ts.filepath}{Path to the targetScan conserved targets file.}

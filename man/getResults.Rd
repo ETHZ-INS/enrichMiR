@@ -4,15 +4,21 @@
 \alias{getResults}
 \title{getResults}
 \usage{
-getResults(object, test = NULL)
+getResults(object, test = NULL, getFeatures = TRUE, flatten = FALSE)
 }
 \arguments{
 \item{object}{An object of class `enrich.results`.}
 
-\item{test}{The name of a test, or a vector of such names. If ommitted (default), all available tests are returned. Note that more detailed results are returned when looking at a specific test.}
+\item{test}{The name of a test, or a vector of such names. If ommitted (default), a 
+merge of all available tests is returned. Note that more detailed results are returned
+ when looking at a specific test.}
+
+\item{getFeatures}{Logical; whether to return overlapping features.}
+
+\item{flatten}{Logical; whether to return a normal data.frame instead of a DataFrame.}
 }
 \value{
-a data.frame.
+a DataFrame or data.frame.
 }
 \description{
 Returns the results table of an enrich.results object.

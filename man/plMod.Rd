@@ -21,5 +21,6 @@ sites). Defaults to TRUE if `var='sites'`, FALSE otherwise.}
 a data.frame
 }
 \description{
-plMod
+Fits linear models between a signal and set variables. This is a flexible but
+slow implementations, we recommend \link{ebayes} for a faster one.
 }

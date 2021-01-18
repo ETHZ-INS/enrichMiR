@@ -1,14 +1,14 @@
 Package: enrichMiR
 Type: Package
 Title: miRNA target enrichment analysis
-Version: 0.99.2
+Version: 0.99.5
 Date: 2018-09-26
 Authors@R: c(
     person("Pierre-Luc", "Germain", email="pierre-luc.germain@hest.ethz.ch", role=c("cre","aut"), comment=c(ORCID="0000-0003-3418-4218")),
     person("Michael", "Soutschek", email="michael.soutschek@hest.ethz.ch", role="ctb"),
     person("Tomas", "Germade", email="tgermade@student.ethz.ch", role="ctb"))
-Depends: data.table, shiny, shinydashboard
-Suggests: knitr, rmarkdown, fgsea, goseq, MASS, aggregation, viper
+Depends: S4Vectors, data.table, shiny, shinydashboard, limma, glmnet, MASS
+Suggests: knitr, rmarkdown, fgsea, goseq, aggregation, viper
 Description: miRNA target enrichment analysis
 License: GPL
 VignetteBuilder: knitr
