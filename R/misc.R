@@ -183,11 +183,16 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
     names(a) <- a <- row.names(df)
     a[names(new.rn)] <- as.character(new.rn)
     new.rn <- a[row.names(df)]
+    tt <- split(names(new.rn),new.rn)
+    tt <- data.frame(row.names=names(tt),
+                     members=sapply(tt, FUN=function(x) paste(sort(x),collapse=";")))
   }
   if(ncol(df)==0) return(data.frame(row.names=unique(new.rn)))
   if(!any(duplicated(new.rn))){
     row.names(df) <- new.rn
-    return(df)
+    df <- merge(df,tt,by = 0, all.x = TRUE)
+    row.names(df) <- df$Row.names
+    df[,-c(1),drop=FALSE]
   }
   df <- aggregate(df, by=list(RN=new.rn), FUN=function(x){
     if(is.factor(x)) x <- as.character(x)
@@ -196,7 +201,9 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
     paste(sort(x), collapse=";")
   })
   row.names(df) <- df[,1]
-  df[,-1,drop=FALSE]
+  df <- merge(df,tt,by = 0, all.x = TRUE)
+  row.names(df) <- df$Row.names
+  df[,-c(1,2),drop=FALSE]
 }
 
 .filterTranscripts <- function(x, minProp=0.9, minLogCPM=1){
