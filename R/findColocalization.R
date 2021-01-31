@@ -309,11 +309,11 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
   if(!is.null(sets_pos)){
     o <- new("enrich.results", input=list(x=x, sets.properties= 
                                           list("miRNA" = mir_pos.properties, "Partner" = sets_pos.properties)), 
-           binary.signatures=signature.list, info=list(call=match.call()))
+           binary.signatures=signature.list, info=list(call=match.call(),type = "colocalization"))
   }else{
     o <- new("enrich.results", input=list(x=x, sets.properties= 
                                             list("miRNA" = mir_pos.properties)), 
-             binary.signatures=signature.list, info=list(call=match.call()))
+             binary.signatures=signature.list, info=list(call=match.call(),type = "colocalization"))
   }
   
   # add mir-overlap info
@@ -395,7 +395,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
   # Currently, the getResults wouldn't work with regards to the naming, since it's not possible
   # to use cbind with the row.names for these result-tables. Names are though saved in the 
   # properties files as row.names, one could either attach them before with merge or rewrite the .getResults
-  # >> Potentially by checking if "sets.properties" is a list
+  # >> Potentially by checking if "sets.properties" is a list or o@info$type == colocalization
       
 
 }
