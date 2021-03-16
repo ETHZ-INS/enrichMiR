@@ -7,13 +7,16 @@
 mw(signal, sets)
 }
 \arguments{
-\item{signal}{A named logical vector indicating which features are differentially-expressed}
+\item{signal}{A named logical vector indicating the features of interest 
+(e.g. which features are differentially-expressed)}
 
-\item{sets}{A data.frame with at least the following columns: 'set', 'feature'.}
+\item{sets}{A data.frame with at least the following columns: 
+'set', 'feature'.}
 }
 \value{
 a data.frame.
 }
 \description{
-miRNA targets enrichment analysis using a Mann-Whitney / Wilcoxon test on the targets' foldchanges.
+miRNA targets enrichment analysis using a Mann-Whitney / Wilcoxon test on 
+the targets' foldchanges.
 }

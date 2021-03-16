@@ -7,15 +7,19 @@
 woverlap(signal, sets, method = "Wallenius")
 }
 \arguments{
-\item{signal}{A named logical vector indicating which features are differentially-expressed}
+\item{signal}{A named logical vector indicating the features of interest 
+(e.g. which features are differentially-expressed)}
 
-\item{sets}{A data.frame with at least the following columns: 'set', 'feature'.}
+\item{sets}{A data.frame with at least the following columns: 
+'set', 'feature'.}
 
-\item{method}{Method for handling then length bias, default "Wallenius". See `?goseq` for more detail.}
+\item{method}{Method for handling then length bias, default "Wallenius".
+See `?goseq` for more detail.}
 }
 \value{
 a data.frame.
 }
 \description{
-Weighted hypergeometric test adjusted for total number of miRNA bindings sites. (This is done through the `goseq` package)
+Weighted hypergeometric test adjusted for total number of miRNA bindings 
+sites. This is done through the `goseq` package.
 }

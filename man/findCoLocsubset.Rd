@@ -4,11 +4,18 @@
 \alias{findCoLocsubset}
 \title{Find miRNA colocalizations in a subset of genes}
 \usage{
-findCoLocsubset(genes_in_set = NULL, expressed.genes = NULL,
-  search.mode = c("MM", "MR", "MC"), cust.input = NULL,
-  species = c("human", "mouse", "rat"), expressed.miRNAs = NULL,
-  co_dist_min = NULL, co_dist_max = NULL, KD_Sites = FALSE,
-  min_pairs_sub = 5)
+findCoLocsubset(
+  genes_in_set = NULL,
+  expressed.genes = NULL,
+  search.mode = c("MM", "MR", "MC"),
+  cust.input = NULL,
+  species = c("human", "mouse", "rat"),
+  expressed.miRNAs = NULL,
+  co_dist_min = NULL,
+  co_dist_max = NULL,
+  KD_Sites = FALSE,
+  min_pairs_sub = 5
+)
 }
 \arguments{
 \item{genes_in_set}{A vector of genes, that are a subset of the expressed

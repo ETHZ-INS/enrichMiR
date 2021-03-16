@@ -4,18 +4,23 @@
 \alias{siteoverlap}
 \title{siteoverlap}
 \usage{
-siteoverlap(signal, sets)
+siteoverlap(signal, sets, alternative = c("greater", "less", "two.sided"))
 }
 \arguments{
-\item{signal}{A named logical vector indicating which features are differentially-expressed}
+\item{signal}{A named logical vector indicating which features are 
+differentially-expressed}
 
 \item{sets}{A data.frame with at least the following columns: 
 'set', 'feature', 'sites'.}
+
+\item{alternative}{Test alternative (defaults to 'greater' to test for
+over-representation)}
 }
 \value{
 a data.frame.
 }
 \description{
-Applies Fisher's test to the number of miRNA binding sites among a set of features (vs all other binding sites in that set of features).
+Applies Fisher's test to the number of binding sites among a set of features 
+(vs all other binding sites in that set of features).
 Of note, this application violates the assumptions of Fisher's exact test.
 }

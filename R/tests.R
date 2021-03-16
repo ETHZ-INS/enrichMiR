@@ -1,34 +1,92 @@
 #' overlap
 #'
-#' Traditional overlap (Fisher test) between differentially-expressed features and miRNA targets.
+#' Traditional overlap (Fisher test) between a logical signal (e.g. 
+#' differentially-expressed features) and the elements of sets.
 #'
-#' @param signal A named logical vector indicating which features are differentially-expressed
-#' @param sets A data.frame of annotation, with at least the following columns: `set`, `feature`.
+#' @param signal A named logical vector indicating which features are 
+#' differentially-expressed
+#' @param sets A data.frame of annotation, with at least the following columns: 
+#' `set`, `feature`. Alternatively, a sparse logical matrix, with sets as 
+#' columns and features as rows (dimensions must be named).
+#' @param alternative Test alternative (defaults to 'greater' to test for
+#' over-representation)
 #'
 #' @return a data.frame.
 #'
 #' @export
-overlap <- function(signal, sets){
-  tested <- names(signal)
-  significant <- names(signal)[signal]
-  significant <- intersect(significant,tested)
-  res <- vapply( split(sets$feature,sets$set), set1=significant, 
-                FUN.VALUE=numeric(4), FUN=function(set2,set1){
-    expected <- length(set1)*length(set2)/length(tested)
-    ov <- length(intersect(set1,set2))
-    c(overlap=ov,
-      enrichment=round(log2((ov+0.5)/expected),2),
-      under.pvalue=.overlap.prob(set1,set2,tested,lower=T),
-      over.pvalue=.overlap.prob(set1,set2,tested)
-    )
-  })
-  res <- as.data.frame(t(res))
-  res$FDR <- p.adjust(res$over.pvalue,method="fdr")
-  res[order(res$FDR,res$over.pvalue),]
+overlap <- function(signal, sets, alternative=c("greater","less","two.sided")){
+  alternative <- match.arg(alternative)
+  if(!.checkSets(sets, matrixAlternative="logical")){
+    if("sites" %in% colnames(sets)){
+      sets$sites <- sets$sites > 0
+      sets <- .setsToScoreMatrix(signal, sets, column="sites", keepSparse=TRUE)
+    }else{
+      sets <- .setsToScoreMatrix(signal, sets, column=NULL, keepSparse=TRUE)
+    }
+  }else{
+    sets <- sets[row.names(sets) %in% names(signal),]
+  }
+  signal <- signal[row.names(sets)]
+  sigAndSet <- colSums(sets[which(signal),,drop=FALSE])
+  notSigAndSet <- colSums(sets[which(!signal),,drop=FALSE])
+  sigAndNotSet <- sum(signal)-sigAndSet
+  notNot <- nrow(sets)-sigAndSet-notSigAndSet-sigAndNotSet
+  expected <- sum(signal)*(sigAndSet+notSigAndSet)/nrow(sets)
+  res <- data.frame( overlap=sigAndSet,
+                     enrichment=round(log2((sigAndSet+0.25)/(expected+0.25)),3),
+                     pvalue=fisher.test.p(sigAndSet,notSigAndSet,
+                                               sigAndNotSet,notNot,
+                                               alternative=alternative) )
+  res$FDR <- p.adjust(res$pvalue, method="fdr")
+  res[order(res$FDR,res$pvalue),]
+}
+
+#' siteoverlap
+#'
+#' Applies Fisher's test to the number of binding sites among a set of features 
+#' (vs all other binding sites in that set of features).
+#' Of note, this application violates the assumptions of Fisher's exact test.
+#'
+#' @param signal A named logical vector indicating which features are 
+#' differentially-expressed
+#' @param sets A data.frame with at least the following columns: 
+#' 'set', 'feature', 'sites'.
+#' @param alternative Test alternative (defaults to 'greater' to test for
+#' over-representation)
+#'
+#' @return a data.frame.
+#'
+#' @export
+siteoverlap <- function(signal, sets, 
+                        alternative=c("greater","less","two.sided")){
+  alternative <- match.arg(alternative)
+  if(!.checkSets(sets, "sites", matrixAlternative="numeric")){
+    sets <- .setsToScoreMatrix(signal, sets, column="sites", keepSparse=TRUE)
+  }else{
+    sets <- sets[row.names(sets) %in% names(signal),]
+  }
+  signal <- signal[row.names(sets)]
+  BS.in <- colSums(sets[which(signal),,drop=FALSE])
+  otherBS.in <- sum(sets[which(signal),,drop=FALSE])-BS.in
+  BS.inBG <- colSums(sets[which(!signal),,drop=FALSE])
+  otherBS.inBG <- sum(sets[which(!signal),,drop=FALSE])-BS.inBG
+  enrichment <- ((1+BS.in)/(otherBS.in))/((1+BS.inBG)/(otherBS.inBG))
+  expected <- sum(signal)*(sigAndSet+notSigAndSet)/nrow(sets)
+  res <- data.frame( overlap=colSums(sets[which(signal),,drop=FALSE]>0),
+                     sites.overlap=BS.in,
+                     enrichment=round(log2(enrichment),3),
+                     pvalue=fisher.test.p(BS.in, otherBS.in,
+                                          BS.inBG, otherBS.inBG,
+                                          alternative=alternative) )
+  res$FDR <- p.adjust(res$pvalue, method="fdr")
+  res[order(res$FDR,res$pvalue),]
 }
 
 
 #' plMod
+#'
+#' Fits linear models between a signal and set variables. This is a flexible but
+#' slow implementations, we recommend \link{ebayes} for a faster one.
 #'
 #' @param signature A named numeric vector
 #' @param sets A data.frame with at least the following columns: 'set', 
@@ -60,14 +118,14 @@ plMod <- function(signature, sets, var="sites", correctForLength=NULL){
     row.names(x) <- x$feature
     x2 <- x[names(fcs),var]
     x2[which(is.na(x2))] <- 0
-    if(is.null(cfl)){
-      mod <- try(lm(fcs~x2+0),silent=T)
+    if(!is.null(cfl)){
+      x2 <- cbind(x2=x2, cfl=clf)
     }else{
-      mod <- try(lm(fcs~x2+cfl+0),silent=T)
+      x2 <- as.matrix(x2)
     }
-    if(!is(mod,"try-error"))
-      return(c(coef(mod)["x2"], summary(aov(mod))[[1]]["x2","Pr(>F)"]))
-    return(rep(NA_real_,2))
+    mod <- try(.lm.fit(x2, fcs), silent=TRUE)
+    if(is(mod,"try-error")) return(rep(NA_real_,2))
+    c(mod$coefficients[1], tryCatch(.lm.pval(mod)[1], error=function(e) NA))
   })))
   colnames(res) <- c("coefficient","pvalue")
   res$FDR <- p.adjust(res$pvalue)
@@ -83,11 +141,15 @@ modscore <- function(x, sets, ...) plMod(x, sets, var="score", ...)
 
 #' woverlap
 #'
-#' Weighted hypergeometric test adjusted for total number of miRNA bindings sites. (This is done through the `goseq` package)
+#' Weighted hypergeometric test adjusted for total number of miRNA bindings 
+#' sites. This is done through the `goseq` package.
 #'
-#' @param signal A named logical vector indicating which features are differentially-expressed
-#' @param sets A data.frame with at least the following columns: 'set', 'feature'.
-#' @param method Method for handling then length bias, default "Wallenius". See `?goseq` for more detail.
+#' @param signal A named logical vector indicating the features of interest 
+#' (e.g. which features are differentially-expressed)
+#' @param sets A data.frame with at least the following columns: 
+#' 'set', 'feature'.
+#' @param method Method for handling then length bias, default "Wallenius".
+#' See `?goseq` for more detail.
 #'
 #' @return a data.frame.
 #'
@@ -127,55 +189,12 @@ woverlap <- function(signal, sets, method="Wallenius"){
   res
 }
 
-#' siteoverlap
-#'
-#' Applies Fisher's test to the number of miRNA binding sites among a set of features (vs all other binding sites in that set of features).
-#' Of note, this application violates the assumptions of Fisher's exact test.
-#'
-#' @param signal A named logical vector indicating which features are differentially-expressed
-#' @param sets A data.frame with at least the following columns: 
-#' 'set', 'feature', 'sites'.
-#'
-#' @return a data.frame.
-#'
-#' @export
-siteoverlap <- function(signal, sets){
-  tested <- names(signal)
-  significant <- names(signal)[signal]
-  allBS.bg <- sum(sets[which(!(sets$feature %in% significant)),"sites"])
-  allBS.sig <- sum(sets[which(sets$feature %in% significant),"sites"])
-  res <- t(vapply(split(sets,sets$set), set1=significant, bs.sig=allBS.sig, 
-                  bs.bg=allBS.bg, FUN.VALUE=numeric(8), 
-                  FUN=function(x,set1,bs.sig,bs.bg){
-    x <- as.data.frame(x)
-    w <- which(as.character(x$feature) %in% set1)
-    xin <- sum(x[w,"sites"])
-    xout <- sum(x[which(!(as.character(x$feature) %in% set1)),"sites"])
-    mm <- matrix(round(c(xin,bs.sig-xin,xout,bs.bg-xout)),nrow=2)
-    p1 <- fisher.test(mm,alternative="greater")$p.value[[1]]
-    p2 <- fisher.test(mm,alternative="less")$p.value[[1]]
-    c(  overlap=length(unique(x[w,"feature"])),
-        BS.in=xin,
-        otherBS.in=bs.sig-xin,
-        BS.inBG=xout,
-        enrichment=log2(((1+xin)/(bs.sig-xin))/((1+xout)/(bs.bg-xout))),
-        otherBS.inBG=bs.bg-xout,
-        under.pvalue=p2,
-        pvalue=p1
-    )
-  }))
-  res <- as.data.frame(res)
-  res <- res[order(res$pvalue),]
-  for(i in 1:4) res[[i]] <- as.integer(res[[i]])
-  res$FDR <- p.adjust(res$pvalue,method="fdr")
-  res
-}
-
 #' ks
 #'
 #' enrichment analysis using a Kolmogorov-Smirnov test on the signal.
 #'
-#' @param signal A named logical vector indicating which features are differentially-expressed
+#' @param signal A named logical vector indicating the features of interest 
+#' (e.g. which features are differentially-expressed)
 #' @param sets A data.frame with at least the following columns: 'set', 'feature'.
 #'
 #' @return a data.frame.
@@ -194,10 +213,13 @@ ks <- function(signal, sets){
 
 #' mw
 #'
-#' miRNA targets enrichment analysis using a Mann-Whitney / Wilcoxon test on the targets' foldchanges.
+#' miRNA targets enrichment analysis using a Mann-Whitney / Wilcoxon test on 
+#' the targets' foldchanges.
 #'
-#' @param signal A named logical vector indicating which features are differentially-expressed
-#' @param sets A data.frame with at least the following columns: 'set', 'feature'.
+#' @param signal A named logical vector indicating the features of interest 
+#' (e.g. which features are differentially-expressed)
+#' @param sets A data.frame with at least the following columns: 
+#' 'set', 'feature'.
 #'
 #' @return a data.frame.
 mw <- function(signal, sets){
@@ -215,10 +237,14 @@ mw <- function(signal, sets){
 
 #' gsea
 #'
-#' @param signal A named logical vector indicating which features are differentially-expressed
-#' @param sets A data.frame with at least the following columns: 'set', 'feature'.
-#' @param maxSize The maximum number of elements in a set to be tested (default 500). If the test takes too long to run, consider setting this.
-#' @param nperm The number of permutations, default 2000. The more permutations, the more precise the p-values, in particular for small p-values.
+#' @param signal A named numeric vector indicating the features' response (e.g. 
+#' logFC)
+#' @param sets A data.frame with at least the following columns:
+#' 'set', 'feature'.
+#' @param maxSize The maximum number of elements in a set to be tested (default 
+#' 500). If the test takes too long to run, consider setting this.
+#' @param nperm The number of permutations, default 2000. The more permutations,
+#'  the more precise the p-values, in particular for small p-values.
 #'
 #' @return a data.frame.
 #'
@@ -236,62 +262,6 @@ gsea <- function(signal, sets, maxSize=300, nperm=2000, ...){
 }
 
 
-#' geneBasedTest
-#'
-#' Applies Fisher's test to the number of miRNA binding sites of each differentially-expressed gene
-#'
-#' @param features The set of differentially-expressed features, or features of interest.
-#' @param TS A data.frame of miRNA targets, with at least the following columns: `family`, `rep.miRNA`, `feature`, `sites`.
-#'
-#' @return a named vector of p-values.
-#'
-#' @importFrom aggregation fisher
-#' @export
-geneBasedTest <- function(features, TS){
-  TS$family <- as.character(TS$family)
-  features <- as.character(features)[which(features %in% TS$feature)]
-  tmp <- aggregate(TS$sites,by=list(family=TS$family),FUN=sum)
-  bgs <- tmp[,2]
-  names(bgs) <- tmp[,1]
-  TS <- TS[which(TS$feature %in% features),]
-  
-  res <- sapply(split(TS[,c("family","sites")],as.character(TS$feature),drop=F), fams=unique(TS$family), bgs=bgs, FUN=function(x, fams, bgs){
-    p <- rep(1,length(fams))
-    names(p) <- fams
-    tbs.in <- sum(x$sites)
-    tbs <- sum(bgs)
-    x <- as.data.frame(x)
-    for(f in 1:nrow(x)){
-      y <- x[f,"sites"]
-      b <- bgs[x[f,"family"]]
-      mm <- matrix(c(y, sum(x$sites)-y, b, sum(bgs)-b),nrow=2)
-      r <- try(fisher.test(mm, alternative="greater")$p.value,silent=T)
-      p[x[f,"family"]] <- ifelse(is(r,"try-error"),NA,r)
-    }
-    p
-  })
-  res <- apply(res,1,FUN=function(x){ x <- x[!is.na(x)]; if(length(x)==0) return(NA); fisher(x)})
-  return(res)
-}
-
-
-.overlap.prob <- function (set1, set2, universe, lower = F){
-  set1 <- as.character(set1)
-  set2 <- as.character(set2)
-  if (class(universe) == "character") {
-    set1 <- intersect(set1, universe)
-    set2 <- intersect(set2, universe)
-    universe <- length(unique(universe))
-  }
-  set1 <- unique(set1)
-  set2 <- unique(set2)
-  ov <- sum(set1 %in% set2)
-  phyper(max(0, ov - 1), length(set1), universe - length(set1), 
-         length(set2), lower.tail = lower)
-}
-
-
-
 .censorScore <- function(x){
   x <- 0.1-x
   if(length(w <- which(x>0.9))>0)
@@ -299,7 +269,7 @@ geneBasedTest <- function(features, TS){
   x
 }
 
-TS2regulon <- function(x, likelihood="score"){
+.TS2regulon <- function(x, likelihood="score"){
   x <- as.data.frame(x)
   if(likelihood=="score"){
     x$likelihood <- .censorScore(x[[likelihood]])
@@ -328,7 +298,8 @@ TS2regulon <- function(x, likelihood="score"){
 #'
 #' @export
 areamir <- function(signal, sets, ...){
-  vi <- viper::msviper(signal, regulon=TS2regulon(as.data.frame(sets)), ..., verbose=FALSE)
+  vi <- viper::msviper(signal, regulon=.TS2regulon(as.data.frame(sets)), ...,
+                       verbose=FALSE)
   vi2 <- as.data.frame(vi$es[c("nes","p.value")])
   colnames(vi2) <- c("enrichment","pvalue")
   vi2$FDR <- p.adjust(vi2$pvalue)
@@ -342,7 +313,9 @@ areamir <- function(signal, sets, ...){
 #'
 #' @param signal A vector of logical or numeric values, with gene symbols as names.
 #' @param sets A data.frame with at least the following columns: 
-#' 'set', 'feature', and (if binary=FALSE) 'score'.
+#' 'set', 'feature', and (if binary=FALSE) 'score'. Alternatively, a sparse
+#' logical (if binary=TRUE) or numeric matrix with features as rows and sets
+#' as columns.
 #' @param binary Logical; whether to consider target prediction as binary.
 #' @param alpha elastic net mixing param (0=ridge, 1=lasso)
 #' @param do.plot Logical, whether to plot coefficients against lambda
@@ -350,36 +323,43 @@ areamir <- function(signal, sets, ...){
 #' @param keepAll Logical, whether to return all families.
 #'
 #' @return A DataFrame.
-#' @import glmnet zetadiv S4Vectors 
+#' @import glmnet zetadiv S4Vectors Matrix sparseMatrixStats
 #' @export
-regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE, use.intercept=FALSE,
-                   keepAll=TRUE){
+regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE, 
+                   use.intercept=FALSE, keepAll=TRUE){
   if(is.null(names(signal))) stop("`signal` should be a named vector!")
-  suppressPackageStartupMessages(c(
-    library(glmnet),
+  suppressPackageStartupMessages({
+    library(glmnet)
     library(zetadiv)
-    ))
-  if(is.null(binary)) binary <- "score" %in% colnames(sets)
+    library(Matrix)
+  })
+  if(is.null(binary)){
+    if(is.data.frame(sets) || is(sets,"DFrame")){
+      binary <- !("score" %in% colnames(sets))
+    }else{
+      binary <- is.logical(sets) || is(sets,"lgCMatrix")
+    }
+  }
+  
   # prepare the target matrix
   if(binary){
-    bm <- sapply(split(sets$feature, sets$set), FUN=function(x) names(signal) %in% x)
+    if(!.checkSets(sets, matrixAlternative="logical")){
+      sets <- .setsToScoreMatrix(signal, sets, column=NULL, keepSparse=TRUE)
+    }
   }else{
-    TS2 <- aggregate(sets[,"score",drop=FALSE], by=as.data.frame(sets[,c("set","feature")]), FUN=min)
-    TS2 <- split(TS2[,c("score","feature")], TS2$set)
-    bm <- sapply(TS2, FUN=function(x){
-      row.names(x) <- x$feature
-      -1*x[names(signal),"score"]
-    })
-    bm[is.na(bm)] <- 0
-    colnames(bm) <- names(TS2)
+    bm <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
   }
-  bm <- bm[,colSums(bm)>0]
+  sets <- sets[row.names(sets) %in% names(signal),]
+  sets <- .reduceBm(sets)
+  signal <- signal[row.names(sets)]
   
   # regularized regression with cross-validation
   if(isLogistic <- is.logical(signal)){
-    fits <- cv.glmnet(bm, signal, standardize=FALSE, alpha=alpha, family="binomial", lower.limits=0 )
+    fits <- cv.glmnet(sets, signal, standardize=FALSE, alpha=alpha, 
+                      family="binomial", lower.limits=0, intercept=use.intercept)
   }else{
-    fits <- cv.glmnet(bm, signal, standardize=FALSE, alpha=alpha, family="gaussian")
+    fits <- cv.glmnet(sets, signal, standardize=FALSE, alpha=alpha, 
+                      family="gaussian", intercept=use.intercept)
   }
   
   if(do.plot){
@@ -389,16 +369,17 @@ regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE, use.interc
   }
   
   # we extract the miRNAs selected by the best most regularized glmnet fit:
-  co <- coef(fits, fits$lambda.1se)
-  co <- row.names(co)[co[,1]!=0][-1]
+  co <- .decideLambda(fits)
+
+  # p <- fixedLassoInf(sets, signal, co[,1], lambda=lambda, intercept=use.intercept, 
+  #                    family=ifelse(isLogistic,"binomial","gaussian"), alpha=alpha-0.01)
+  # res <- data.frame(row.names=names(p$vars), beta=co[names(p$vars),1], pvalue=p$pv)
+  # print(res)
   
-  if( length(co)==0 && fits$lambda.min!=fits$lambda.1se ){
-    # if no coefficient was selected, we use the minimum lambda
-    co <- coef(fits, fits$lambda.min)
-    co <- row.names(co)[co[,1]!=0][-1]
-  }
-  
-  signald <- data.frame( y=signal, bm[,co,drop=FALSE] )
+  beta <- co[,1]
+  names(beta) <- row.names(co)
+  signald <- data.frame( y=signal, as.matrix(sets[,names(beta),drop=FALSE]) )
+  if(!binary) signald$median <- sparseMatrixStats::rowMedians(sets)
   
   # new fit to get significance estimates
   if(use.intercept){
@@ -406,15 +387,20 @@ regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE, use.interc
   }else{
     form <- y~0+.
   }
-  if(isLogistic){
-    mod <- glm.cons( form, data=signald, family="binomial", cons=1, cons.inter=-1)
-  }else{
-    mod <- lm( form, data=signald )
-  }
-  
-  # we extract the coefficients and p-values, and reorganize the output:
-  res <- coef(summary(mod))
-  res <- res[order(res[,4]),,drop=FALSE]
+  res <- tryCatch({
+    if(isLogistic){
+      mod <- glm.cons( form, data=signald, family="binomial", cons=1, cons.inter=-1)
+    }else{
+      mod <- lm( form, data=signald )
+    }
+    
+    # we extract the coefficients and p-values, and reorganize the output:
+    res <- coef(summary(mod))
+    res[order(res[,4]),,drop=FALSE]
+  }, error=function(e){
+    warning(e)
+    data.frame(row.names=names(beta), beta=beta, z=rep(NA_real_, length(beta)), pvalue=1)
+  })
   colnames(res) <- c("beta","stderr",ifelse(isLogistic,"z","t"),"pvalue")
   res <- res[grep("^\\(Intercept\\)$|FALSE$", row.names(res), invert=TRUE),,drop=FALSE]
   row.names(res) <- gsub("TRUE","",row.names(res))
@@ -436,13 +422,204 @@ regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE, use.interc
   # res <- DataFrame(res)
   # we adjust using all features as number of comparisons
   if(nrow(res)>0){
-    res$FDR <- p.adjust(res$pvalue, n=ncol(bm))
+    res$FDR <- p.adjust(res$pvalue, n=max(nrow(res),ncol(sets),na.rm=TRUE))
     # res$features <- CharacterList(lapply(split(TS$feature, TS$family)[row.names(res)], 
     #                                 y=names(signal)[signal], FUN=intersect))
   }
   res
 }
 
-regmirb <- function(signal, ...){
-  regmir(signal, binary=TRUE, ...)
+
+regmirb <- regmir.bb <- function(signal, sets, ...){
+  regmir(signal, sets, binary=TRUE, ...)
+}
+regmir.bb <- function(signal, sets, ...) regmir(signal, sets, binary=TRUE, ...)
+regmir.bc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
+regmir.cc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
+
+.decideLambda <- function(fits){
+  l <- fits$lambda.1se
+  if(fits$nzero[fits$lambda==l]<2){
+    w1 <- which(fits$lambda==fits$lambda.min)
+    w2 <- which(fits$lambda==fits$lambda.1se)
+    l <- fits$lambda[floor((w1-w2)/2+w2)]
+  }
+  if(fits$nzero[fits$lambda==l]<2) l <- fits$lambda.min
+  co <- coef(fits, s=l)
+  co[co[,1]!=0,,drop=FALSE]
+}
+
+.lm.pval <- function(m){
+  rdf <- length(m$residuals) - ncol(m$qr)
+  x <- sum(m$residuals^2)/rdf
+  se <- sqrt(diag(chol2inv(m$qr))*x)
+  2*pt(abs(m$coef/se),rdf,lower.tail=FALSE)
+}
+
+#' checks for duplicated bm columns for regmir
+.reduceBm <- function(bm){
+  # split columns into groups having the same colSums
+  si <- split(seq_len(ncol(bm)), colSums(bm))
+  if(!any(lengths(si)>1)) return(bm)
+  ll <- lapply(si[lengths(si)>1], FUN=function(i){
+    # for each group of >1 columns:
+    # calculate pairwise distances
+    d <- as.matrix(dist(t(bm[,i])))
+    # remove redundant sets
+    d <- d[!duplicated(d),,drop=FALSE]
+    # extract sets
+    lapply(seq_len(nrow(d)), FUN=function(x){
+      colnames(d)[which(d[x,]==0)]
+    })
+  })
+  ll <- unlist(ll, recursive=FALSE)
+  # remove things that aren't duplicated
+  ll <- ll[lengths(ll)>1]
+  if(length(ll)==0) return(bm)
+  old.names <- sapply(ll, FUN=function(x) x[1]) # those columns we'll rename
+  toRemove <- sapply(ll, FUN=function(x) x[-1]) # those columns we remove
+  bm <- bm[,setdiff(colnames(bm), unlist(toRemove))]
+  bm2 <- bm[,old.names]
+  colnames(bm2) <- sapply(ll, FUN=function(x) paste(sort(x),collapse="."))
+  cbind(bm[,setdiff(colnames(bm), old.names)],bm2)
+}
+
+#' @import Matrix
+.setsToScoreMatrix <- function(signal, sets, column="score", keepSparse=FALSE){
+  if(!is.factor(sets$feature)) sets$feature <- as.factor(sets$feature)
+  signal <- signal[names(signal) %in% levels(sets$feature)]
+  sets$set <- droplevels(as.factor(sets$set))
+  if(is.null(column)){
+    column <- TRUE
+  }else{
+    column <- sets[[column]]
+  }
+  bm <- sparseMatrix(i=as.integer(sets$feature), j=as.integer(sets$set), 
+                     x=column, dim=c(length(levels(sets$feature)), 
+                                     length(levels(sets$set))),
+                     dimnames=list(levels(sets$feature),levels(sets$set)))
+  bm <- bm[names(signal),]
+  if(!keepSparse) bm <- as.matrix(bm)
+  bm
+}
+
+#' ebayes
+#'
+#' A wrapper around \code{\link[limma]{lmFit}} and \code{\link[limma]{eBayes}}
+#' for fitting the feature scores of many sets against a signal.
+#' 
+#' @param signal A named numeric vector indicating the signal (e.g. logFC) of
+#' each feature.
+#' @param sets A data.frame of annotation, with at least the following columns: 
+#' `set`, `feature` and `score`. Alternatively, a sparse numeric matrix, with sets as 
+#' columns and features as rows (dimensions must be named).
+#' @param use.intercept Logical; whether to use an intercept in the model.
+#' 
+#' @return A data.frame.
+#'
+#' @importFrom limma lmFit topTable eBayes
+#' @import stats sparseMatrixStats
+ebayes <- function(signal, sets, use.intercept=FALSE){
+  if(!.checkSets(sets, "score", matrixAlternative="numeric"))
+    sets <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
+  signal <- signal[names(signal) %in% row.names(sets)]
+  sets <- sets[names(signal),]
+  meds <- sparseMatrixStats::rowMedians(bm)
+  if(use.intercept){
+    mm <- model.matrix(~meds+signal)
+  }else{
+    mm <- model.matrix(~0+meds+signal)
+  }
+  fit <- lmFit(as.matrix(t(bm)), mm)
+  res <- as.data.frame(topTable(eBayes(fit), coef="signal", number = Inf)[,c(1,4,5)])
+  colnames(res) <- c("coefficient", "pvalue", "FDR")
+  res
+}
+
+#' lmadd
+#'
+#' Complementary linear fits between signal and sets' feature scores
+#' 
+#' @param signal A named numeric vector indicating the signal (e.g. logFC) of
+#' each feature.
+#' @param sets A data.frame of annotation, with at least the following columns: 
+#' `set`, `feature` and `score`. Alternatively, a sparse numeric matrix, with sets as 
+#' columns and features as rows (dimensions must be named).
+#' @param use.intercept Logical; whether to use an intercept in the model.
+#' @param calc.threshold Minimum p-value threshold for the individual fit in 
+#' order to calculate a complementary coefficient.
+#' @param comb.threshold Minimum p-value threshold for the individual fit in 
+#' order to include as covariate for other coefficients.
+#' 
+#' @return A data.frame.
+#'
+#' @importFrom limma lmFit topTable eBayes
+#' @import stats sparseMatrixStats
+lmadd <- function(signal, sets, use.intercept=FALSE, calc.threshold=0.2, comb.threshold=0.05){
+  if(!.checkSets(sets, "score", matrixAlternative="numeric"))
+    sets <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
+  signal <- signal[names(signal) %in% row.names(sets)]
+  sets <- sets[names(signal),]
+  if(use.intercept){
+    mm <- model.matrix(~meds+signal)
+  }else{
+    mm <- model.matrix(~0+meds+signal)
+  }
+  fit <- eBayes(lmFit(as.matrix(t(sets)), mm))
+  res1 <- as.data.frame(topTable(fit, coef=2+use.intercept, number=Inf)[,c(1,1,4,4)])
+  colnames(res1) <- c("independent.coef", "combined.coef", 
+                      "independent.pvalue", "combined.pvalue")
+  res1$combined.coef <- res1$independent.coef <- 0
+  res1$combined.pvalue[-1] <- 1
+  i <- 1
+  p <- res1$independent.pvalue[1]
+  sets <- data.frame(signal=signal, intercept=1, median=meds, sets, 
+                     check.names=FALSE)
+  while(i<=nrow(res1) && p<=calc.threshold){
+    feats <- row.names(res1)[i]
+    if(use.intercept) feats <- c("intercept", feats)
+    fit <- lm.fit(as.matrix(sets[,feats,drop=FALSE]), signal)
+    res1$independent.coef[i] <- rev(fit$coefficients)[1]
+    feats <- c("signal",row.names(res1)[seq_len(i)])
+    if(i==1) feats <- c("median",feats)
+    if(use.intercept) feats <- c("intercept",feats)
+    fit <- lm(signal~.,data=sets[,feats])
+    co <- coef(summary(fit))
+    res1$combined.pvalue[i] <- p <- rev(co[,4])[1]
+    if(p<comb.threshold){
+      res1$combined.coef[rev(seq_len(i))] <- rev(co[,1])[seq_len(i)]
+    }else{
+      res1$combined.coef[i] <- rev(co[,1])[1]
+    }
+    i <- i+1
+  }
+  res1$FDR <- p.adjust(res1$combined.pvalue)
+  res1
+}
+
+
+#' fisher.test.p
+#' 
+#' Fast p-values from multiple Fisher's exact tests
+#'
+#' @param a,b,c,f Vectors containing the four positions of the 2x2 matrix
+#' @param alternative greater, less, or 'two.sided' (default)
+#'
+#' @return A vector of p-values
+#' @export
+fisher.test.p <- function (a, b, c, d, 
+                           alternative=c("two.sided", "greater", "less")){
+  fn <- switch( match.arg(alternative), 
+     less = function(x,m,n,k) phyper(x, m, n, k), 
+     greater = function(x,m,n,k) phyper(x - 1, m, n, k, lower.tail=FALSE), 
+     two.sided = function(x,m,n,k){
+       lo = max(0, k - n)
+       support = lo:min(k, m)
+       d <- dhyper(support, m, n, k, log = TRUE)
+       d <- exp(d - max(d))
+       d <- d/sum(d)
+       sum(d[d <= d[x - lo + 1] * (1 + 10^(-7))])
+     }
+  )
+  mapply(FUN=fn, a, a+c, b+d, a+b)
 }

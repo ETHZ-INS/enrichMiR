@@ -57,7 +57,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
                             minSize=5, maxSize=Inf, gsea.maxSize=1000, 
                             gsea.permutations=2000, testOnlyAnnotated=FALSE, 
                             keepAnnotation=FALSE, field=NULL, BPPARAM=NULL, 
-                            ...){
+                            familyRound=NULL, checkSynonyms=TRUE, ...){
   if(is.character(x)){
     if(is.null(background)) 
       stop("If `x` is a character vector, `background` should be given.")
@@ -66,38 +66,22 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   }else{
     if(!is.null(background)) warning("`background` ignored.")
   }
+  message("Preparing inputs...")
   if(!is.null(dim(x))) x <- .homogenizeDEA(x)
-  x <- .applySynonyms(x, sets)
+  if(checkSynonyms) x <- .applySynonyms(x, sets)
 
-  if( (is.null(dim(x)) && !any(names(x) %in% sets$feature)) ||
-      (!is.null(dim(x)) && !any(row.names(x) %in% sets$feature)) )
-    stop("There is no match between the features of the `sets` and those of `x`. ",
-         "Are you sure that you are using the right annotation for your data?")
+  sets <- .filterInput(sets, x, min.size=minSize, max.size=maxSize)
+  x <- sets$signal
+  sets <- sets$sets
   
-  sets <- .list2DF(sets)
-  
-  if(is.null(dim(x))){
-    if(testOnlyAnnotated) x <- x[names(x) %in% unique(sets$feature)]
-    U <- names(x)
-  }else{
-    if(testOnlyAnnotated) x <- x[row.names(x) %in% unique(sets$feature),]
-    U <- row.names(x)
-    if(is.null(field)){
-      if(!all(c("logFC","FDR") %in% colnames(x)))
-        stop("`x` does not contain a 'logFC' and 'FDR' columns. Either rename ",
-             "the columns or specify the `field` argument.")
-    }else{
-      if(!("field" %in% colnames(x)))
-        stop("The `field` selected is not available in `x`.")
-    }
-  }
-  if(is.null(U)) stop("`x` should be named.")
-
   atests <- availableTests(x, sets)
   if(is.null(tests)){
     tests <- setdiff(atests, c("gsea", "ks", "ks2", "mw"))
   }else{
-    if(length(bad.tests <- setdiff(tolower(tests), atests))>0)
+    tests <- tolower(tests)
+    if("regmir" %in% tests)
+      tests <- c(setdiff(tests, "regmir"), grep("regmir",atests,value=TRUE))
+    if(length(bad.tests <- setdiff(tests, atests))>0)
       stop("The following tests are not available with this kind of input: ", 
            paste(bad.tests, collapse=", "))
   }
@@ -290,22 +274,70 @@ availableTests <- function(x=NULL, sets=NULL){
     sigContinuous <- !is.null(dim(x)) || is.numeric(x)
   }
   if(!is.null(sets)){
-    setsScore <- !is.null(dim(sets)) && "score" %in% colnames(sets)
-    setsSites <- !is.null(dim(sets)) && "sites" %in% colnames(sets)
+    if(.is.matrix(sets)){
+      content <- attr(sets, "content")
+      if(is.null(content) || !(content %in% c("sites","score"))){
+        setsSites <- setsScore <- !is.logical(sets[1,1])  
+      }else{
+        setsSites <- content=="sites"
+        setsScore <- content=="score"
+      }
+    }else{
+      setsScore <- !is.null(dim(sets)) && "score" %in% colnames(sets)
+      setsSites <- !is.null(dim(sets)) && "sites" %in% colnames(sets)
+    }
   }
-  tests <- c("regmirb")
-  if(sigBinary) tests <- c(tests, c("overlap","siteoverlap","woverlap"))
+  tests <- c("regmir.bb")
+  if(sigBinary) tests <- c(tests, c("overlap","siteoverlap","woverlap","regmir.bb"))
   if(sigContinuous) tests <- c(tests, c("mw","ks","ks2","gsea","areamir"))
-  if(sigContinuous && setsScore) tests <- c(tests, c("modscore"))
+  if(sigContinuous && setsScore) tests <- c(tests, c("modscore","regmir.cc","ebayes","lmadd"))
   if(sigContinuous && setsSites) tests <- c(tests, c("modsites"))
-  if(setsScore) tests <- c(tests, c("regmir"))
+  if(setsScore && sigBinary) tests <- c(tests, c("regmir.bc"))
   sort(tests)
 }
 
+.filterInput <- function(sets, signal, min.size=5, max.size=Inf, testOnlyAnnotated=FALSE){
+  stopifnot(!is.null(names(signal))) 
+  features <- names(signal)
+  if(.is.matrix(sets)){
+    stopifnot(!is.null(row.names(sets)) && !is.null(colnames(sets)))
+    if(testOnlyAnnotated)  features <- intersect(features, row.names(sets))
+    sets <- sets[row.names(sets) %in% features,,drop=FALSE]
+    cs <- colSums(sets!=0, na.rm=TRUE)
+    sets[,cs>=min.size & cs<max.size,drop=FALSE]
+    if(ncol(sets)==0) stop(.noMatchingFeatures())
+    return(list(sets=sets, signal=signal[row.names(sets)]))
+  }
+  sets <- .list2DF(sets)
+  sets$feature <- as.factor(sets$feature)
+  sets$set <- as.factor(sets$set)
+  if(testOnlyAnnotated) features <- intersect(levels(sets$features), features)
+  i <- which(levels(sets$feature) %in% features)
+  sets <- sets[as.integer(sets$features) %in% i,]
+  sets$features <- droplevels(sets$features)
+  tt <- table(sets$set)
+  i <- which(levels(sets$set) %in% names(tt)[tt>=min.size && tt<max.size])
+  if(length(i)==0) stop(.noMatchingFeatures())
+  sets <- sets[as.integer(sets$set) %in% i,]
+  sets$set <- droplevels(sets$set)
+  return(list(sets=sets, signal=signal[levels(sets$feature)]))
+}
+
+.noMatchingFeatures <- function(){
+  stop("There is no match between the features of the `sets` and those of `x`. ",
+       "Are you sure that you are using the right annotation for your data?")
+}
+
 .filterMatchSets <- function(sets, props, tryPrefixRemoval=TRUE){
+  if(isS4(sets)){
+    fams <- metadata(sets)$families
+  }else{
+    fams <- attr(sets, "families")
+  }
+  if(.is.matrix(sets))
+    sets <- data.frame(feature=row.names(sets), set=colnames(sets))
   if(is.null(props)){
-    if(is.null(fams <- metadata(sets)$families))
-      return(data.frame(row.names=unique(sets$set)))
+    if(is.null(fams)) return(data.frame(row.names=unique(sets$set)))
     props <- split(names(fams),fams)
     props <- data.frame(row.names=names(props),
                         members=sapply(props, FUN=function(x) paste(sort(x),collapse=";")))
@@ -346,48 +378,29 @@ availableTests <- function(x=NULL, sets=NULL){
   props[intersect(row.names(props),usets),,drop=FALSE]
 }
 
-.list2DF <- function(sets){
-  if(is(sets, "DataFrame")) return(sets)
-  if(is.data.frame(sets)) return(DataFrame(sets))
-  if(is.null(names(sets))) stop("The sets should be named!")
-  if(is.list(sets[[1]])){
-    if(all(names(sets[[1]]) %in% c("tfmode","likelihood"))){
-      # regulon object
-      sets <- lapply(sets, FUN=function(x){
-        data.frame(feature=names(x[[1]]), score=x$tfmode*x$likelihood)
-      })
-      return(cbind(set=rep(names(sets),sapply(sets,nrow)),
-                   do.call(rbind, sets)))
-    }else{
-      stop("`sets` has an unknown format")
-    }
-  }
-  y <- DataFrame( set=factor(rep(sets, lengths(sets))) )
-  if(!is.null(names(sets[[1]])) && is.numeric(sets[[1]])){
-    y$feature <- unlist(lapply(sets, names))
-    y$score <- unlist(lapply(sets, as.numeric))
-  }else{
-    y$feature <- unlist(lapply(sets, as.character))
-  }
-  y$feature <- as.factor(y$feature)
-  y
-}
 
 .dispatchTest <- function(test, sig, sets, binary.signatures=list(), ...){
   ll <- list()
   if(length(binary.signatures)>0 && 
-     test %in% c("overlap","siteoverlap","woverlap","regmir","regmirb")){
-    ll <- lapply(binary.signatures, sets=sets, FUN=test)
+     test %in% c("overlap","siteoverlap","woverlap","regmir.bb","regmir.bc")){
+    ll <- lapply(binary.signatures, FUN=function(sig){
+      tryCatch(get(test)(sig, sets=sets), 
+               error=function(e){
+                 message("Test '",test,"' failed with:")
+                 message(e)
+                 return(NULL)
+               })
+      })
   }
   if(!is.null(sig) && !(test %in% c("overlap","siteoverlap","woverlap"))){
     if(!is.null(dim(sig))) sig <- .dea2sig(sig, ...)
-    res <- get(test)(sig, sets)
-    if(test %in% c("regmir","regmirb")){
-      ll[["continuous"]] <- res
-    }else{
-      ll <- c(ll, list(res))
-    }
-    ll
+    res <- tryCatch(get(test)(sig, sets=sets), 
+                     error=function(e){
+                       message("Test '",test,"' failed with:")
+                       message(e)
+                       return(NULL)
+                     })
+    ll <- c(ll, list(res))
   }
   ll
 }

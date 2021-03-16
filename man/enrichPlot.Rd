@@ -4,11 +4,21 @@
 \alias{enrichPlot}
 \title{enrichPlot}
 \usage{
-enrichPlot(res, enr.field = c("enrichment", "normalizedEnrichment",
-  "beta", "coefficient"), size.field = c("overlap", "size"),
-  col.field = NULL, sig.field = "FDR", max.sig.thres = 100,
-  min.enr.thres = NULL, label.sig.thres = 0.05, label.enr.thres = 0,
-  label.field = NULL, maxLabels = 10, opacity = 0.5, repel = TRUE)
+enrichPlot(
+  res,
+  enr.field = c("enrichment", "normalizedEnrichment", "beta", "coefficient"),
+  size.field = c("overlap", "set_size"),
+  col.field = NULL,
+  sig.field = "FDR",
+  max.sig.thres = 100,
+  min.enr.thres = NULL,
+  label.sig.thres = 0.05,
+  label.enr.thres = 0,
+  label.field = NULL,
+  maxLabels = 10,
+  opacity = 0.5,
+  repel = TRUE
+)
 }
 \arguments{
 \item{res}{The results of an enrichment analysis, as obtained by the 

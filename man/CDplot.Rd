@@ -4,8 +4,17 @@
 \alias{CDplot}
 \title{CDplot}
 \usage{
-CDplot(ll, by = NULL, k = 3, breaks = NULL, sameFreq = FALSE,
-  addN = FALSE, dig.lab = NULL, minN = 10, ...)
+CDplot(
+  ll,
+  by = NULL,
+  k = 3,
+  breaks = NULL,
+  sameFreq = FALSE,
+  addN = FALSE,
+  dig.lab = NULL,
+  minN = 10,
+  ...
+)
 }
 \arguments{
 \item{ll}{A named list of numeric values, or a vector of values to be divided}

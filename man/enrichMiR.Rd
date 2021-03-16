@@ -4,8 +4,14 @@
 \alias{enrichMiR}
 \title{enrichMiR}
 \usage{
-enrichMiR(DEA, TS, miRNA.expression = NULL, families = NULL,
-  cleanNames = FALSE, ...)
+enrichMiR(
+  DEA,
+  TS,
+  miRNA.expression = NULL,
+  families = NULL,
+  cleanNames = FALSE,
+  ...
+)
 }
 \arguments{
 \item{DEA}{A data.frame of the results of a differential expression analysis, with features

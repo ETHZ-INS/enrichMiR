@@ -4,16 +4,23 @@
 \alias{overlap}
 \title{overlap}
 \usage{
-overlap(signal, sets)
+overlap(signal, sets, alternative = c("greater", "less", "two.sided"))
 }
 \arguments{
-\item{signal}{A named logical vector indicating which features are differentially-expressed}
+\item{signal}{A named logical vector indicating which features are 
+differentially-expressed}
 
-\item{sets}{A data.frame of annotation, with at least the following columns: `set`, `feature`.}
+\item{sets}{A data.frame of annotation, with at least the following columns: 
+`set`, `feature`. Alternatively, a sparse logical matrix, with sets as 
+columns and features as rows (dimensions must be named).}
+
+\item{alternative}{Test alternative (defaults to 'greater' to test for
+over-representation)}
 }
 \value{
 a data.frame.
 }
 \description{
-Traditional overlap (Fisher test) between differentially-expressed features and miRNA targets.
+Traditional overlap (Fisher test) between a logical signal (e.g. 
+differentially-expressed features) and the elements of sets.
 }

@@ -184,11 +184,16 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
     names(a) <- a <- row.names(df)
     a[names(new.rn)] <- as.character(new.rn)
     new.rn <- a[row.names(df)]
+    tt <- split(names(new.rn),new.rn)
+    tt <- data.frame(row.names=names(tt),
+                     members=sapply(tt, FUN=function(x) paste(sort(x),collapse=";")))
   }
   if(ncol(df)==0) return(data.frame(row.names=unique(new.rn)))
   if(!any(duplicated(new.rn))){
     row.names(df) <- new.rn
-    return(df)
+    df <- merge(df,tt,by = 0, all.x = TRUE)
+    row.names(df) <- df$Row.names
+    df[,-c(1),drop=FALSE]
   }
   df <- aggregate(df, by=list(RN=new.rn), FUN=function(x){
     if(is.factor(x)) x <- as.character(x)
@@ -197,5 +202,73 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
     paste(sort(x), collapse=";")
   })
   row.names(df) <- df[,1]
-  df[,-1,drop=FALSE]
+  df <- merge(df,tt,by = 0, all.x = TRUE)
+  row.names(df) <- df$Row.names
+  df[,-c(1,2),drop=FALSE]
+}
+
+.filterTranscripts <- function(x, minProp=0.9, minLogCPM=1){
+  if(!all(c("transcript","gene","logCPM") %in% colnames(x))) stop("Malformed input.")
+  gs <- rowsum(exp(x$logCPM), x$gene)
+  x[ (exp(x$logCPM)/gs[x$gene,1]) > minProp & x$logCPM>minLogCPM, ]
+}
+
+# triggers an error if the sets are not formatted correctly, and return a 
+# logical indicating whether the sets are in matrix format
+.checkSets <- function(sets, requiredColumns=c(), matrixAlternative=FALSE){
+  if( !isFALSE(matrixAlternative) && 
+      (is.matrix(sets) || is(sets,"sparseMatrix")) ){
+    matrixAlternative <- match.arg(matrixAlternative, c("logical","numeric"))
+    if(is(sets,"sparseMatrix")){
+      if(matrixAlternative=="logical") stopifnot(is(sets,"lgCMatrix"))
+      if(matrixAlternative=="numeric") stopifnot(is(sets,"dgCMatrix"))
+    }else{
+      if(matrixAlternative=="logical") stopifnot(is.logical(sets))
+      if(matrixAlternative=="numeric") stopifnot(is.numeric(sets))
+    }
+    return(TRUE)
+  }
+  stopifnot(is.data.frame(sets) || is(sets, "DFrame"))
+  stopifnot(c("feature","set",requiredColumns) %in% colnames(sets))
+  FALSE
+}
+
+.is.matrix <- function(x){
+  is.matrix(x) || is(x,"sparseMatrix") || is(x,"DelayedArray")
+}
+
+#' @import S4Vectors
+.list2DF <- function(sets){
+  if(!is.null(dim(sets)) && !all(c("feature","set") %in% colnames(sets)))
+    stop("Malformed `sets`.")
+  if(is(sets, "DataFrame")) return(sets)
+  if(is.data.frame(sets)){
+    at <- attributes(sets)
+    sets <- DataFrame(sets)
+    for(f in intersect(at, c("sets.properties","feature.synonyms")))
+      metadata(sets)[[f]] <- at[[f]]
+    return(sets)
+  }
+  if(is.null(names(sets))) stop("The sets should be named!")
+  if(is.list(sets[[1]])){
+    if(all(names(sets[[1]]) %in% c("tfmode","likelihood"))){
+      # regulon object
+      sets <- lapply(sets, FUN=function(x){
+        data.frame(feature=names(x[[1]]), score=x$tfmode*x$likelihood)
+      })
+      return(cbind(set=rep(names(sets),sapply(sets,nrow)),
+                   do.call(rbind, sets)))
+    }else{
+      stop("`sets` has an unknown format")
+    }
+  }
+  y <- DataFrame( set=factor(rep(sets, lengths(sets))) )
+  if(!is.null(names(sets[[1]])) && is.numeric(sets[[1]])){
+    y$feature <- unlist(lapply(sets, names))
+    y$score <- unlist(lapply(sets, as.numeric))
+  }else{
+    y$feature <- unlist(lapply(sets, as.character))
+  }
+  y$feature <- as.factor(y$feature)
+  y
 }

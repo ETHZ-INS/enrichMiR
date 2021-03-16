@@ -7,7 +7,8 @@
 ks(signal, sets)
 }
 \arguments{
-\item{signal}{A named logical vector indicating which features are differentially-expressed}
+\item{signal}{A named logical vector indicating the features of interest 
+(e.g. which features are differentially-expressed)}
 
 \item{sets}{A data.frame with at least the following columns: 'set', 'feature'.}
 }
