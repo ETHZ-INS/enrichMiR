@@ -87,8 +87,9 @@ recapitalizeMiRs <- function(x){
   x <- as.data.frame(x)
   if(all(row.names(x) == seq_len(nrow(x))) && 
      (is.character(x[,1]) || !any(duplicated(x[,1]))))
+    x[,1] <- gsub("\\..*","",x[,1]) 
     row.names(x) <- x[,1]
-  colnames(x) <- gsub("log2FoldChange|log2FC|log2\\(fold_change\\)|log2\\.fold_change\\.",
+  colnames(x) <- gsub("log2FoldChange|log2Fold|log2FC|log2\\(fold_change\\)|log2\\.fold_change\\.",
                       "logFC", colnames(x))
   
   abf <- colnames(df)[which(colnames(df) %in% c("meanExpr", "AveExpr", 
@@ -100,8 +101,8 @@ recapitalizeMiRs <- function(x){
   }else if(all(c("value_1","value_2") %in% colnames(x))){ # cufflinks
     x$meanExpr <- log(1+x$value_1+x$value_2)
   }
-  colnames(x) <- gsub("P\\.Value|pvalue|p_value", "PValue", colnames(x))
-  colnames(x) <- gsub("padj|adj\\.P\\.Val|q_value", "FDR", colnames(x))
+  colnames(x) <- gsub("P\\.Value|pvalue|p_value|pval", "PValue", colnames(x))
+  colnames(x) <- gsub("padj|adj\\.P\\.Val|q_value|qval", "FDR", colnames(x))
   if (!("FDR" %in% colnames(x))) 
     x$FDR <- p.adjust(x$PValue, method = "fdr")
   f <- grep("^logFC$",colnames(x),value=TRUE)

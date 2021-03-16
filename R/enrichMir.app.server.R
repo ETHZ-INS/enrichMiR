@@ -50,7 +50,8 @@ enrichMiR.server <- function(){
         if(is.null(DEA())) return(NULL)
         row.names(DEA())
       }else{
-        return(trimInputList(input$background_genes))
+        b <- trimInputList(input$background_genes)
+        b <- gsub("\\..*","",b)
       }
     })
         
@@ -107,7 +108,8 @@ enrichMiR.server <- function(){
         return(row.names(d)[d$FDR<input$binary_fdr])
       }else{
         if(input$GOI == "GOI_custom"){
-          return(trimInputList(input$genes_of_interest))
+          g <- trimInputList(input$genes_of_interest)
+          g <- gsub("\\..*","",g)
         }else{
             Sp <- switch(input$species,
                                  "Human" = "Hs",
