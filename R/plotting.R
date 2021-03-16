@@ -90,7 +90,10 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
 #' @return A ggplot.
 #' @export
 CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"), 
-                    sameFreq=NULL, line.size=1.2, point.size=0.8, ...){
+                    sameFreq=NULL, line.size=1.2, point.size=0.8, checkSynonyms=TRUE, ...){
+  message("Preparing inputs...")
+  dea <- .homogenizeDEA(dea)
+  if(checkSynonyms) dea <- .applySynonyms(dea, sets)
   sets <- .list2DF(sets)
   sets <- sets[sets$set==setName,]
   if(is.null(sets$sites)) sets$sites <- 1
