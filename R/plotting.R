@@ -181,7 +181,7 @@ CDplot3 <- function(dea, sets, setName, line.size=1.2, point.size=0.8, checkSyno
   if(addN) levels(d$Sets) <- paste0(levels(d$Sets), " (n=",
                                     as.numeric(table(d$Sets)), ")")
   p <- ggplot(d, aes(x,y,colour=Sets)) + 
-    geom_vline(xintercept=0, linetype="dashed") + geom_line(...) 
+    geom_vline(xintercept=0, linetype="dashed") + geom_line(size = line.size,...) 
   p + ylab("Cumulative proportion")
 
   if(point.size>0) p <- p + geom_point(size=point.size)
