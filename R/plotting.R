@@ -17,6 +17,7 @@
 #' @param dig.lab Number of digits for automatically-generated breaks.
 #' @param minN The minimum number of items per group (groups below this will be
 #' merged if the breaks are numeric).
+#' @param pvals Logical; whether to print the p-values of KS tests between sets
 #' @param ... Passed to `geom_line` (can for instance be used for `size`, etc.)
 #'
 #' @return A ggplot.
@@ -25,7 +26,7 @@
 #' 
 #' @export
 CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE, 
-                   dig.lab=NULL, minN=10, ...){
+                   dig.lab=NULL, minN=10, pvals=FALSE, ...){
   library(ggplot2)
   if(!is.list(ll)){
     if(is.null(by)) stop("If `ll` is not already a list, `by` should be given.")
@@ -58,6 +59,15 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
     }
   }
   ll <- .mergeSmallerGroups(ll,minN=minN)
+  if(pvals){
+    p <- sapply(ll, FUN=function(x){
+      sapply(ll, FUN=function(y){
+        if(identical(x,y)) return(NA_real_)
+        ks.test(y,x)$p.value
+      })
+    })
+    print(p)
+  }
   d <- dplyr::bind_rows(lapply(ll, FUN=function(x){
     data.frame( y=(seq_along(x)-1)/(length(x)-1), x=sort(x) )
   }), .id="Sets")
@@ -89,7 +99,7 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
 #'
 #' @return A ggplot.
 #' @export
-CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"), 
+CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"),
                     sameFreq=NULL, line.size=1.2, point.size=0.8, ...){
   sets <- .list2DF(sets)
   sets <- sets[sets$set==setName,]

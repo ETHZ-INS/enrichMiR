@@ -13,6 +13,7 @@ CDplot(
   addN = FALSE,
   dig.lab = NULL,
   minN = 10,
+  pvals = FALSE,
   ...
 )
 }
@@ -38,6 +39,8 @@ the same frequency (rather than same width)}
 
 \item{minN}{The minimum number of items per group (groups below this will be
 merged if the breaks are numeric).}
+
+\item{pvals}{Logical; whether to print the p-values of KS tests between sets}
 
 \item{...}{Passed to `geom_line` (can for instance be used for `size`, etc.)}
 }
