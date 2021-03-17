@@ -139,13 +139,15 @@ CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"),
 #' @param sets The target sets object containing site specific information with 
 #' a "type" column indicating the Site Type.
 #' @param setName The name of the set to plot in `sets`.
+#' @param addN Logical; whether to add group sizes to their names
 #' @param line.size Size of the line.
 #' @param point.size Size of the points.
 #' @param ... Any other argument passed to \code{\link{CDplot}}.
 #'
 #' @return A ggplot.
 #' @export
-CDplot3 <- function(dea, sets, setName, line.size=1.2, point.size=0.8, checkSynonyms=TRUE, ...){
+CDplot3 <- function(dea, sets, setName, line.size=1.2, point.size=0.8, checkSynonyms=TRUE, 
+                    addN=FALSE, ...){
   message("Preparing inputs...")
   dea <- .homogenizeDEA(dea)
   if(checkSynonyms) dea <- .applySynonyms(dea, sets)
@@ -164,13 +166,24 @@ CDplot3 <- function(dea, sets, setName, line.size=1.2, point.size=0.8, checkSyno
     stop("There seems to be no overlap between the rows of `dea` and the ",
          "features of `sets`.")
   
-  
-  sets <- merge(sets[,c("feature","type")],dea["logFC"], by.x = "feature", by.y = 0, all.y = TRUE)
+  dea <- data.frame(feature = names(dea),"logFC" = dea)
+  sets <- merge(sets[,c("feature","type")],dea, by = "feature", all.y = TRUE)
   levels(sets$type) <- c(levels(sets$type),"no site")
   sets$type[is.na(sets$type)] <- "no site"
+  sets <- sets[!is.na(sets$logFC),]
 
-  ll <- split(sets, sets$type)
-  p <- CDplot(ll, size=line.size, ...)
+  ll <- as.list(split(sets, sets$type))
+  
+  d <- dplyr::bind_rows(lapply(ll, FUN=function(x){
+    data.frame( y=(seq_along(x$logFC)-1)/(length(as.character(x$logFC))-1), x=sort(x$logFC) )
+  }), .id="Sets")
+  d$Sets <- factor(d$Sets, levels=unique(d$Sets))
+  if(addN) levels(d$Sets) <- paste0(levels(d$Sets), " (n=",
+                                    as.numeric(table(d$Sets)), ")")
+  p <- ggplot(d, aes(x,y,colour=Sets)) + 
+    geom_vline(xintercept=0, linetype="dashed") + geom_line(...) 
+  p + ylab("Cumulative proportion")
+
   if(point.size>0) p <- p + geom_point(size=point.size)
   p + xlab("logFC") + ggtitle(setName)
 }
