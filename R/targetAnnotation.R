@@ -99,7 +99,7 @@ setMethod("as.data.frame", "targetAnnotationMatrix", definition=function(x, name
     x <- summary(x)
     w <- which(x$x!=ifelse(is.logical(x$x),FALSE,0))
     xout <- data.frame( feature=factor(x$i[w], levels=seq_len(length(dimn[[1]])), labels=dimn[[1]]),
-                        set=factor(x$j[w], levels=seq_len(dimn[[2]]), labels=dimn[[2]]) )
+                        set=factor(x$j[w], levels=seq_len(length(dimn[[2]])), labels=dimn[[2]]) )
     if(!is.logical(x$x)) xout[[content]] <- x$x[w]
   }else{
     w <- which(as.vector(x!=ifelse(is.logical(x[1,1]),FALSE,0)))

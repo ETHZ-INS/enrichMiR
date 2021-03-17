@@ -80,27 +80,30 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
 }
 
 #' CDplot2
-#' 
-#' A wrapper around \code{\link{CDplot}} to work directly with DEA results and
-#' a target sets as inputs.
+#'
+#' A wrapper around \code{\link{CDplot}} to work directly with DEA results and a
+#' target sets as inputs.
 #'
 #' @param dea A named numeric vector containing the signal for each feature, or
-#' a DEA results data.frame (such as produced by major DEA packages, i.e. edgeR,
-#' DESeq2 or limma).
+#'   a DEA results data.frame (such as produced by major DEA packages, i.e.
+#'   edgeR, DESeq2 or limma).
 #' @param sets The target sets object.
 #' @param setName The name of the set to plot in `sets`.
 #' @param k The number of groups to form.
-#' @param by The variable by which to form the groups; either "sites" or "score"
-#' @param sameFreq Logical; whether to divide so as to obtained groups with 
-#' similar frequencies (rather than groups of similar width)
+#' @param by The variable by which to form the groups; either "sites" or "score".
+#' @param sameFreq Logical; whether to divide so as to obtained groups with
+#'   similar frequencies (rather than groups of similar width)
 #' @param line.size Size of the line.
 #' @param point.size Size of the points.
 #' @param ... Any other argument passed to \code{\link{CDplot}}.
 #'
 #' @return A ggplot.
 #' @export
-CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"),
-                    sameFreq=NULL, line.size=1.2, point.size=0.8, ...){
+CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"), 
+                    sameFreq=NULL, line.size=1.2, point.size=0.8, checkSynonyms=TRUE, ...){
+  message("Preparing inputs...")
+  dea <- .homogenizeDEA(dea)
+  if(checkSynonyms) dea <- .applySynonyms(dea, sets)
   sets <- .list2DF(sets)
   sets <- sets[sets$set==setName,]
   if(is.null(sets$sites)) sets$sites <- 1
@@ -119,6 +122,7 @@ CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"),
          "features of `sets`.")
   if(is.null(sameFreq)) sameFreq <- by=="score"
   
+  
   by <- rowsum(sets[[by]], sets$feature)[,1]
   by2 <- by[names(dea)]
   by2[is.na(by2)] <- 0
@@ -132,6 +136,72 @@ CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"),
   if(point.size>0) p <- p + geom_point(size=point.size)
   p + xlab("logFC") + ggtitle(setName)
 }
+
+
+#' CDplot3
+#'
+#' A wrapper around \code{\link{CDplot}} to work directly with DEA results and
+#' split by site type
+#'
+#' @param dea A named numeric vector containing the signal for each feature, or
+#'   a DEA results data.frame (such as produced by major DEA packages, i.e.
+#'   edgeR, DESeq2 or limma).
+#' @param sets The target sets object containing site specific information with 
+#' a "type" column indicating the Site Type.
+#' @param setName The name of the set to plot in `sets`.
+#' @param addN Logical; whether to add group sizes to their names
+#' @param line.size Size of the line.
+#' @param point.size Size of the points.
+#' @param ... Any other argument passed to \code{\link{CDplot}}.
+#'
+#' @return A ggplot.
+#' @export
+CDplot3 <- function(dea, sets, setName, line.size=1.2, point.size=0.8, checkSynonyms=TRUE, 
+                    addN=FALSE, ...){
+  message("Preparing inputs...")
+  dea <- .homogenizeDEA(dea)
+  if(checkSynonyms) dea <- .applySynonyms(dea, sets)
+  sets <- .list2DF(sets)
+  sets <- sets[sets$set==setName,]
+  if(!("type" %in% colnames(sets))) stop("`type` not available in `sets`.")
+  if(nrow(sets)==0) stop("setName not found in `sets`.")
+  if(is.null(dim(dea))){
+    if(!is.numeric(dea) || is.null(names(dea)))
+      stop("`dea` should be a named numeric vector or a data.frame containing ",
+           "the results of a differential expression analysis.")
+  }else{
+    dea <- .dea2sig(.homogenizeDEA(dea), "logFC")
+  }
+  if(!any(sets$feature %in% names(dea)))
+    stop("There seems to be no overlap between the rows of `dea` and the ",
+         "features of `sets`.")
+  
+  dea <- data.frame(feature = names(dea),"logFC" = dea)
+  sets <- merge(sets[,c("feature","type")],dea, by = "feature", all.y = TRUE)
+  levels(sets$type) <- c(levels(sets$type),"no site")
+  sets$type[is.na(sets$type)] <- "no site"
+  sets <- sets[!is.na(sets$logFC),]
+
+  ll <- as.list(split(sets, sets$type))
+  
+  d <- dplyr::bind_rows(lapply(ll, FUN=function(x){
+    data.frame( y=(seq_along(x$logFC)-1)/(length(as.character(x$logFC))-1), x=sort(x$logFC) )
+  }), .id="Sets")
+  d$Sets <- factor(d$Sets, levels=unique(d$Sets))
+  if(addN) levels(d$Sets) <- paste0(levels(d$Sets), " (n=",
+                                    as.numeric(table(d$Sets)), ")")
+  p <- ggplot(d, aes(x,y,colour=Sets)) + 
+    geom_vline(xintercept=0, linetype="dashed") + geom_line(size = line.size,...) 
+  p + ylab("Cumulative proportion")
+
+  if(point.size>0) p <- p + geom_point(size=point.size)
+  p + xlab("logFC") + ggtitle(setName)
+}
+
+
+
+
+
 
 .mergeSmallerGroups <- function(ll, minN=10){
   if(all(grepl("^[\\(\\[\\)\\]].+,.+[\\(\\[\\)\\]]$", names(ll), perl=TRUE))){

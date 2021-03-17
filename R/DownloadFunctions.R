@@ -50,10 +50,15 @@
   tmp <- a[!duplicated(a[,1:2]),1:2]
   syn <- as.character(tmp[,2])
   names(syn) <- tmp[,1]
+  
+  # add SiteType information
+  sit_ty <- data.frame("Site Type" = c(1,2,3,4),"type" = c("7mer-1a","7mer-m8","8mer","6mer"),check.names = FALSE)
+  a <- merge(a,sit_ty,by="Site Type")
+  
   syn <- c(syn, .ens2symbol(species))
-  keep <- c("Seed.m8", "Gene Symbol","UTR_start","UTR end","score","weighted_score")
+  keep <- c("Seed.m8", "Gene Symbol","UTR_start","UTR end","score","weighted_score","type")
   a <- a[,keep]
-  colnames(a)[1:6] <- c("set","feature","start","end","score","weighted_score")
+  colnames(a)[1:7] <- c("set","feature","start","end","score","weighted_score","type")
   a[,1] <- as.factor(a[,1])
   a[,2] <- as.factor(a[,2])
   a[,3] <- as.integer(a[,3])
@@ -62,13 +67,14 @@
   a[,5] <- as.numeric(a[,5])
   a[[6]][a[[6]] == "NULL"] <- 0
   a[,6] <- as.numeric(a[,6])
+  a[,7] <- as.factor(a[,7])
   
   #attach the metadata
   a <- DataFrame(a)
   metadata(a)$feature.synonyms <- syn
   metadata(a)$families <- fams[["Seed.m8"]]
   names(metadata(a)$families) <- fams[["MiRBase.ID"]]
-  metadata(a)$families <- droplevels(metadata(a)$families)
+  metadata(a)$families <- droplevels(as.factor(metadata(a)$families))
   a
   }
 
