@@ -216,17 +216,27 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
   if(is.null(test) || length(test)==0) test <- names(object@res)
   ll <- object@res[test]
   if(length(ll)>1){
-    ll <- lapply(ll,FUN=function(x){
+    ff <- lapply(ll,FUN=function(x){
       x[,grep("pvalue|FDR|enrichment|nes|beta|coefficient|overlap",colnames(x)),drop=FALSE]
     })
-    res <- .plMergeList(ll,all=T)
-    rm(ll)
+    res <- .plMergeList(ff,all=T)
+    rm(ff)
   }else{
     res <- ll[[1]]
   }
-
-  res <- cbind(object@input$sets.properties[row.names(res),,drop=FALSE], res)
-
+  if(object@info$type == "colocalization"){
+    if(!all(c("miRNA","Partner") %in% colnames(res))){
+      res <- cbind(ll[[1]][,c(1,2)],res)}
+    res$miRNA_name <- object@input$sets.properties$miRNA[res$miRNA,"members"]
+    if(length(object@input$sets.properties) == 1){
+      res$Partner_name <- object@input$sets.properties$miRNA[res$Partner,"members"]
+    }else{
+      #RBP names - this should be correct but I'm not 100% sure
+      res$Partner_name <- object@input$sets.properties$Partner[res$Partner,"members"]
+    }
+  }else{
+    res <- cbind(object@input$sets.properties[row.names(res),,drop=FALSE], res)
+  }
   fdr <- grep("FDR",colnames(res))
   if(length(fdr)==1){
     ob <- res[[fdr]]
@@ -236,13 +246,22 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
     res$FDR.geomean <- ob
   }
   res <- dround(res[order(ob),], roundGreaterThan1=TRUE)
+  
   if(getFeatures && length(object@overlaps)>0){
     for(f in names(object@overlaps)){
       if(flatten){
-        res[[paste0("genes.", f)]] <- sapply(object@overlaps[[f]][row.names(res)], collapse=",", FUN=paste)
+        if(object@info$type == "colocalization"){
+          res[[paste0(f,"_miRNA")]] <- sapply(object@overlaps[[f]][res$miRNA], collapse=",", FUN=paste)
+        }else{
+          res[[paste0("genes.", f)]] <- sapply(object@overlaps[[f]][row.names(res)], collapse=",", FUN=paste) 
+        }
       }else{
         res <- DataFrame(res)
-        res[[paste0("genes.", f)]] <- FactorList(lapply(row.names(res), FUN=function(x) object@overlaps[[f]][[x]]))
+        if(object@info$type == "colocalization"){
+          res[[paste0(f,"_miRNA")]] <- FactorList(lapply(res$miRNA, FUN=function(x) object@overlaps[[f]][[x]]))
+        }else{
+          res[[paste0("genes.", f)]] <- FactorList(lapply(row.names(res), FUN=function(x) object@overlaps[[f]][[x]]))
+        }
       }
     }
   }
@@ -297,8 +316,12 @@ availableTests <- function(x=NULL, sets=NULL){
 }
 
 .filterInput <- function(sets, signal, min.size=5, max.size=Inf, testOnlyAnnotated=FALSE){
-  stopifnot(!is.null(names(signal))) 
-  features <- names(signal)
+  if(!is.null(dim(signal))){
+    features <- row.names(signal)
+  }else{
+    features <- names(signal)
+  }
+  stopifnot(!is.null(features))
   if(.is.matrix(sets)){
     stopifnot(!is.null(row.names(sets)) && !is.null(colnames(sets)))
     if(testOnlyAnnotated)  features <- intersect(features, row.names(sets))
@@ -311,16 +334,20 @@ availableTests <- function(x=NULL, sets=NULL){
   sets <- .list2DF(sets)
   sets$feature <- as.factor(sets$feature)
   sets$set <- as.factor(sets$set)
-  if(testOnlyAnnotated) features <- intersect(levels(sets$features), features)
+  if(testOnlyAnnotated) features <- intersect(levels(sets$feature), features)
   i <- which(levels(sets$feature) %in% features)
-  sets <- sets[as.integer(sets$features) %in% i,]
-  sets$features <- droplevels(sets$features)
+  sets <- sets[as.integer(sets$feature) %in% i,]
+  sets$features <- droplevels(sets$feature)
   tt <- table(sets$set)
   i <- which(levels(sets$set) %in% names(tt)[tt>=min.size && tt<max.size])
   if(length(i)==0) stop(.noMatchingFeatures())
   sets <- sets[as.integer(sets$set) %in% i,]
   sets$set <- droplevels(sets$set)
-  return(list(sets=sets, signal=signal[levels(sets$feature)]))
+  if(!is.null(dim(signal))){
+    return(list(sets=sets, signal=signal[row.names(signal) %in% levels(sets$feature),])) 
+  }else{
+    return(list(sets=sets, signal=signal[levels(sets$feature)])) 
+  }
 }
 
 .noMatchingFeatures <- function(){
