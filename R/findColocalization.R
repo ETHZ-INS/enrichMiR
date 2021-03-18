@@ -103,25 +103,27 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
   mode <- "subset"
 
   if(is.character(x)){
-    if(is.null(background) || force.global.mode) {
+    if(is.null(background)) {
         message("Search for colocalization of motifs within the full given set of genes")
         mode <- "global"
         t <- !x %in% x
         names(t) <- x
         x <- t
       }else{
-        x <- background %in% x
-        names(x) <- background 
+        if(force.global.mode){
+          mode = "global"
+          t <- rep(FALSE,length(x))
+          names(t) <- x
+          x <- t
+          warning("`background` ignored.")
+        }else{
+          x <- background %in% x
+          names(x) <- background 
+        }
+        
       }
-  }else{
-    if(force.global.mode){
-      mode = "global"
-      t <- rep(FALSE,length(x))
-      names(t) <- x
-      x <- t
-    }
-    if(!is.null(background)) warning("`background` ignored.")
   }
+  
   
   if(!is.null(dim(x))){ 
     x <- .homogenizeDEA(x)
@@ -131,6 +133,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
       names(t) <- row.names(x)
       x <- t
     }}
+  
 
   x <- .applySynonyms(x, mir_pos)
   
@@ -365,7 +368,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
       dt.up <- dt[,c(1,2,3,5,7,9)]
       dt.up <- .fisher_test(dt.up)
       o@res["Fisher.Partner.Co.Up"] <-list(dt.up)
-      dt.down <- dt[,c(1,2,3,11,13)]
+      dt.down <- dt[,c(1,2,3,5,11,13)]
       dt.down <- .fisher_test(dt.down)
       o@res["Fisher.Partner.Co.Down"] <-list(dt.down)
       
@@ -397,7 +400,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
   # properties files as row.names, one could either attach them before with merge or rewrite the .getResults
   # >> Potentially by checking if "sets.properties" is a list or o@info$type == colocalization
       
-
+  o
 }
 
   
@@ -406,12 +409,13 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
 
   
 .fisher_test <- function(dt){
-  dt$p.value.enrich <- apply(dt,1,function(dt){
+  dt$pvalue <- apply(dt,1,function(dt){
     m <- matrix(as.numeric(dt[c(3, 4, 5, 6)]), ncol = 2)
     f <- fisher.test(as.table(m), alt="greater")
     return(f$p.value)
   })
-  dt$FDR <- p.adjust(dt$p.value.enrich, method = "BH")
+  dt$FDR <- p.adjust(dt$pvalue, method = "BH")
+  dt <- as.data.frame(dt)
   dt
 }  
 
