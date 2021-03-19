@@ -113,7 +113,8 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
     signature[w] <- max(abs(signature[-w]))*sign(signature[w])
   
   o <- new("enrich.results", input=list(x=x, sets.properties=sets.properties), 
-           binary.signatures=binary.signatures, info=list(call=match.call()))
+           binary.signatures=binary.signatures, info=list(call=match.call(),
+                                                          type = "enrichment"))
   o@overlaps <- lapply(binary.signatures, FUN=function(x){
     FactorList(lapply(split(sets$feature, sets$set), 
                       FUN=function(y) sort(intersect(y,names(x)[x]))))

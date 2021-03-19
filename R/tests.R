@@ -57,30 +57,76 @@ overlap <- function(signal, sets, alternative=c("greater","less","two.sided")){
 #' @return a data.frame.
 #'
 #' @export
-siteoverlap <- function(signal, sets, 
-                        alternative=c("greater","less","two.sided")){
-  alternative <- match.arg(alternative)
-  if(!.checkSets(sets, "sites", matrixAlternative="numeric")){
-    sets <- .setsToScoreMatrix(signal, sets, column="sites", keepSparse=TRUE)
-  }else{
-    sets <- sets[row.names(sets) %in% names(signal),]
-  }
-  signal <- signal[row.names(sets)]
-  BS.in <- colSums(sets[which(signal),,drop=FALSE])
-  otherBS.in <- sum(sets[which(signal),,drop=FALSE])-BS.in
-  BS.inBG <- colSums(sets[which(!signal),,drop=FALSE])
-  otherBS.inBG <- sum(sets[which(!signal),,drop=FALSE])-BS.inBG
-  enrichment <- ((1+BS.in)/(otherBS.in))/((1+BS.inBG)/(otherBS.inBG))
-  expected <- sum(signal)*(sigAndSet+notSigAndSet)/nrow(sets)
-  res <- data.frame( overlap=colSums(sets[which(signal),,drop=FALSE]>0),
-                     sites.overlap=BS.in,
-                     enrichment=round(log2(enrichment),3),
-                     pvalue=fisher.test.p(BS.in, otherBS.in,
-                                          BS.inBG, otherBS.inBG,
-                                          alternative=alternative) )
-  res$FDR <- p.adjust(res$pvalue, method="fdr")
-  res[order(res$FDR,res$pvalue),]
+siteoverlap <- function(signal, sets){
+  tested <- names(signal)
+  significant <- names(signal)[signal]
+  allBS.bg <- sum(sets[which(!(sets$feature %in% significant)),"sites"])
+  allBS.sig <- sum(sets[which(sets$feature %in% significant),"sites"])
+  res <- t(vapply(split(sets,sets$set), set1=significant, bs.sig=allBS.sig, 
+                  bs.bg=allBS.bg, FUN.VALUE=numeric(8), 
+                  FUN=function(x,set1,bs.sig,bs.bg){
+                    x <- as.data.frame(x)
+                    w <- which(as.character(x$feature) %in% set1)
+                    xin <- sum(x[w,"sites"])
+                    xout <- sum(x[which(!(as.character(x$feature) %in% set1)),"sites"])
+                    mm <- matrix(round(c(xin,bs.sig-xin,xout,bs.bg-xout)),nrow=2)
+                    p1 <- fisher.test(mm,alternative="greater")$p.value[[1]]
+                    p2 <- fisher.test(mm,alternative="less")$p.value[[1]]
+                    c(  overlap=length(unique(x[w,"feature"])),
+                        BS.in=xin,
+                        otherBS.in=bs.sig-xin,
+                        BS.inBG=xout,
+                        enrichment=log2(((1+xin)/(bs.sig-xin))/((1+xout)/(bs.bg-xout))),
+                        otherBS.inBG=bs.bg-xout,
+                        under.pvalue=p2,
+                        pvalue=p1
+                    )
+                  }))
+  res <- as.data.frame(res)
+  res <- res[order(res$pvalue),]
+  for(i in 1:4) res[[i]] <- as.integer(res[[i]])
+  res$FDR <- p.adjust(res$pvalue,method="fdr")
+  res
 }
+
+
+
+
+
+
+
+# Sparse Matrix version, not working yet
+#
+# siteoverlap <- function(signal, sets, 
+#                         alternative=c("greater","less","two.sided")){
+#   alternative <- match.arg(alternative)
+#   if(!.checkSets(sets, "sites", matrixAlternative="numeric")){
+#     sets <- .setsToScoreMatrix(signal, sets, column="sites", keepSparse=TRUE)
+#   }else{
+#     sets <- sets[row.names(sets) %in% names(signal),]
+#   }
+#   signal <- signal[row.names(sets)]
+#   BS.in <- colSums(sets[which(signal),,drop=FALSE])
+#   otherBS.in <- sum(sets[which(signal),,drop=FALSE])-BS.in
+#   BS.inBG <- colSums(sets[which(!signal),,drop=FALSE])
+#   otherBS.inBG <- sum(sets[which(!signal),,drop=FALSE])-BS.inBG
+#   enrichment <- ((1+BS.in)/(otherBS.in))/((1+BS.inBG)/(otherBS.inBG))
+#   expected <- sum(signal)*(sigAndSet+notSigAndSet)/nrow(sets)
+#   res <- data.frame( overlap=colSums(sets[which(signal),,drop=FALSE]>0),
+#                      sites.overlap=BS.in,
+#                      enrichment=round(log2(enrichment),3),
+#                      pvalue=fisher.test.p(BS.in, otherBS.in,
+#                                           BS.inBG, otherBS.inBG,
+#                                           alternative=alternative) )
+#   res$FDR <- p.adjust(res$pvalue, method="fdr")
+#   res[order(res$FDR,res$pvalue),]
+# }
+
+
+
+
+
+
 
 
 #' plMod
