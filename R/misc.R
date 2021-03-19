@@ -184,10 +184,10 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
     names(a) <- a <- row.names(df)
     a[names(new.rn)] <- as.character(new.rn)
     new.rn <- a[row.names(df)]
-    tt <- split(names(new.rn),new.rn)
-    tt <- data.frame(row.names=names(tt),
-                     members=sapply(tt, FUN=function(x) paste(sort(x),collapse=";")))
   }
+  tt <- split(names(new.rn),new.rn)
+  tt <- data.frame(row.names=names(tt),
+                   members=sapply(tt, FUN=function(x) paste(sort(x),collapse=";")))
   if(ncol(df)==0) return(data.frame(row.names=unique(new.rn)))
   if(!any(duplicated(new.rn))){
     row.names(df) <- new.rn
