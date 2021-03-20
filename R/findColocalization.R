@@ -86,7 +86,7 @@
 testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
                             mir_pos.properties=NULL, th.abs.logFC=0, th.FDR=0.05, 
                             minSize=5, maxSize=Inf, co_dist_min = 0, co_dist_max = NULL, 
-                            force.global.mode = FALSE, BPPARAM=NULL, 
+                            force.global.mode = FALSE, BP=NULL, 
                             ...){
   
   
@@ -263,45 +263,46 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
   
   ## Create the Colocalization Tables
   
+  if(is.null(BP)) BP <- SerialParam()
   # global mode
   # all genes should be assigned to background in global mode
   if(mode == "global"){
     if(!is.null(sets_pos)){
-      dt <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.back,rbps.back) 
+      dt <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.back,rbps.back,BP) 
     }else{
-      dt <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.back)
+      dt <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.back,BP)
     }
   }else{
     # subset mode
     # prepare the background table
     if(!is.null(sets_pos)){
-      dt.back <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.back, rbps.back)
+      dt.back <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.back, rbps.back,BP)
     }else{
-      dt.back <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.back)
+      dt.back <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.back,BP)
     }
     colnames(dt.back)[-c(1,2)] <- paste(colnames(dt.back)[-c(1,2)], "in.back", sep = "_")
         
     # prepare the subset tables and merge
     if(!is.null(dim(x))){
       if(!is.null(sets_pos)){
-        dt.up <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.up,rbps.up)
-        dt.down <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.down, rbps.down)
+        dt.up <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.up,rbps.up,BP)
+        dt.down <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.down, rbps.down,BP)
       }else{
-        dt.up <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.up)
-        dt.down <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.down)
+        dt.up <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.up,BP)
+        dt.down <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.down,BP)
       }
       colnames(dt.up)[-c(1,2)] <- paste(colnames(dt.up)[-c(1,2)], "in.up", sep = "_")
       colnames(dt.down)[-c(1,2)] <- paste(colnames(dt.down)[-c(1,2)], "in.down", sep = "_")
-      dt <- merge(dt.back,dt.up,by = c("miRNA","Partner"), all = TRUE)
-      dt <- merge(dt,dt.down,by = c("miRNA","Partner"), all = TRUE)
+      dt <- merge(dt.up,dt.back,by = c("miRNA","Partner"), all = TRUE)
+      dt <- merge(dt.down,dt,by = c("miRNA","Partner"), all = TRUE)
       }else{
         if(!is.null(sets_pos)){
-           dt.sig <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.sig, rbps.sig)
+           dt.sig <- .findcoloc1rbp(co_dist_min,co_dist_max,mirs.sig, rbps.sig,BP)
         }else{
-          dt.sig <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.sig)
+          dt.sig <- .findcoloc1mir(co_dist_min,co_dist_max,mirs.sig,BP)
         }
         colnames(dt.sig)[-c(1,2)] <- paste(colnames(dt.sig)[-c(1,2)], "in.sig", sep = "_")
-        dt <- merge(dt.back,dt.sig,by = c("miRNA","Partner"), all = TRUE)
+        dt <- merge(dt.sig,dt.back,by = c("miRNA","Partner"), all = TRUE)
       }
     dt[is.na(dt)] <- 0
     }
@@ -337,7 +338,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
   
   # global mode
   if(mode == "global"){
-    dt <- .fisher_test(dt)
+    dt <- .fisher_test(dt,mod = "subset")
     o@res["Fisher.Pair"] <- list(dt)
   }
   
@@ -347,59 +348,53 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
     if(!is.null(dim(x))){
       
       # 1) Check for the enrichment of a specific pair in the subset vs the background.
-      dt.up <- dt[,c(1,2,3,6,7,10)]
-      dt.up <- .fisher_test(dt.up)
+      dt.up <- dt[,c(1,2,7,10,11,14)]
+      dt.up <- .fisher_test(dt.up,mod = "subset")
       o@res["Fisher.Pair.Up"] <-list(dt.up)
       dt.down <- dt[,c(1,2,3,6,11,14)]
-      dt.down <- .fisher_test(dt.down)
+      dt.down <- .fisher_test(dt.down,mod = "subset")
       o@res["Fisher.Pair.Down"] <-list(dt.down)
     
       # 2) Check whether the specified microRNA has more colocolizations with this partner than
-      #    with any other.
-      dt.up <- dt[,c(1,2,3,4,7,8)]
-      dt.up <- .fisher_test(dt.up)
+      #    expected by chance.
+      dt.up <- dt[,c(1,2,7,8,11,12)]
+      dt.up <- .fisher_test(dt.up,mod = "subset")
       o@res["Fisher.MIR.Co.Up"] <-list(dt.up)
       dt.down <- dt[,c(1,2,3,4,11,12)]
-      dt.down <- .fisher_test(dt.down)
+      dt.down <- .fisher_test(dt.down,mod = "subset")
       o@res["Fisher.MIR.Co.Down"] <-list(dt.down)
       
       # 3) Check whether the specified Partner has more colocolizations with this microRNA than
-      #    with any other.
-      dt.up <- dt[,c(1,2,3,5,7,9)]
-      dt.up <- .fisher_test(dt.up)
+      #    expected by chance.
+      dt.up <- dt[,c(1,2,7,9,11,13)]
+      dt.up <- .fisher_test(dt.up,mod = "subset")
       o@res["Fisher.Partner.Co.Up"] <-list(dt.up)
       dt.down <- dt[,c(1,2,3,5,11,13)]
-      dt.down <- .fisher_test(dt.down)
+      dt.down <- .fisher_test(dt.down,mod = "subset")
       o@res["Fisher.Partner.Co.Down"] <-list(dt.down)
       
     }else{
       
       # 1) Check for the enrichment of a specific pair in the subset vs the background.
       dt.sig <- dt[,c(1,2,3,6,7,10)]
-      dt.sig <- .fisher_test(dt.sig)
+      dt.sig <- .fisher_test(dt.sig,mod = "subset")
       o@res["Fisher.Pair"] <-list(dt.sig)
       
       # 2) Check whether the specified microRNA has more colocolizations with this partner than
-      #    with any other.
+      #    expected by chance.
       dt.sig <- dt[,c(1,2,3,4,7,8)]
-      dt.sig <- .fisher_test(dt.sig)
+      dt.sig <- .fisher_test(dt.sig,mod = "subset")
       o@res["Fisher.MIR.Co"] <-list(dt.sig)
       
       # 3) Check whether the specified Partner has more colocolizations with this microRNA than
-      #    with any other.
+      #    expected by chance.
       dt.sig <- dt[,c(1,2,3,5,7,9)]
-      dt.sig <- .fisher_test(dt.sig)
+      dt.sig <- .fisher_test(dt.sig,mod = "subset")
       o@res["Fisher.Partner.Co"] <-list(dt.sig)
       
     } 
   }
   
-  ## Naming and .getResults 
-  # Currently, the getResults wouldn't work with regards to the naming, since it's not possible
-  # to use cbind with the row.names for these result-tables. Names are though saved in the 
-  # properties files as row.names, one could either attach them before with merge or rewrite the .getResults
-  # >> Potentially by checking if "sets.properties" is a list or o@info$type == colocalization
-      
   o
 }
 
@@ -408,7 +403,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
 ## Helper Functions
 
   
-.fisher_test <- function(dt){
+.fisher_test <- function(dt,mod){
   dt$pvalue <- apply(dt,1,function(dt){
     m <- matrix(as.numeric(dt[c(3, 4, 5, 6)]), ncol = 2)
     f <- fisher.test(as.table(m), alt="greater")
@@ -416,17 +411,26 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
   })
   dt$FDR <- p.adjust(dt$pvalue, method = "BH")
   dt <- as.data.frame(dt)
+  if(mod == "subset"){
+    dt$enrichment <- apply(dt,1,function(dt){
+      c <- as.numeric(dt[c(3, 4, 5, 6)])
+      c <- (c[1]/max(c[2],1))/(c[3]/max(c[4],1))
+      log2(c)
+    })
+  }
   dt
 }  
 
 
 
 
-.findcoloc1mir <- function(min.dist,max.dist,Pos_object) {
+.findcoloc1mir <- function(min.dist,max.dist,Pos_object,BP) {
+  library(BiocParallel)
+  
   df <- sapply( split(Pos_object, Pos_object$miRNA), FUN=function(mirs_all){
     # each mirs contains all the binding sites of a single miRNA
     # this means basically that a second argument (the mirs_all) is passed to the lapply function
-    ll <- lapply(split(Pos_object, Pos_object$miRNA), mi=mirs_all, FUN=function(x,mi){
+    ll <- bplapply(split(Pos_object, Pos_object$miRNA), mi=mirs_all,BPPARAM=BP, FUN=function(x,mi){
       suppressWarnings(distanceToNearest(x, mi, ignore.strand=T)@elementMetadata$distance)
     })
     sapply(ll,FUN=function(x) {
@@ -477,13 +481,13 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
 
 
 
-.findcoloc1rbp<- function(min.dist,max.dist,mirs,rbps) {
-  
+.findcoloc1rbp<- function(min.dist,max.dist,mirs,rbps,BP) {
+  library(BiocParallel)
   # This should be miRNA centered, correct? Would that matter?
   
   df <- sapply( split(mirs, mirs$miRNA), FUN=function(mirs_all){
     # mirs contains all the binding sites of a single miRNA
-    ll <- lapply(split(rbps, rbps$RBP), mi=mirs_all, FUN=function(x,mi){
+    ll <- bplapply(split(rbps, rbps$RBP), mi=mirs_all, BPPARAM=BP,FUN=function(x,mi){
       suppressWarnings(distanceToNearest(x, mi, ignore.strand=T)@elementMetadata$distance)
     })
     sapply(ll,FUN=function(x) {

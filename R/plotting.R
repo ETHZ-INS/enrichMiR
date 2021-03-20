@@ -60,13 +60,12 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
   }
   ll <- .mergeSmallerGroups(ll,minN=minN)
   if(pvals){
-    p <- sapply(ll, FUN=function(x){
+    stat_df <- sapply(ll, FUN=function(x){
       sapply(ll, FUN=function(y){
         if(identical(x,y)) return(NA_real_)
-        ks.test(y,x)$p.value
+        suppressWarnings(ks.test(y,x)$p.value)
       })
     })
-    print(p)
   }
   d <- dplyr::bind_rows(lapply(ll, FUN=function(x){
     data.frame( y=(seq_along(x)-1)/(length(x)-1), x=sort(x) )
@@ -76,6 +75,7 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
                                     as.numeric(table(d$Sets)), ")")
   p <- ggplot(d, aes(x,y,colour=Sets)) + 
     geom_vline(xintercept=0, linetype="dashed") + geom_line(...) 
+  p$stat <- stat_df
   p + ylab("Cumulative proportion")
 }
 
@@ -152,12 +152,13 @@ CDplot2 <- function(dea, sets, setName, k=3, by=c("sites","score"),
 #' @param addN Logical; whether to add group sizes to their names
 #' @param line.size Size of the line.
 #' @param point.size Size of the points.
+#' @param pvals Logical; whether to print the p-values of KS tests between sets
 #' @param ... Any other argument passed to \code{\link{CDplot}}.
 #'
 #' @return A ggplot.
 #' @export
 CDplot3 <- function(dea, sets, setName, line.size=1.2, point.size=0.8, checkSynonyms=TRUE, 
-                    addN=FALSE, ...){
+                    addN=FALSE, pvals = FALSE, ...){
   message("Preparing inputs...")
   dea <- .homogenizeDEA(dea)
   if(checkSynonyms) dea <- .applySynonyms(dea, sets)
@@ -183,6 +184,15 @@ CDplot3 <- function(dea, sets, setName, line.size=1.2, point.size=0.8, checkSyno
   sets <- sets[!is.na(sets$logFC),]
 
   ll <- as.list(split(sets, sets$type))
+  if(pvals){
+    ll2 <- lapply(ll,FUN = function(x) x$logFC)
+    stat_df <- sapply(ll2, FUN=function(x){
+      sapply(ll2, FUN=function(y){
+        if(identical(x,y)) return(NA_real_)
+        suppressWarnings(ks.test(y,x)$p.value)
+      })
+    })
+  }
   
   d <- dplyr::bind_rows(lapply(ll, FUN=function(x){
     data.frame( y=(seq_along(x$logFC)-1)/(length(as.character(x$logFC))-1), x=sort(x$logFC) )
@@ -193,7 +203,7 @@ CDplot3 <- function(dea, sets, setName, line.size=1.2, point.size=0.8, checkSyno
   p <- ggplot(d, aes(x,y,colour=Sets)) + 
     geom_vline(xintercept=0, linetype="dashed") + geom_line(size = line.size,...) 
   p + ylab("Cumulative proportion")
-
+  p$stat <- stat_df
   if(point.size>0) p <- p + geom_point(size=point.size)
   p + xlab("logFC") + ggtitle(setName)
 }
