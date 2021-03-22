@@ -338,7 +338,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
   
   # global mode
   if(mode == "global"){
-    dt <- .fisher_test(dt,mod = "subset")
+    dt <- .fisher_test(dt,mod = "global")
     o@res["Fisher.Pair"] <- list(dt)
   }
   
@@ -364,6 +364,8 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
       dt.down <- .fisher_test(dt.down,mod = "subset")
       o@res["Fisher.MIR.Co.Down"] <-list(dt.down)
       
+      
+      if(!is.null(sets_pos)){
       # 3) Check whether the specified Partner has more colocolizations with this microRNA than
       #    expected by chance.
       dt.up <- dt[,c(1,2,7,9,11,13)]
@@ -372,6 +374,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
       dt.down <- dt[,c(1,2,3,5,11,13)]
       dt.down <- .fisher_test(dt.down,mod = "subset")
       o@res["Fisher.Partner.Co.Down"] <-list(dt.down)
+      }
       
     }else{
       
@@ -386,11 +389,13 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
       dt.sig <- .fisher_test(dt.sig,mod = "subset")
       o@res["Fisher.MIR.Co"] <-list(dt.sig)
       
+      if(!is.null(sets_pos)){
       # 3) Check whether the specified Partner has more colocolizations with this microRNA than
       #    expected by chance.
       dt.sig <- dt[,c(1,2,3,5,7,9)]
       dt.sig <- .fisher_test(dt.sig,mod = "subset")
       o@res["Fisher.Partner.Co"] <-list(dt.sig)
+      }
       
     } 
   }
@@ -414,8 +419,8 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
   if(mod == "subset"){
     dt$enrichment <- apply(dt,1,function(dt){
       c <- as.numeric(dt[c(3, 4, 5, 6)])
-      c <- (c[1]/max(c[2],1))/(c[3]/max(c[4],1))
-      log2(c)
+      c <- ((c[1] + 0.25)/max(c[2],1))/((c[3]+0.25)/max(c[4],1))
+      ifelse(c==0,0,log2(c))
     })
   }
   dt
@@ -538,24 +543,24 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
 # sum((is.null(min.dist) | abs(x)>= min.dist) & (is.null(max.dist) | abs(x)<= max.dist), na.rm = T)
 # doesn't work for mindist = 0 und max.dist = NULL
 
-.findcoloc1PL <- function(min.dist,max.dist,Pos_object, BP=SerialParam()) {
-  library(BiocParallel)
-  mirs_all <- split(Pos_object, Pos_object$seed)
-  do.call(cbind, bplapply(seq_along(mirs_all), BPPARAM=BP, FUN=function(mir){
-    # mirs_all contains all the binding sites of ONE single miRNA
-    # this means basically that a second argument (the mirs_all) is passed to the lapply function
-    ll <- lapply(seq_along(mirs_all), FUN=function(x){
-      if(x>=mir) return=NULL
-      suppressWarnings(distanceToNearest(mirs_all[[x]], mirs_all[[mir]], ignore.strand=T)@elementMetadata$distance)
-    })
-    sapply(ll,FUN=function(x) {
-      #assign the min-max values
-      if(is.null(x)) return(NA_integer_)
-      sum((is.null(min.dist) | abs(x)>= min.dist) & (is.null(max.dist) | abs(x)<= max.dist), na.rm = T)
-      
-    })
-  }))
-}
+# .findcoloc1PL <- function(min.dist,max.dist,Pos_object, BP=SerialParam()) {
+#   library(BiocParallel)
+#   mirs_all <- split(Pos_object, Pos_object$seed)
+#   do.call(cbind, bplapply(seq_along(mirs_all), BPPARAM=BP, FUN=function(mir){
+#     # mirs_all contains all the binding sites of ONE single miRNA
+#     # this means basically that a second argument (the mirs_all) is passed to the lapply function
+#     ll <- lapply(seq_along(mirs_all), FUN=function(x){
+#       if(x>=mir) return=NULL
+#       suppressWarnings(distanceToNearest(mirs_all[[x]], mirs_all[[mir]], ignore.strand=T)@elementMetadata$distance)
+#     })
+#     sapply(ll,FUN=function(x) {
+#       #assign the min-max values
+#       if(is.null(x)) return(NA_integer_)
+#       sum((is.null(min.dist) | abs(x)>= min.dist) & (is.null(max.dist) | abs(x)<= max.dist), na.rm = T)
+#       
+#     })
+#   }))
+# }
 
 
 
