@@ -4,7 +4,7 @@
 \alias{siteoverlap}
 \title{siteoverlap}
 \usage{
-siteoverlap(signal, sets, alternative = c("greater", "less", "two.sided"))
+siteoverlap(signal, sets)
 }
 \arguments{
 \item{signal}{A named logical vector indicating which features are 

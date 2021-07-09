@@ -22,7 +22,7 @@
 #' @param background A character vector of background; ignored if `x` is not a
 #' character vector.
 #' @param tests Character vector of the tests to perform. See 
-#' \link{\code{availableTests}} for the options.
+#' \link{\code{enrichMiR::availableTests}} for the options.
 #' @param sets.properties Any further information about the sets; this can 
 #' either be a data.frame (or DataFrame), with row.names corresponding to names
 #' of `sets` (or to alternative names), or a named vector (e.g. miRNA expression
@@ -115,6 +115,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   o <- new("enrich.results", input=list(x=x, sets.properties=sets.properties), 
            binary.signatures=binary.signatures, info=list(call=match.call(),
                                                           type = "enrichment"))
+  if(is.null(names(binary.signatures))) names(binary.signatures) <- "features"
   o@overlaps <- lapply(binary.signatures, FUN=function(x){
     FactorList(lapply(split(sets$feature, sets$set), 
                       FUN=function(y) sort(intersect(y,names(x)[x]))))
