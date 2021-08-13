@@ -208,3 +208,203 @@
   sparseMatrix( as.numeric(e[,2]), as.numeric(e[,1]), 
                 dimnames=list(levels(e[,2]), levels(e[,1])) )
 }
+
+
+
+
+#Downlaod RBP position info from the ornament database
+.getOrnamentDB <- function(species = c("human","mouse"), type=c("coding","non-coding"),MSSthreshold = "50%"){
+  message("This function will take quite some time")
+  species <- match.arg(species)
+  type <- match.arg(type)
+
+  #Download raw data by species and type
+  tmp <- tempfile()
+  options(timeout=750)
+  if(species == "human"){
+    if(type == "coding"){
+      download.file(
+        "http://rnabiology.ircm.qc.ca/BIF/oRNAment/static/Homo_sapiens_cDNA_oRNAment.csv.gz", tmp)
+    }else if(type == "non-coding"){
+      download.file(
+        "http://rnabiology.ircm.qc.ca/BIF/oRNAment/static/Homo_sapiens_ncRNA_oRNAment.csv.gz", tmp)
+    }else{stop("Choose either 'coding' or 'non-coding'")}
+  }else if(species == "mouse"){
+    if(type == "coding"){
+      download.file(
+        "http://rnabiology.ircm.qc.ca/BIF/oRNAment/static/Mus_musculus_cDNA_oRNAment.csv.gz", tmp)
+    }else if(type == "non-coding"){
+      download.file(
+        "http://rnabiology.ircm.qc.ca/BIF/oRNAment/static/Mus_musculus_ncrna_oRNAment.csv.gz", tmp)
+    }else{stop("Choose either 'coding' or 'non-coding'")}
+  }else{stop("Choose either 'mouse' or 'human'")}
+  options(timeout=60)
+  #Unzip and read file
+  gunzip(file.path(tmp),paste0(file.path(tmp),".csv"), remove=FALSE)
+  a <- fread(paste0(file.path(tmp),".csv"),drop = c(1,9,11:12))
+  colnames(a) <- c("ensembl_transcript_id_INT", "gene_biotype", "transcript_biotype", "transcript_position", "rbp_code", "score", "unpaired_probability","region")
+  unlink(tmp)
+  
+  # Get Ensembl gene & transcript names
+  tmp <- tempfile()
+  if(species == "human"){
+    download.file(
+      "http://rnabiology.ircm.qc.ca/BIF/oRNAment/static/Homo_sapiens_string_to_int_ID_conversion.csv.gz", tmp)
+  }else{
+    download.file(
+      "http://rnabiology.ircm.qc.ca/BIF/oRNAment/static/Mus_musculus_string_to_int_ID_conversion.csv.gz", tmp)
+  }
+  gunzip(file.path(tmp),paste0(file.path(tmp),".csv"), remove=FALSE)
+  ens <- fread(paste0(file.path(tmp),".csv"), drop = 5)
+  colnames(ens) <- c("ensembl_transcript_id", "ensembl_gene_id", "external_gene_name", "ensembl_transcript_id_INT")
+  if(species == "mouse") a$ensembl_transcript_id_INT <- trunc(a$ensembl_transcript_id_INT)
+  a <- merge(a,ens,by = "ensembl_transcript_id_INT", all.x = TRUE)
+  a$ensembl_transcript_id_INT <- NULL
+  unlink(tmp)
+  
+  
+  # Get the tx lenght
+  # They use GRCx38 and Ensembl v97
+  ah <- AnnotationHub()
+  if(species == "human"){
+    en <- query(ah, c("EnsDb", "Homo sapiens", "v97"))
+  }else{
+    en <- query(ah, c("EnsDb", "Mus musculus", "v97"))
+  }
+  EnsDB <- ah[[en$ah_id]]
+  len <- transcriptLengths(EnsDB,with.utr3_len = TRUE)
+  len <- as.data.table(len)
+  a <- merge(a,len[,c("tx_id","utr3_len","tx_len")],by.x = "ensembl_transcript_id",by.y = "tx_id",all.x = TRUE)
+  
+  # Filter gene biotype, transcript biotype and get 3'UTR start
+  if(type == "coding"){
+    #protein coding genes
+    a <- a[a$gene_biotype == 1,]
+    a <- a[a$transcript_biotype == 1,]
+    a$tx_len <- NULL
+  }else{
+    #lincRNA and associated genes
+    a <- a[a$gene_biotype == 13,]
+    a <- a[a$transcript_biotype == 5,]
+    a$region <- NULL
+    a$utr3_len <- NULL
+  }
+  a$gene_biotype <- NULL
+  a$transcript_biotype <- NULL
+  
+  
+  
+  #Filter for the specified MSS score
+  if(MSSthreshold != "50%"){
+    MSS <- switch(MSSthreshold,
+                  '45%' = "0_45",
+                  '40%' = "0_40",
+                  '35%' = "0_35",
+                  '30%' = "0_30",
+                  '25%' = "0_25",
+                  '20%' = "0_20",
+                  '15%' = "0_15",
+                  '10%' = "0_10",
+                  '5%' = "0_05",
+                  '1%' = "0_01",
+                  stop("Possible thresshold values are: '50%','45%','40%','35%','30%','25%','20%','15%','10%','5%','1%'"))
+    tmp <- tempfile()
+    tmp2 <- tempdir()
+    download.file(
+      "http://rnabiology.ircm.qc.ca/BIF/oRNAment/static/PMM_thresholds.tar.gz", tmp)
+    untar(file.path(tmp),exdir = tmp2)
+    mss_file <- fread(paste0(tmp2,"/PMM_thresholds/MSS-prime-",MSS,".csv"))
+    mss <- mss_file$score
+    names(mss) <- mss_file$motif
+    idx <- a$score
+    names(idx) <- a$rbp_code
+    w <- ifelse(idx < mss[names(idx)],FALSE,TRUE)
+    a <- a[w,]
+    unlink(tmp)
+    unlink(tmp2)
+  }
+  
+  # Get the RBP names
+  tmp <- tempfile()
+  download.file(
+    "http://rnabiology.ircm.qc.ca/BIF/oRNAment/static/RBP_id_encoding.csv.gz", tmp)
+  gunzip(file.path(tmp),paste0(file.path(tmp),".csv"), remove=FALSE)
+  rbp <- fread(paste0(file.path(tmp),".csv"))
+  colnames(rbp) <- c("rbp_code","RBP")
+  a <- merge(a,rbp,by = "rbp_code",all.x = TRUE)
+  a$rbp_code <- NULL
+  
+  # decrease file size
+  a$ensembl_transcript_id <- as.factor(a$ensembl_transcript_id) 
+  a$score <- as.integer(round(a$score,3)*1000)
+  a$unpaired_probability <- as.integer(round(a$unpaired_probability,3)*1000)
+  if(!is.null(a$region)) a$region <- as.factor(a$region)
+  a$ensembl_gene_id <- as.factor(a$ensembl_gene_id)
+  a$external_gene_name <- as.factor(a$external_gene_name)
+  if(!is.null(a$utr3_len)) a$utr3_len <- as.integer(a$utr3_len)
+  if(!is.null(a$tx_len)) a$tx_len <- as.integer(a$tx_len)
+  a$RBP_Motif <- as.factor(a$RBP)
+  
+  #save as GRanges ?
+  # a <- GRanges(seqnames = a$ensembl_transcript_id,ranges = IRanges(start = a$transcript_position,width = 7L), "score" = a$score, "unpaired_probability" = a$unpaired_probability,"region" = a$region, 
+  #              "ensembl_gene_id" = a$ensembl_gene_id, "gene_name" = a$external_gene_name, "utr3_len" = a$utr3_len, "tx_len" = a$tx_len, "RBP" = a$RBP)
+  a
+}
+
+
+
+#Import Function
+import_oRNAment <- function(x, tx = TRUE, only3utr = TRUE, aggregatesites = TRUE){
+ 
+  if(is.null(x$region) && only3utr) stop("The 3'-UTR region can't be exported for lncRNAs")
+  
+  # filter 3'utr
+  if(only3utr){
+      x <- x[x$region == "3;3"]
+    }
+  
+  # only transcript info
+  if(isFALSE(tx)){
+    if(is.null(x$utr3_len)){
+      x <- x[, .SD[tx_len == max(tx_len)], by = .(ensembl_gene_id)]
+    }else{
+      x <- x[, .SD[utr3_len == max(utr3_len)], by = .(ensembl_gene_id)]
+    }
+    # check in case there is two transcripts with the same length or utr length
+    x <- x[, .SD[ensembl_transcript_id == min(as.character(ensembl_transcript_id))], by = .(ensembl_gene_id)]
+    syn <- x$external_gene_name
+    names(syn) <- x$ensembl_gene_id
+  }
+  
+  #aggregate all motifs per RBP
+  x$RBP <- gsub(" \\(.*","",x$RBP_Motif)
+  fams <- unique(x[,c("RBP","RBP_Motif")])
+
+  #aggregate sites
+  if(aggregatesites){
+    x <- x[, sites:= .N, by = .(ensembl_transcript_id,RBP)]
+    if(tx){
+      ll = DataFrame("set" = x$RBP, "feature" = x$ensembl_transcript_id, "sites" = x$sites)
+      
+    }else{
+      ll = DataFrame("set" = x$RBP, "feature" = x$external_gene_name, "sites" = x$sites)
+      metadata(ll)$feature.synonyms <- ll
+    }
+
+  }else{
+    if(tx){
+      ll = DataFrame("set" = x$RBP, "feature" = x$ensembl_transcript_id, "start" = x$transcript_position, "end" = x$transcript_position + 6)
+    }else{
+      ll = DataFrame("set" = x$RBP, "feature" = x$external_gene_name, "start" = x$transcript_position, "end" = x$transcript_position + 6)
+      metadata(ll)$feature.synonyms <- ll
+    }
+  }
+  metadata(ll)$families <- fams$RBP
+  names(metadata(ll)$families) <- fams$RBP_Motif
+  metadata(ll)$families <- droplevels(as.factor(metadata(ll)$families))
+  return(ll)
+}
+
+
+
+

@@ -55,6 +55,8 @@ findGO <- function(expr, fixed=FALSE, ontology="BP|MF|CC"){
 }
 
 
+## MS: Not needed anymore I guess
+
 #' enrichMiR2
 #'
 #' Looks for miRNA target enrichment across different subsets of genes
