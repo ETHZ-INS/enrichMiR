@@ -354,6 +354,7 @@
 
 
 #Import Function
+# if tx=FALSE, the longest transcript of each gene gets imported
 import_oRNAment <- function(x, tx = TRUE, only3utr = TRUE, aggregatesites = TRUE){
  
   if(is.null(x$region) && only3utr) stop("The 3'-UTR region can't be exported for lncRNAs")

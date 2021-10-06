@@ -535,38 +535,6 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
 
 
 
-## work on this function that would not need sapply and could use BP.
-# doesn't display yet the vector names
-# also still computes the upper triangle
-
-# This line here
-# sum((is.null(min.dist) | abs(x)>= min.dist) & (is.null(max.dist) | abs(x)<= max.dist), na.rm = T)
-# doesn't work for mindist = 0 und max.dist = NULL
-
-# .findcoloc1PL <- function(min.dist,max.dist,Pos_object, BP=SerialParam()) {
-#   library(BiocParallel)
-#   mirs_all <- split(Pos_object, Pos_object$seed)
-#   do.call(cbind, bplapply(seq_along(mirs_all), BPPARAM=BP, FUN=function(mir){
-#     # mirs_all contains all the binding sites of ONE single miRNA
-#     # this means basically that a second argument (the mirs_all) is passed to the lapply function
-#     ll <- lapply(seq_along(mirs_all), FUN=function(x){
-#       if(x>=mir) return=NULL
-#       suppressWarnings(distanceToNearest(mirs_all[[x]], mirs_all[[mir]], ignore.strand=T)@elementMetadata$distance)
-#     })
-#     sapply(ll,FUN=function(x) {
-#       #assign the min-max values
-#       if(is.null(x)) return(NA_integer_)
-#       sum((is.null(min.dist) | abs(x)>= min.dist) & (is.null(max.dist) | abs(x)<= max.dist), na.rm = T)
-#       
-#     })
-#   }))
-# }
-
-
-
-
-
-
 
 
   
