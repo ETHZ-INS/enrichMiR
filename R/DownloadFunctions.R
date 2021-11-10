@@ -281,7 +281,6 @@
     #protein coding genes
     a <- a[a$gene_biotype == 1,]
     a <- a[a$transcript_biotype == 1,]
-    a$tx_len <- NULL
   }else{
     #lincRNA and associated genes
     a <- a[a$gene_biotype == 13,]
@@ -342,7 +341,7 @@
   a$ensembl_gene_id <- as.factor(a$ensembl_gene_id)
   a$external_gene_name <- as.factor(a$external_gene_name)
   if(!is.null(a$utr3_len)) a$utr3_len <- as.integer(a$utr3_len)
-  if(!is.null(a$tx_len)) a$tx_len <- as.integer(a$tx_len)
+  a$tx_len <- as.integer(a$tx_len)
   a$RBP_Motif <- as.factor(a$RBP)
   
   #save as GRanges ?
@@ -362,6 +361,8 @@ import_oRNAment <- function(x, tx = TRUE, only3utr = TRUE, aggregatesites = TRUE
   # filter 3'utr
   if(only3utr){
       x <- x[x$region == "3;3"]
+      #get the position relative within in the 3'UTR
+      x$transcript_position <- x$transcript_position - (x$tx_len - x$utr3_len)
     }
   
   # only transcript info
@@ -389,7 +390,7 @@ import_oRNAment <- function(x, tx = TRUE, only3utr = TRUE, aggregatesites = TRUE
       
     }else{
       ll = DataFrame("set" = x$RBP, "feature" = x$external_gene_name, "sites" = x$sites)
-      metadata(ll)$feature.synonyms <- ll
+      metadata(ll)$feature.synonyms <- syn
     }
 
   }else{
@@ -397,7 +398,7 @@ import_oRNAment <- function(x, tx = TRUE, only3utr = TRUE, aggregatesites = TRUE
       ll = DataFrame("set" = x$RBP, "feature" = x$ensembl_transcript_id, "start" = x$transcript_position, "end" = x$transcript_position + 6)
     }else{
       ll = DataFrame("set" = x$RBP, "feature" = x$external_gene_name, "start" = x$transcript_position, "end" = x$transcript_position + 6)
-      metadata(ll)$feature.synonyms <- ll
+      metadata(ll)$feature.synonyms <- syn
     }
   }
   metadata(ll)$families <- fams$RBP

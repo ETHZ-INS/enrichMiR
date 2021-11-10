@@ -75,7 +75,7 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
                                     as.numeric(table(d$Sets)), ")")
   p <- ggplot(d, aes(x,y,colour=Sets)) + 
     geom_vline(xintercept=0, linetype="dashed") + geom_line(...) 
-  p$stat <- stat_df
+  if(pvals) p$stat <- stat_df
   p + ylab("Cumulative proportion")
 }
 
@@ -203,7 +203,7 @@ CDplot3 <- function(dea, sets, setName, line.size=1.2, point.size=0.8, checkSyno
   p <- ggplot(d, aes(x,y,colour=Sets)) + 
     geom_vline(xintercept=0, linetype="dashed") + geom_line(size = line.size,...) 
   p + ylab("Cumulative proportion")
-  p$stat <- stat_df
+  if(pvals) p$stat <- stat_df
   if(point.size>0) p <- p + geom_point(size=point.size)
   p + xlab("logFC") + ggtitle(setName)
 }

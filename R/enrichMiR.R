@@ -233,7 +233,6 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
     if(length(object@input$sets.properties) == 1){
       res$Partner_name <- object@input$sets.properties$miRNA[res$Partner,"members"]
     }else{
-      #RBP names - this should be correct but I'm not 100% sure
       res$Partner_name <- object@input$sets.properties$Partner[res$Partner,"members"]
     }
   }else{

@@ -32,15 +32,15 @@
 #'   following columns: `logFC`, `FDR`; \item A logical vector of membership to
 #'   the geneset of interest, with feature (e.g. genes) as names, in which case
 #'   only tests based on a binary signal will be available. \item A vector of
-#'   feature names; in this case the \code{background} argument will also be
-#'   required, and only tests based on a binary signal will be available. } By
-#'   convention, we only test for enrichments in annotated genes.
+#'   feature names; in this case the search mode is "global" and only tests
+#'   based on a binary signal will be available. } By convention, we only test
+#'   for enrichments in annotated genes.
 #' @param background A character vector of background; ignored if `x` is not a
 #'   character vector.
 #' @param mir_pos A data.frame (or DataFrame) with positional information of
 #'   miRNA Binding Sites as obtained through the findSeedMatches function or
-#'   \link{\code{enrichMiR::.getTargetScanPos}}. Should contain at least the following
-#'   columns: `set`, `feature`,`start` & `stop`.
+#'   \link{\code{enrichMiR::.getTargetScanPos}}. Should contain at least the
+#'   following columns: `set`, `feature`,`start` & `stop`.
 #' @param sets_pos A data.frame (or DataFrame) / data.table with positional
 #'   information of any RBP motif sites as for example obtained through the
 #'   ""link to RBP_Pos function"" or in custom manner. Should contain at least
@@ -77,7 +77,7 @@
 #' @param BPPARAM could be potentially included, see .findcolocPL at the bottom
 #'   \link{BiocParallel} multithreading parameters. Used to multithread
 #'   colocalization.
-#'
+#'   
 #' @return an enrich.results object.
 #'
 #' @import S4Vectors
@@ -431,6 +431,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
 
 .findcoloc1mir <- function(min.dist,max.dist,Pos_object,BP) {
   library(BiocParallel)
+  if(is.null(BP)) BP <- SerialParam()
   
   df <- sapply( split(Pos_object, Pos_object$miRNA), FUN=function(mirs_all){
     # each mirs contains all the binding sites of a single miRNA
@@ -488,6 +489,7 @@ testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,
 
 .findcoloc1rbp<- function(min.dist,max.dist,mirs,rbps,BP) {
   library(BiocParallel)
+  if(is.null(BP)) BP <- SerialParam()
   # This should be miRNA centered, correct? Would that matter?
   
   df <- sapply( split(mirs, mirs$miRNA), FUN=function(mirs_all){
