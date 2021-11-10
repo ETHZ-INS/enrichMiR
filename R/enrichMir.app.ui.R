@@ -119,11 +119,11 @@ enrichMiR.ui <- function(){
                                 footer = "Note: If you want to use the Targetscan miRNA annotations together with rat genes, use the 'Gene Symbol' format"
                        ),
                        tabPanel(title = "Upload DEA results", value = "dea",
+                                tags$div(style="float: right;", htmlOutput("dea_res")),
                                 fileInput(inputId = "dea_input", label = "Upload DEA object as '*.csv' file (see help)",  accept = c(
                                   "text/csv",
                                   "text/comma-separated-values,text/plain",
-                                  ".csv")),
-                                checkboxInput("header", "Header", TRUE), br(),
+                                  ".csv", ".tab", ".txt")), br(),
                                 sliderInput(inputId = "dea_sig_th", label = "Select significance thresshold",
                                             min = 0.01, max = 0.5, value = 0.05, step = 0.01),
                                 "Upload Differential Expression Analyses (DEAs) as table with at least following information: Provide ENSEMBL_ID or Gene Symbol as identifier
@@ -152,7 +152,7 @@ enrichMiR.ui <- function(){
                     )
                 ),
         tabItem(tabName = "tab_enrich",
-                column(4,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))), 
+                column(4,uiOutput("enrichbtn")), 
                 br(), br(), br(),
                 column(9, id="sel_test_div", selectInput("view_test", "View test", choices=c(), width="90%")),
                 column(3, style = "margin-top: 30px;", checkboxInput("view_all", "advanced")),

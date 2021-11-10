@@ -35,13 +35,33 @@ enrichMiR.server <- function(){
     
     DEA <- reactive({ #initialize dea
       upFile <- input$dea_input
-      #if (is.null(upFile)) return(NULL)
+      ##if (is.null(upFile)) return(NULL)
       if (is.null(upFile)){ ## TEMPORARY - BECAUSE I'M LAZY
         updf <- readRDS("/mnt/schratt/enrichMiR_benchmark/data/bartel_HEK.deaList.rds")[[1]]
       }else{
-        updf <- read.csv(upFile$datapath, header = input$header, row.names=1)
+        updf <- data.table::fread(upFile$datapath)
       }
       updf <- enrichMiR:::.homogenizeDEA(updf)
+      if(nrow(updf)==0) return(NULL)
+      updf
+    })
+    
+    output$dea_res <- renderUI({
+      if(is.null(DEA()))
+        return(tags$span(icon("exclamation-triangle"), "No valid file uploaded",
+                         style="font-weight: bold; font-color: red;"))
+      tags$span(icon("check-circle"), "Valid file",
+                style="font-weight: bold; font-color: forestgreen;")
+    })
+    
+    output$enrichbtn <- renderUI({
+      if( (input$input_type == "dea" && is.null(DEA())) ||
+          (input$input_type != "dea" && (
+            is.null(Gene_Subset()) || length(Gene_Subset())<2 ||
+            is.null(Back()))) )
+        return(tags$span(icon("exclamation-triangle"), "No valid gene/DEA input!",
+                         style="font-weight: bold; font-color: red;"))
+      actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))
     })
     
     ## Include , and "" gsub
@@ -267,8 +287,16 @@ enrichMiR.server <- function(){
       detail <- NULL
       if(input$collection == "Targetscan all miRNA BS") detail <- "This will take a while..."
       withProgress(message=msg, detail=detail, value=1, max=3, {
-      testEnrichment(sig, EN_Object(), background=bg, sets.properties = mirexp,
-                     tests=tests, minSize=input$minsize, th.FDR=input$dea_sig_th)
+        o <- tryCatch(testEnrichment(sig, EN_Object(), background=bg, 
+                                     sets.properties=mirexp, tests=tests, 
+                                     minSize=input$minsize, th.FDR=input$dea_sig_th),
+                      error=function(e){
+                        showModal(modalDialog(
+                          title = "There was an error with your request:",
+                          tags$pre(as.character(e)),
+                          "This typically happens when there is a mismatch between your different input data (e.g. wrong species)"
+                        ))
+                      })
       })
     })
     
