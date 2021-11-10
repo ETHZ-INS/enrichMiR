@@ -84,6 +84,8 @@ recapitalizeMiRs <- function(x){
 }
 
 .homogenizeDEA <- function(x){
+  if(is(x,"data.table"))
+    x <- data.frame(row.names=x[[1]], as.data.frame(x[,-1,drop=FALSE]))
   x <- as.data.frame(x)
   if(all(row.names(x) == seq_len(nrow(x))) && 
      (is.character(x[,1]) || !any(duplicated(x[,1])))){
