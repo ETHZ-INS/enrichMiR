@@ -195,6 +195,20 @@ enrichMiR.server <- function(){
     ##############################
     ## CD plot
     
+    output$CDplotUI <- renderUI({
+      if( input$input_type!="dea" || is.null(DEA()) )
+        return(tags$h3(style="font-color: red;", icon("exclamation-triangle"), 
+                "Cumulative distribution plots require the use of a DEA input."))
+      tagList(
+        withSpinner(jqui_resizable(plotOutput("cd_plot", width='100%', height='400px'))),
+        br(),br(),br(),br(),br(),
+        column(6,sliderInput(inputId="CDplot_xaxis", "logFC to display on x.axis",
+                             min=0.5, max=5, value=2, step=0.5)),
+        column(6,sliderInput(inputId="CD_k", "Approximate number of sets",
+                             min=2, max=6, value=2, step=1))
+      )
+    })
+    
     observe({
       if(!is.null(EN_Object())){
         if(!is.null(m <- metadata(EN_Object())$families)){
@@ -213,6 +227,7 @@ enrichMiR.server <- function(){
     }) 
               
     output$cd_plot <- renderPlot({
+      if( input$input_type=="dea" && is.null(DEA()) ) return(NULL)
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
       validate(
         need(any(EN_Object()$set %in% input$mir_fam), "This miRNA has no annotated Binding Site")

@@ -1,4 +1,6 @@
-
+genes_placeholder <- "Enter your genes as symbols or ensembl IDs, separated by spaces, commas, or linebreaks. E.g.:
+EZH2, YY1, SHANK3, ...\nor:
+ENSG00000106462, ENSG00000100811, ..."
 
 #' @import shiny DT shinydashboard shinycssloaders
 #' @export
@@ -61,7 +63,10 @@ enrichMiR.ui <- function(){
                               textAreaInput(inputId = "exp_mirna_list", 
                                   label="miRNA List", 
                                   rows=5,
-                                  placeholder="miRNA_1\nmiRNA_2\nmiRNA_3", 
+                                  placeholder="Enter miRbase IDs, separated by spaces, commas, or linebreaks. E.g.:
+hsa-miR-30b-5p
+hsa-miR-30d-5p
+...", 
                                   resize="vertical")),
                     tabPanel(title = "Upload miRNA expression table",
                              "Upload miRNA Expression Table in the following format: miRBase name in the first
@@ -88,9 +93,9 @@ enrichMiR.ui <- function(){
                                                      "Paste a list of expressed genes in the selected format", br(), br(),
                                                      textAreaInput(inputId = "genes_of_interest", 
                                                                    label="Gene List", 
-                                                                   rows=5,
+                                                                   rows=5, width="100%",
                                                                    value = NULL,
-                                                                   placeholder="Gene_1\nGene_2\nGene_3", 
+                                                                   placeholder=genes_placeholder, 
                                                                    resize="vertical"),
                                             ),
                                             tabPanel(title = "From Gene Ontology", value="GOI_GO",
@@ -103,9 +108,9 @@ enrichMiR.ui <- function(){
                                 ),br(),tags$hr(),tags$h3("Background"),
                                 textAreaInput(inputId = "background_genes", 
                                               label="Gene List", 
-                                              rows=5,
-                                              value = NULL,
-                                              placeholder="Gene_1\nGene_2\nGene_3", 
+                                              rows=5, width="100%",
+                                              value=NULL,
+                                              placeholder=genes_placeholder,
                                               resize="vertical"),br(),
                                 actionButton("example_GOI", "Example genes"),
                                 footer = "Note: If you want to use the Targetscan miRNA annotations together with rat genes, use the 'Gene Symbol' format"
@@ -190,14 +195,9 @@ enrichMiR.ui <- function(){
         ),
         tabItem(tabName = "tab_cdplot",
                 box(width=12, title="CD Plot", 
-                    "(Cumulative distribution plots require a DEA input.)",
-                    br(), br(),
                     column(6,selectizeInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
                     column(6,selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
-                    withSpinner(jqui_resizable(plotOutput("cd_plot",width = '100%', height = '400px'))),
-                    br(),br(),br(),br(),br(),
-                    column(6,sliderInput(inputId = "CDplot_xaxis","logFC to display on x.axis",min = 0.5,max = 5,value = 2,step = 0.5)),
-                    column(6,sliderInput(inputId = "CD_k","Approximate number of sets",min=2, max=6, value=2, step=1))
+                    uiOutput("CDplotUI")
                 )
         ),
         tabItem(tabName = "tab_co_mode",
