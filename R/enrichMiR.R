@@ -116,9 +116,9 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
            binary.signatures=binary.signatures, info=list(call=match.call(),
                                                           type = "enrichment"))
   if(is.null(names(binary.signatures))) names(binary.signatures) <- "features"
-  o@overlaps <- lapply(binary.signatures, FUN=function(x){
-    FactorList(lapply(split(sets$feature, sets$set), 
-                      FUN=function(y) sort(intersect(y,names(x)[x]))))
+    o@overlaps <- lapply(binary.signatures, FUN=function(x){
+      FactorList(lapply(split(sets$feature, sets$set), 
+                        FUN=function(y) sort(intersect(y,names(x)[x]))))
   })
   if(keepAnnotation) o@input$sets <- sets
 
@@ -434,8 +434,13 @@ availableTests <- function(x=NULL, sets=NULL){
 }
 
 .applySynonyms <- function(x, sets){
-  if(is.null(metadata(sets)) || is.null(metadata(sets)$feature.synonyms)) return(x)
+  if(is.null(metadata(sets)) || is.null(metadata(sets)$feature.synonyms))
+    return(x)
   ss <- metadata(sets)$feature.synonyms
+  if(is.null(dim(x)) && any(grepl("^ENS",head(names(x)))))
+    names(x) <- gsub("\\.[0-9]+$", "", names(x))
+  if(!is.null(dim(x)) && any(grepl("^ENS",head(row.names(x)))))
+    row.names(x) <- gsub("\\.[0-9]+$", "", row.names(x))
   if(is.null(dim(x)) && any(names(x) %in% names(ss))){
     n <- names(x)
     w <- which(n %in% names(ss))
