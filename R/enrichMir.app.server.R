@@ -13,8 +13,9 @@ enrichMiR.server <- function(){
     datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
                options=list(pageLength=pageLength, dom = "fltBip", rownames=FALSE,
                             colReorder=TRUE,
-                            columnDefs = list(list(visible=FALSE, 
-                                                   targets=na.omit(match(hide_cols, colnames(d))))),
+                            columnDefs=list(
+                              list(visible=FALSE, 
+                                   targets=na.omit(match(hide_cols, colnames(d))))),
                             buttons=c('copy', 'csv', 'excel', 'csvHtml5') ) )
   }
   
@@ -83,7 +84,7 @@ enrichMiR.server <- function(){
         return(trimInputList(input$exp_mirna_list))
       }
       if(is.null(input$exp_mirna_file)) return(NULL)
-      mirup <- read.csv(input$exp_mirna_file$datapath, header = input$header_mir, row.names=1)
+      mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
       mirup <- mirup[order(mirup[[2]]),]
       colnames(mirup)[1] <- "name"
       colnames(mirup)[2] <- "expression"
