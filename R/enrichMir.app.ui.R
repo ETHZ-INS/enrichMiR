@@ -1,6 +1,7 @@
 genes_placeholder <- "Enter your genes as symbols or ensembl IDs, separated by spaces, commas, or linebreaks. E.g.:
 EZH2, YY1, SHANK3, ...\nor:
 ENSG00000106462, ENSG00000100811, ..."
+ggplot_themes <- setdiff(grep("^theme_",ls(getNamespace("ggplot2"), all.names=TRUE),value=TRUE), "theme_all_null")
 
 #' @import shiny DT shinydashboard shinycssloaders
 #' @export
@@ -184,7 +185,8 @@ hsa-miR-30d-5p
                     column(6, numericInput(inputId = "label_n", "Max number of Labels", value=10, min=1, max=50)),
                     column(6, radioButtons(inputId = "sig.field", label = "Display on y-axis:",
                                            choices = c("p.value" = "pvalue",
-                                                       "FDR" = "FDR"), selected = "FDR"))
+                                                       "FDR" = "FDR"), selected = "FDR")),
+                    column(6, selectInput("bubble_theme", "Theme", choices=ggplot_themes))
                 ),
                 box(width=12, title="Table", collapsible=TRUE, collapsed = TRUE,
                     checkboxGroupInput(inputId = "columns2show", label = "Select add. columns to be shown:", choices = list(
@@ -197,7 +199,9 @@ hsa-miR-30d-5p
                 box(width=12, title="CD Plot", 
                     column(6,selectizeInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
                     column(6,selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
-                    uiOutput("CDplotUI")
+                    uiOutput("CDplotUI"),
+                    column(6, selectInput("CDplot_theme", "Theme", choices=ggplot_themes)),
+                    column(6, actionButton("cd_plot_dl", "Download"))
                 )
         ),
         tabItem(tabName = "tab_co_mode",

@@ -28,17 +28,17 @@ analysis, with features (e.g. genes) as row names and with at least the
 following columns: `logFC`, `FDR`; \item A logical vector of membership to
 the geneset of interest, with feature (e.g. genes) as names, in which case
 only tests based on a binary signal will be available. \item A vector of
-feature names; in this case the \code{background} argument will also be
-required, and only tests based on a binary signal will be available. } By
-convention, we only test for enrichments in annotated genes.}
+feature names; in this case the search mode is "global" and only tests
+based on a binary signal will be available. } By convention, we only test
+for enrichments in annotated genes.}
 
 \item{background}{A character vector of background; ignored if `x` is not a
 character vector.}
 
 \item{mir_pos}{A data.frame (or DataFrame) with positional information of
 miRNA Binding Sites as obtained through the findSeedMatches function or
-\link{\code{enrichMiR::.getTargetScanPos}}. Should contain at least the following
-columns: `set`, `feature`,`start` & `stop`.}
+enrichMiR:::.getTargetScanPos. (Here one should the correct link) Should
+contain at least the following columns: `set`, `feature`,`start` & `stop`.}
 
 \item{sets_pos}{A data.frame (or DataFrame) / data.table with positional
 information of any RBP motif sites as for example obtained through the
