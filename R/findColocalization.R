@@ -1,3 +1,5 @@
+#link the mir_pos info
+
 #' testColocalization
 #'
 #' Creates an enrich.results object and performs enrichment analysis of miRNA
@@ -39,8 +41,8 @@
 #'   character vector.
 #' @param mir_pos A data.frame (or DataFrame) with positional information of
 #'   miRNA Binding Sites as obtained through the findSeedMatches function or
-#'   \link{\code{enrichMiR::.getTargetScanPos}}. Should contain at least the
-#'   following columns: `set`, `feature`,`start` & `stop`.
+#'   enrichMiR:::.getTargetScanPos. (Here one should the correct link) Should
+#'   contain at least the following columns: `set`, `feature`,`start` & `stop`.
 #' @param sets_pos A data.frame (or DataFrame) / data.table with positional
 #'   information of any RBP motif sites as for example obtained through the
 #'   ""link to RBP_Pos function"" or in custom manner. Should contain at least
