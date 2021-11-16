@@ -39,7 +39,7 @@
 #'   character vector.
 #' @param mir_pos A data.frame (or DataFrame) with positional information of
 #'   miRNA Binding Sites as obtained through the findSeedMatches function or
-#'   \link{\code{enrichMiR::.getTargetScanPos}}. Should contain at least the
+#'   \code{\link{enrichMiR:.getTargetScanPos}}. Should contain at least the
 #'   following columns: `set`, `feature`,`start` & `stop`.
 #' @param sets_pos A data.frame (or DataFrame) / data.table with positional
 #'   information of any RBP motif sites as for example obtained through the
