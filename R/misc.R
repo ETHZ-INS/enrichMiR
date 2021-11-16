@@ -51,6 +51,7 @@ recapitalizeMiRs <- function(x){
 
 .cleanMiRname <- function(x){ paste(strsplit(x,"-",fixed=T)[[1]][-1],collapse="-") }
 
+
 .dea2binary <- function( dea, th=0.05, th.alfc=0, min.at.th=20, alt.top=50, 
                          restrictSign=NULL, verbose=TRUE ){
   dea <- .homogenizeDEA(dea)
@@ -88,6 +89,7 @@ recapitalizeMiRs <- function(x){
   if(all(row.names(x) == seq_len(nrow(x))) && 
      (is.character(x[,1]) || !any(duplicated(x[,1])))){
     x[,1] <- gsub("\\..*","",x[,1]) 
+    #aggregate duplicates? take the first?
     row.names(x) <- x[,1]}
   colnames(x) <- gsub("log2FoldChange|log2Fold|log2FC|log2\\(fold_change\\)|log2\\.fold_change\\.",
                       "logFC", colnames(x))
@@ -155,28 +157,6 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
 }
 
 
-
-# Loading RBP Position files in the correct format
-.loadRBPPos <- function(species = c("human","mouse","rat")) {
-  species <- match.arg(species)
-  message("Only mouse at the moment, will be loaded at every species")
-  RBPPos <- switch( species,
-                    human = data("RBPPos_test"),
-                    mouse = data("RBPPos_test"),
-                    rat = data("RBPPos_test"), 
-                    stop("No matched species"))
-  
-  colnames(RBPPos)[colnames(RBPPos)=="motif_id"] <- "Motif_ID"
-  colnames(RBPPos)[colnames(RBPPos)=="sequence_name"] <- "Transcript ID"
-  RBP_Names <- switch( species,
-                       human = data("RBP_Names_Mus_Sample_CISBP"),
-                       mouse = data("RBP_Names_Mus_Sample_CISBP"),
-                       rat = data("RBP_Names_Mus_Sample_CISBP"), 
-                       stop("No matched species"))
-  RBPPos <- merge(RBPPos,RBP_Names_mus,by = "Motif_ID",all.x = TRUE)
-  RBPPos
-  
-}
 
 .agDF <- function(df, new.rn, 
                   match.names=(!is.null(names(new.rn)) && length(df)!=length(new.rn))){

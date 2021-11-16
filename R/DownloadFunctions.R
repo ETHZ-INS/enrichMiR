@@ -1,4 +1,6 @@
 
+#Update to Targetscan8
+
 #' Downlaod Targetscan Position Files
 .getTargetScanPos <- function(species = c("human","mouse","rat"), incl_nonconsites = TRUE) {
   species <- match.arg(species)
@@ -79,7 +81,7 @@
   }
 
 
-
+#Update to Targetscan8
 
 #' Download Targetscan miRNA families
 .fetch_Mirfamilies <- function(species = c("human","mouse","rat")) {
@@ -121,6 +123,9 @@
   names(e2s) <- anno[,1]
   e2s
 }
+
+
+#Update to Targetscan8
 
 .getTargetScan <- function(species = c("human","mouse","rat"), type=c("conserved","all"), keepMers=FALSE){
   type <- match.arg(type)
@@ -179,12 +184,11 @@
   a[,3] <- as.integer(a[,3])
   a[[4]][a[[4]] == "NULL"] <- 0
   a[,4] <- as.numeric(a[,4])
-  #filter for the miRNA species
   a <- DataFrame(a)
   metadata(a)$feature.synonyms <- syn
   metadata(a)$families <- fams[["Seed.m8"]]
   names(metadata(a)$families) <- fams[["MiRBase.ID"]]
-  metadata(a)$families <- droplevels(metadata(a)$families)
+  metadata(a)$families <- droplevels(as.factor(metadata(a)$families))
   a
 }
 
