@@ -13,8 +13,9 @@ enrichMiR.server <- function(){
     datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
                options=list(pageLength=pageLength, dom = "fltBip", rownames=FALSE,
                             colReorder=TRUE,
-                            columnDefs = list(list(visible=FALSE, 
-                                                   targets=na.omit(match(hide_cols, colnames(d))))),
+                            columnDefs=list(
+                              list(visible=FALSE, 
+                                   targets=na.omit(match(hide_cols, colnames(d))))),
                             buttons=c('copy', 'csv', 'excel', 'csvHtml5') ) )
   }
   
@@ -35,13 +36,33 @@ enrichMiR.server <- function(){
     
     DEA <- reactive({ #initialize dea
       upFile <- input$dea_input
-      #if (is.null(upFile)) return(NULL)
+      ##if (is.null(upFile)) return(NULL)
       if (is.null(upFile)){ ## TEMPORARY - BECAUSE I'M LAZY
         updf <- readRDS("/mnt/schratt/enrichMiR_benchmark/data/bartel_HEK.deaList.rds")[[1]]
       }else{
-        updf <- read.csv(upFile$datapath, header = input$header, row.names=1)
+        updf <- data.table::fread(upFile$datapath)
       }
       updf <- enrichMiR:::.homogenizeDEA(updf)
+      if(nrow(updf)==0) return(NULL)
+      updf
+    })
+    
+    output$dea_res <- renderUI({
+      if(is.null(DEA()))
+        return(tags$span(icon("exclamation-triangle"), "No valid file uploaded",
+                         style="font-weight: bold; font-color: red;"))
+      tags$span(icon("check-circle"), "Valid file",
+                style="font-weight: bold; font-color: forestgreen;")
+    })
+    
+    output$enrichbtn <- renderUI({
+      if( (input$input_type == "dea" && is.null(DEA())) ||
+          (input$input_type != "dea" && (
+            is.null(Gene_Subset()) || length(Gene_Subset())<2 ||
+            is.null(Back()))) )
+        return(tags$span(icon("exclamation-triangle"), "No valid gene/DEA input!",
+                         style="font-weight: bold; font-color: red;"))
+      actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))
     })
     
     ## Include , and "" gsub
@@ -63,7 +84,7 @@ enrichMiR.server <- function(){
         return(trimInputList(input$exp_mirna_list))
       }
       if(is.null(input$exp_mirna_file)) return(NULL)
-      mirup <- read.csv(input$exp_mirna_file$datapath, header = input$header_mir, row.names=1)
+      mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
       mirup <- mirup[order(mirup[[2]]),]
       colnames(mirup)[1] <- "name"
       colnames(mirup)[2] <- "expression"
@@ -174,6 +195,20 @@ enrichMiR.server <- function(){
     ##############################
     ## CD plot
     
+    output$CDplotUI <- renderUI({
+      if( input$input_type!="dea" || is.null(DEA()) )
+        return(tags$h3(style="font-color: red;", icon("exclamation-triangle"), 
+                "Cumulative distribution plots require the use of a DEA input."))
+      tagList(
+        withSpinner(jqui_resizable(plotOutput("cd_plot", width='100%', height='400px'))),
+        br(),br(),br(),br(),br(),
+        column(6,sliderInput(inputId="CDplot_xaxis", "logFC to display on x.axis",
+                             min=0.5, max=5, value=2, step=0.5)),
+        column(6,sliderInput(inputId="CD_k", "Approximate number of sets",
+                             min=2, max=6, value=2, step=1))
+      )
+    })
+    
     observe({
       if(!is.null(EN_Object())){
         if(!is.null(m <- metadata(EN_Object())$families)){
@@ -192,6 +227,7 @@ enrichMiR.server <- function(){
     }) 
               
     output$cd_plot <- renderPlot({
+      if( input$input_type=="dea" && is.null(DEA()) ) return(NULL)
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
       validate(
         need(any(EN_Object()$set %in% input$mir_fam), "This miRNA has no annotated Binding Site")
@@ -267,8 +303,16 @@ enrichMiR.server <- function(){
       detail <- NULL
       if(input$collection == "Targetscan all miRNA BS") detail <- "This will take a while..."
       withProgress(message=msg, detail=detail, value=1, max=3, {
-      testEnrichment(sig, EN_Object(), background=bg, sets.properties = mirexp,
-                     tests=tests, minSize=input$minsize, th.FDR=input$dea_sig_th)
+        o <- tryCatch(testEnrichment(sig, EN_Object(), background=bg, 
+                                     sets.properties=mirexp, tests=tests, 
+                                     minSize=input$minsize, th.FDR=input$dea_sig_th),
+                      error=function(e){
+                        showModal(modalDialog(
+                          title = "There was an error with your request:",
+                          tags$pre(as.character(e)),
+                          "This typically happens when there is a mismatch between your different input data (e.g. wrong species)"
+                        ))
+                      })
       })
     })
     

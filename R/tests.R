@@ -158,14 +158,14 @@ plMod <- function(signature, sets, var="sites", correctForLength=NULL){
     cfl <- NULL
   }
   sets$family <- as.character(sets$set)
-  res <- as.data.frame(t(vapply(split(sets,sets$set), fcs=signature, cfl=cfl, 
-                  FUN.VALUE=numeric(2), FUN=function(x,fcs, minSize, cfl){
+  res <- as.data.frame(t(vapply(split(sets,sets$set), fcs=signature, 
+                  FUN.VALUE=numeric(2), FUN=function(x,fcs, minSize){
     x <- x[!duplicated(x),]
     row.names(x) <- x$feature
     x2 <- x[names(fcs),var]
     x2[which(is.na(x2))] <- 0
     if(!is.null(cfl)){
-      x2 <- cbind(x2=x2, cfl=clf)
+      x2 <- cbind(x2=x2, cfl=cfl)
     }else{
       x2 <- as.matrix(x2)
     }
@@ -393,7 +393,7 @@ regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE,
       sets <- .setsToScoreMatrix(signal, sets, column=NULL, keepSparse=TRUE)
     }
   }else{
-    bm <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
+    sets <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
   }
   sets <- sets[row.names(sets) %in% names(signal),]
   sets <- .reduceBm(sets)
@@ -465,6 +465,7 @@ regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE,
     res <- rbind(res,co2)
   }
   
+  res <- res[row.names(res)!="median",]
   # res <- DataFrame(res)
   # we adjust using all features as number of comparisons
   if(nrow(res)>0){
@@ -570,13 +571,13 @@ ebayes <- function(signal, sets, use.intercept=FALSE){
     sets <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
   signal <- signal[names(signal) %in% row.names(sets)]
   sets <- sets[names(signal),]
-  meds <- sparseMatrixStats::rowMedians(bm)
+  meds <- sparseMatrixStats::rowMedians(sets)
   if(use.intercept){
     mm <- model.matrix(~meds+signal)
   }else{
     mm <- model.matrix(~0+meds+signal)
   }
-  fit <- lmFit(as.matrix(t(bm)), mm)
+  fit <- lmFit(as.matrix(t(sets)), mm)
   res <- as.data.frame(topTable(eBayes(fit), coef="signal", number = Inf)[,c(1,4,5)])
   colnames(res) <- c("coefficient", "pvalue", "FDR")
   res

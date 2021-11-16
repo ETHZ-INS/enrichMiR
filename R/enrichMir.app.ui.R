@@ -1,4 +1,6 @@
-
+genes_placeholder <- "Enter your genes as symbols or ensembl IDs, separated by spaces, commas, or linebreaks. E.g.:
+EZH2, YY1, SHANK3, ...\nor:
+ENSG00000106462, ENSG00000100811, ..."
 
 #' @import shiny DT shinydashboard shinycssloaders
 #' @export
@@ -61,7 +63,10 @@ enrichMiR.ui <- function(){
                               textAreaInput(inputId = "exp_mirna_list", 
                                   label="miRNA List", 
                                   rows=5,
-                                  placeholder="miRNA_1\nmiRNA_2\nmiRNA_3", 
+                                  placeholder="Enter miRbase IDs, separated by spaces, commas, or linebreaks. E.g.:
+hsa-miR-30b-5p
+hsa-miR-30d-5p
+...", 
                                   resize="vertical")),
                     tabPanel(title = "Upload miRNA expression table",
                              "Upload miRNA Expression Table in the following format: miRBase name in the first
@@ -69,9 +74,7 @@ enrichMiR.ui <- function(){
                              fileInput(inputId = "exp_mirna_file", label = "Upload miRNA expression object as '*.csv' file (see help)",  accept = c(
                                   "text/csv",
                                   "text/comma-separated-values,text/plain",
-                                  ".csv")),
-                                checkboxInput("header_mir", "Header", TRUE),
-                                br(),
+                                  ".csv",".tab",".txt")),
                                 sliderInput(inputId = "mir_cut_off", label = "Select miRNA expression cut-off:",
                                             min = 10, max = 100, post  = " %", value = 50 ),
                                 "Keep only the top ..% expressed miRNAs"
@@ -84,46 +87,40 @@ enrichMiR.ui <- function(){
                 tabBox(id="input_type", width=12,
                        tabPanel(title = "Select geneset & background", 
                                 tags$p("In this mode, your genes of interest are compared against a background of genes."),
-                                tags$h3("Gene Format"),
-                                radioButtons(inputId = "genes_format", label = "Select:", 
-                                                 choices = c("Ensembl" = "Ens",
-                                                             "Gene Symbol" = "GS"),
-                                                 selected = "Ens"),
-                                br(),tags$hr(),
                                 tags$h3("Genes of interest"),
                                 tabsetPanel(id="GOI",
                                             tabPanel(title = "Custom set", value = "GOI_custom",
                                                      "Paste a list of expressed genes in the selected format", br(), br(),
                                                      textAreaInput(inputId = "genes_of_interest", 
                                                                    label="Gene List", 
-                                                                   rows=5,
+                                                                   rows=5, width="100%",
                                                                    value = NULL,
-                                                                   placeholder="Gene_1\nGene_2\nGene_3", 
+                                                                   placeholder=genes_placeholder, 
                                                                    resize="vertical"),
                                             ),
                                             tabPanel(title = "From Gene Ontology", value="GOI_GO",
-                                                     # selectizeInput(inputID="go_type", "Select GO collection", 
-                                                     #                choices=c("Cellular component"="CC",
-                                                     #                          "Biological process"="BP",
-                                                     #                          "Molecular function"="MF")),
+                                                     radioButtons(inputId = "genes_format", label = "Select:", 
+                                                                  choices = c("Ensembl" = "Ens",
+                                                                              "Gene Symbol" = "GS"),
+                                                                  selected = "Ens"),
                                                      selectizeInput(inputId="go_term", "Select GO-Term", choices=c()),
                                                      textOutput("GOI_nb"))
                                 ),br(),tags$hr(),tags$h3("Background"),
                                 textAreaInput(inputId = "background_genes", 
                                               label="Gene List", 
-                                              rows=5,
-                                              value = NULL,
-                                              placeholder="Gene_1\nGene_2\nGene_3", 
+                                              rows=5, width="100%",
+                                              value=NULL,
+                                              placeholder=genes_placeholder,
                                               resize="vertical"),br(),
                                 actionButton("example_GOI", "Example genes"),
                                 footer = "Note: If you want to use the Targetscan miRNA annotations together with rat genes, use the 'Gene Symbol' format"
                        ),
                        tabPanel(title = "Upload DEA results", value = "dea",
+                                tags$div(style="float: right;", htmlOutput("dea_res")),
                                 fileInput(inputId = "dea_input", label = "Upload DEA object as '*.csv' file (see help)",  accept = c(
                                   "text/csv",
                                   "text/comma-separated-values,text/plain",
-                                  ".csv")),
-                                checkboxInput("header", "Header", TRUE), br(),
+                                  ".csv", ".tab", ".txt")), br(),
                                 sliderInput(inputId = "dea_sig_th", label = "Select significance thresshold",
                                             min = 0.01, max = 0.5, value = 0.05, step = 0.01),
                                 "Upload Differential Expression Analyses (DEAs) as table with at least following information: Provide ENSEMBL_ID or Gene Symbol as identifier
@@ -152,7 +149,7 @@ enrichMiR.ui <- function(){
                     )
                 ),
         tabItem(tabName = "tab_enrich",
-                column(4,actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))), 
+                column(4,uiOutput("enrichbtn")), 
                 br(), br(), br(),
                 column(9, id="sel_test_div", selectInput("view_test", "View test", choices=c(), width="90%")),
                 column(3, style = "margin-top: 30px;", checkboxInput("view_all", "advanced")),
@@ -198,14 +195,9 @@ enrichMiR.ui <- function(){
         ),
         tabItem(tabName = "tab_cdplot",
                 box(width=12, title="CD Plot", 
-                    "(Cumulative distribution plots require a DEA input.)",
-                    br(), br(),
                     column(6,selectizeInput(inputId = "mir_fam", "Select miRNA family to display", choices=c())),
                     column(6,selectInput(inputId = "CD_type", "Split by", choices=c("sites","score"))),
-                    withSpinner(jqui_resizable(plotOutput("cd_plot",width = '100%', height = '400px'))),
-                    br(),br(),br(),br(),br(),
-                    column(6,sliderInput(inputId = "CDplot_xaxis","logFC to display on x.axis",min = 0.5,max = 5,value = 2,step = 0.5)),
-                    column(6,sliderInput(inputId = "CD_k","Approximate number of sets",min=2, max=6, value=2, step=1))
+                    uiOutput("CDplotUI")
                 )
         ),
         tabItem(tabName = "tab_co_mode",
