@@ -1,5 +1,6 @@
 
 #Update to Targetscan8
+#Have these as "full" functions
 
 #' Downlaod Targetscan Position Files
 .getTargetScanPos <- function(species = c("human","mouse","rat"), incl_nonconsites = TRUE) {

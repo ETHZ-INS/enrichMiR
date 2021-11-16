@@ -1,3 +1,5 @@
+#link the mir_pos info
+
 #' testColocalization
 #'
 #' Creates an enrich.results object and performs enrichment analysis of miRNA
