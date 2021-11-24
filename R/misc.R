@@ -84,15 +84,22 @@ recapitalizeMiRs <- function(x){
   x
 }
 
-.homogenizeDEA <- function(x){
-  if(is(x,"data.table"))
+.homogenizeDEA <- function(x, keepTop=TRUE){
+  if(is(x,"data.table")){
+    if(any(duplicated(x[[1]]))){
+      if(keepTop){
+        x <- x[order(x[[head(grep("padj|adj\\.P\\.Val|q_value|qval", colnames(x)),1)]]),]
+        x <- x[!duplicated(x[[1]]),]
+      }else{
+        x <- aggregate(x[,-1,drop=FALSE], by=list(gene=x[[1]]), FUN=mean)
+      }
+    }
     x <- data.frame(row.names=x[[1]], as.data.frame(x[,-1,drop=FALSE]))
+  }
   x <- as.data.frame(x)
-  if(all(row.names(x) == seq_len(nrow(x))) && 
-     (is.character(x[,1]) || !any(duplicated(x[,1])))){
-    x[,1] <- gsub("\\..*","",x[,1]) 
-    #aggregate duplicates? take the first?
-    row.names(x) <- x[,1]}
+  w <- grep("^ENS",row.names(x))
+  row.names(x)[w] <- gsub("\\..*","",row.names(x)[w])
+
   colnames(x) <- gsub("log2FoldChange|log2Fold|log2FC|log2\\(fold_change\\)|log2\\.fold_change\\.",
                       "logFC", colnames(x))
   

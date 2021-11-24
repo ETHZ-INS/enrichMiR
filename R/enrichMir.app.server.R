@@ -224,9 +224,9 @@ enrichMiR.server <- function(){
         updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
         }
       }
-    }) 
-              
-    output$cd_plot <- renderPlot({
+    })
+    
+    CDplot_obj <- reactive({
       if( input$input_type=="dea" && is.null(DEA()) ) return(NULL)
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
       validate(
@@ -235,9 +235,28 @@ enrichMiR.server <- function(){
       dea <- DEA()
       TS <- EN_Object()
       dea <- .applySynonyms(dea, TS)
-      CDplot2(dea, TS, setName=input$mir_fam, by = input$CD_type, k=input$CD_k) + 
+      p <- CDplot2(dea, TS, setName=input$mir_fam, by = input$CD_type, k=input$CD_k) + 
         xlim(-input$CDplot_xaxis, input$CDplot_xaxis)
+      if(!is.null(input$CDplot_theme))
+        p <- tryCatch(p + getFromNamespace(input$CDplot_theme, "ggplot2")(), 
+                      error=function(e){ warning(e); p })
+      p
     })
+              
+    output$cd_plot <- renderPlot({
+      CDplot_obj()
+    })
+    
+    output$cd_plot_dl <- downloadHandler(
+      filename={
+        if(is.null(CDplot_obj())) return(NULL)
+        paste0("CDplot_", input$mir_fam, ".pdf")
+      },
+      content = function(con) {
+        if(is.null(CDplot_obj())) return(NULL)
+        ggsave(con, plot=CDplot_obj(), device="pdf")
+      }
+    )
     
     ##############################
     ## Enrichment analysis
