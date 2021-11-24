@@ -1,9 +1,7 @@
 
-#Update to Targetscan8
-#Have these as "full" functions
 
-#' Downlaod Targetscan Position Files
-.getTargetScanPos <- function(species = c("human","mouse","rat"), incl_nonconsites = TRUE) {
+#' Downlaod Targetscan8 Site Position Files
+.getTargetScanSites <- function(species = c("human","mouse","rat"), incl_nonconsites = TRUE) {
   species <- match.arg(species)
   # assign species ID
   spec <- switch( species,
@@ -20,11 +18,11 @@
   # download TargetScan all conserved miRNA sites positions
   if (species == "human"){
     download.file(
-      "http://www.targetscan.org/vert_72/vert_72_data_download/Conserved_Site_Context_Scores.txt.zip", tmp)
+      "http://www.targetscan.org/vert_80/vert_80_data_download/Conserved_Site_Context_Scores.txt.zip", tmp)
     a <- fread(unzip(file.path(tmp)),drop = c("context++ score percentile","weighted context++ score percentile"))
   }else if(any(species %in% c("mouse","rat"))){
     download.file(
-      "http://www.targetscan.org/mmu_72/mmu_72_data_download/Conserved_Site_Context_Scores.txt.zip", tmp)
+      "http://www.targetscan.org/mmu_80/mmu_80_data_download/Conserved_Site_Context_Scores.txt.zip", tmp)
     a <- fread(unzip(file.path(tmp)),drop = c("context++ score percentile","weighted context++ score percentile"))
   }
   a <- merge(a,fams[,c("Seed.m8","MiRBase.ID")], by.x = "miRNA",by.y = "MiRBase.ID")
@@ -36,11 +34,11 @@
     tmp <- tempfile()
     if (species == "human"){
       download.file(
-        "http://www.targetscan.org/vert_72/vert_72_data_download/Nonconserved_Site_Context_Scores.txt.zip", tmp)
+        "http://www.targetscan.org/vert_80/vert_80_data_download/Nonconserved_Site_Context_Scores.txt.zip", tmp)
       b <- fread(unzip(file.path(tmp)),drop = c("context++ score percentile","weighted context++ score percentile"))
     }else if(any(species %in% c("mouse","rat"))){
       download.file(
-        "http://www.targetscan.org/mmu_72/mmu_72_data_download/Nonconserved_Site_Context_Scores.txt.zip", tmp)
+        "http://www.targetscan.org/mmu_80/mmu_80_data_download/Nonconserved_Site_Context_Scores.txt.zip", tmp)
       b <- fread(unzip(file.path(tmp)),drop = c("context++ score percentile","weighted context++ score percentile"))
     }
     b <- merge(b,fams[,c("Seed.m8","MiRBase.ID")], by.x = "miRNA",by.y = "MiRBase.ID")
@@ -82,10 +80,8 @@
   }
 
 
-#Update to Targetscan8
-
-#' Download Targetscan miRNA families
-.fetch_Mirfamilies <- function(species = c("human","mouse","rat")) {
+#' Download Targetscan8 miRNA families
+.getTargetscan_miRfamilies <- function(species = c("human","mouse","rat")) {
   species <- match.arg(species)
   # assign species ID
   spec <- switch( species,
@@ -96,7 +92,7 @@
   
   # download TargetScan miRNA families
   tmp <- tempfile()
-  download.file("http://www.targetscan.org/vert_72/vert_72_data_download/miR_Family_Info.txt.zip", tmp)
+  download.file("http://www.targetscan.org/vert_80/vert_80_data_download/miR_Family_Info.txt.zip", tmp)
   miRFam <- read.delim(unzip(tmp), header=TRUE)
   unlink(tmp)
   
@@ -126,9 +122,9 @@
 }
 
 
-#Update to Targetscan8
 
-.getTargetScan <- function(species = c("human","mouse","rat"), type=c("conserved","all"), keepMers=FALSE){
+#' Downlaod Targetscan8 Transcript / Gene Predictions
+.getTargetScanPred <- function(species = c("human","mouse","rat"), type=c("conserved","all"), keepMers=FALSE){
   type <- match.arg(type)
   species <- match.arg(species)
   # assign species ID
@@ -140,19 +136,18 @@
   
   fams <- .fetch_Mirfamilies(species)
   
-  
   tmp <- tempfile()
   if(type=="conserved"){
     # download TargetScan conserved miRNA sites
     if (species == "human"){
       #Downlaod Targetscan Species specific site file
       download.file(
-        "http://www.targetscan.org/vert_72/vert_72_data_download/Summary_Counts.default_predictions.txt.zip", tmp)
+        "http://www.targetscan.org/vert_80/vert_80_data_download/Summary_Counts.default_predictions.txt.zip", tmp)
       a <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
     }else if(any(species %in% c("mouse","rat"))){
       #Downlaod Targetscan Species specific site file
       download.file(
-        "http://www.targetscan.org/mmu_72/mmu_72_data_download/Summary_Counts.default_predictions.txt.zip", tmp)
+        "http://www.targetscan.org/mmu_80/mmu_80_data_download/Summary_Counts.default_predictions.txt.zip", tmp)
       a <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
     }
     a$sites <- a[["Total num conserved sites"]]
@@ -160,11 +155,11 @@
     #Downlaod Targetscan Species specific site file (All Sites)
     if (species == "human"){
       download.file(
-        "http://www.targetscan.org/vert_72/vert_72_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
+        "http://www.targetscan.org/vert_80/vert_80_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
       a <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
     }else if(any(species %in% c("mouse","rat"))){
       download.file(
-        "http://www.targetscan.org/mmu_72/mmu_72_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
+        "http://www.targetscan.org/mmu_80/mmu_80_data_download/Summary_Counts.all_predictions.txt.zip", tmp)
       a <- fread(unzip(file.path(tmp)),drop = c("Aggregate PCT"))
     }
     a$sites <- a[["Total num conserved sites"]]+a[["Total num nonconserved sites"]]
@@ -359,7 +354,7 @@
 
 #Import Function
 # if tx=FALSE, the longest transcript of each gene gets imported
-import_oRNAment <- function(x, tx = TRUE, only3utr = TRUE, aggregatesites = TRUE){
+.import_oRNAment <- function(x, tx = TRUE, only3utr = TRUE, aggregatesites = TRUE){
  
   if(is.null(x$region) && only3utr) stop("The 3'-UTR region can't be exported for lncRNAs")
   
