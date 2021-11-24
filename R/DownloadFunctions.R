@@ -10,7 +10,7 @@
                   rat = 10116, 
                   stop("No matched species"))
   
-  fams <- .fetch_Mirfamilies(species)
+  fams <- .getTargetscan_miRfamilies(species)
   
   # download TargetScan miRNA Positions
   tmp <- tempfile()
@@ -134,7 +134,7 @@
                   rat = 10116, 
                   stop("No matched species"))
   
-  fams <- .fetch_Mirfamilies(species)
+  fams <- .getTargetscan_miRfamilies(species)
   
   tmp <- tempfile()
   if(type=="conserved"){
