@@ -261,3 +261,55 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
   y$feature <- as.factor(y$feature)
   y
 }
+
+
+
+
+#' getHumanMirExp
+#'
+#' Get the human miRNA expression in a given tissue or celltype from the 
+#' `microRNAome` package 
+#' (\href{http://genome.cshlp.org/content/27/10/1769}{McCall et al., 2017}).
+#'
+#' @param x Desired tissue or celltype
+#'
+#' @return If `x` is NULL, returns a vector of the possible values. If `x` is 
+#' given and matches a tissue/celltype of the dataset, returns the average miRNA
+#' expression as logCPM, i.e. log(1+counts per million).
+#' @export
+#'
+#' @examples
+#' head(getHumanMirExp("thyroid"))
+getHumanMirExp <- function(x=NULL){
+  data("microRNAome", package="microRNAome")
+  if(is.null(x)) return(sort(unique(microRNAome$cell_tissue)))
+  if(!(x %in% microRNAome$cell_tissue)) return(NULL)
+  x <- assay(microRNAome)[,microRNAome$cell_tissue==x,drop=FALSE]
+  row.names(x) <- gsub("/.+","",(row.names(x)))
+  x <- rowSums(x)
+  sort(log1p(10^6 * x/sum(x)),decreasing=TRUE)
+}
+
+#' getMouseMirExp
+#'
+#' Get the mouse miRNA expression in a given tissue or celltype, based on the
+#' GSE119661 dataset 
+#' (\href{https://doi.org/10.1093/nar/gkaa323}{Kern et al., 2020}) 
+#' supplemented with some celltypes from the GSE30286 dataset 
+#' (\href{https://doi.org/10.1016/j.neuron.2011.11.010}{He et al., 2012}).
+#'
+#' @param x Desired tissue or celltype
+#'
+#' @return If `x` is NULL, returns a vector of the possible values. If `x` is 
+#' given and matches a tissue/celltype of the dataset, returns the average miRNA
+#' expression as logCPM, i.e. log(1+counts per million).
+#' @export
+#'
+#' @examples
+#' head(getMouseMirExp("Muscle"))
+getMouseMirExp <- function(x=NULL){
+  data("miRNAexpMouse", package="enrichMiR")
+  if(is.null(x)) return(sort(colnames(miRNAexpMouse)))
+  if(!(x %in% colnames(miRNAexpMouse))) return(NULL)
+  sort(miRNAexpMouse[,x], decreasing=TRUE)
+}

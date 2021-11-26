@@ -12,4 +12,4 @@ Suggests: knitr, rmarkdown, fgsea, goseq, aggregation, viper
 Description: miRNA target enrichment analysis
 License: GPL
 VignetteBuilder: knitr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2

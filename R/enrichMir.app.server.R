@@ -25,8 +25,6 @@ enrichMiR.server <- function(){
     if(length(x)==0) return(NULL)
     x
   }
-  
-  
 
  function(input, output, session){
 
@@ -83,13 +81,28 @@ enrichMiR.server <- function(){
         if(is.null(input$exp_mirna_list) || input$exp_mirna_list=="") return(NULL)
         return(trimInputList(input$exp_mirna_list))
       }
+      if(input$expressed_mirna_box=="Use preset expression profile"){
+        if(input$mirexp_preset=="From the human microRNAome package"){
+          if(is.null(input$mirexp_human) || 
+             is.null(x <- getHumanMirExp(input$mirexp_human))) return(NULL)
+          x <- head(x,round((input$mir_cut_off2/100)*length(x)))
+          return(data.frame(row.names=names(x), expression=as.numeric(x)))
+        }else{
+          if(is.null(input$mirexp_mouse) || 
+             is.null(x <- getMouseMirExp(input$mirexp_mouse))) return(NULL)
+          x <- head(x,round((input$mir_cut_off2/100)*length(x)))
+          x <- setNames(rep(x,each=2),
+                        paste0(rep(names(x),each=2), c("-5p","-3p")))
+          return(data.frame(row.names=names(x), expression=as.numeric(x)))
+        }
+      }
       if(is.null(input$exp_mirna_file)) return(NULL)
       mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
       mirup <- mirup[order(mirup[[2]]),]
       colnames(mirup)[1] <- "name"
       colnames(mirup)[2] <- "expression"
       mirup <- mirup[1:((input$mir_cut_off/100)*nrow(mirup)),]
-      return(mirup)
+      return(data.frame(row.names=mirup[,1], expression=mirup[,2]))
     })
     
     
@@ -156,16 +169,16 @@ enrichMiR.server <- function(){
       if(isTRUE(getOption("shiny.testmode"))) print("EN_Object")
       switch(input$collection,
             #Loading everywhere the conserved files for now, except for the "all_Sites" object
-             "scanMir miRNA BS" = switch(input$species,
-                                                   "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"),
-                                                   "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_mouse.rds"),
-                                                   "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_rat.rds"),
-                                                   "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds")),
+             # "scanMir miRNA BS" = switch(input$species,
+             #                                       "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Human_ConSites_human.rds"),
+             #                                       "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Mouse_ConSites_mouse.rds"),
+             #                                       "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Mouse_ConSites_rat.rds"),
+             #                                       "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Human_ConSites_human.rds")),
              "Targetscan conserved miRNA BS" = switch(input$species,
-                                                        "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"),
-                                                        "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_mouse.rds"),
-                                                        "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_rat.rds"),
-                                                        "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds")),
+                                                        "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_human.rds"),
+                                                        "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_mouse.rds"),
+                                                        "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_rat.rds"),
+                                                        "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Human_ConSites_human.rds")),
              "Targetscan all miRNA BS" = switch(input$species,
                                                        "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_AllSites_human.rds"),
                                                        "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_AllSites_mouse.rds"),
@@ -212,15 +225,6 @@ enrichMiR.server <- function(){
     observe({
       if(!is.null(EN_Object())){
         if(!is.null(m <- metadata(EN_Object())$families)){
-          if(!is.null(miRNA_exp())) {
-            mirexp <- miRNA_exp()
-              if(is.null(dim(mirexp))) {
-                mirexp <- mirexp
-              }else{
-                mirexp <- mirexp[,1]
-              }
-            m <- m[names(m) %in% mirexp]
-          }
         updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
         }
       }
@@ -302,13 +306,14 @@ enrichMiR.server <- function(){
       if(is.null(input$input_type) || is.null(EN_Object())) return(NULL)
       if(isTRUE(getOption("shiny.testmode"))) print("ER")
       mirexp <- miRNA_exp()
-      if(!is.null(mirexp) && is.null(dim(mirexp)))
+      if(!is.null(mirexp) && is.null(dim(mirexp))){
         mirexp <- data.frame(row.names=mirexp, members=mirexp)
+      }
       if(input$input_type == "dea"){
         if(is.null(DEA())) return(NULL)
         sig <- DEA()
         bg <- NULL
-        standard_tests <- c("siteoverlap","areamir")
+        standard_tests <- c("siteoverlap")#,"areamir")
       }else{
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
         sig <- Gene_Subset()
@@ -345,8 +350,17 @@ enrichMiR.server <- function(){
       }else{
         er <- getResults(ER(), test=test, getFeatures=FALSE, flatten=TRUE)
       }
-      ggplotly(enrichPlot(er, repel=FALSE, label.sig.thres = input$label.sig.thres, sig.field = input$sig.field,
-                          label.enr.thres = input$label.enr.thres, maxLabels = input$label_n ))
+      col.field <- "expression"
+      if(is.null(er$expression)) col.field <- NULL
+      
+      p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
+                      sig.field=input$sig.field, col.field=col.field, 
+                      label.enr.thres=input$label.enr.thres, 
+                      maxLabels=input$label_n )
+      if(!is.null(input$bubble_theme))
+        p <- tryCatch(p + getFromNamespace(input$bubble_theme, "ggplot2")(), 
+                      error=function(e){ warning(e); p })
+      ggplotly(p)
     })
     
     
@@ -355,7 +369,7 @@ enrichMiR.server <- function(){
       test <- input$view_test
       if(is.null(test) || test=="") test <- NULL
       rr <- getResults(ER(), test=test, flatten=TRUE)
-      show_standard <- c("enrichment","pvalue","FDR")
+      show_standard <- c("enrichment","pvalue","FDR","expression")
       if(is.null(input$columns2show)){
         columns2hide <- setdiff(colnames(rr),show_standard)
       }else{

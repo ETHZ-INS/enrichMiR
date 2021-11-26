@@ -1,7 +1,8 @@
 genes_placeholder <- "Enter your genes as symbols or ensembl IDs, separated by spaces, commas, or linebreaks. E.g.:
 EZH2, YY1, SHANK3, ...\nor:
 ENSG00000106462, ENSG00000100811, ..."
-ggplot_themes <- setdiff(grep("^theme_",ls(getNamespace("ggplot2"), all.names=TRUE),value=TRUE), "theme_all_null")
+ggplot_themes <- setdiff(grep("^theme_",ls(getNamespace("ggplot2"), all.names=TRUE),value=TRUE), 
+                         c("theme_all_null","theme_set","theme_update","theme_get","theme_replace","theme_void"))
 
 #' @import shiny DT shinydashboard shinycssloaders
 #' @export
@@ -79,9 +80,28 @@ hsa-miR-30d-5p
                                 sliderInput(inputId = "mir_cut_off", label = "Select miRNA expression cut-off:",
                                             min = 10, max = 100, post  = " %", value = 50 ),
                                 "Keep only the top ..% expressed miRNAs"
-                             )),
-                    br(),
-                    footer = "Note: If no miRNAs are uploaded, enrichment searches will be performed with all microRNAs of the given species")
+                             ),
+                    tabPanel(title="Use preset expression profile", style="border: 1px solid;",
+                      tabBox(id="mirexp_preset", width=12,
+                        tabPanel(title="From the human microRNAome package",
+                             selectizeInput("mirexp_human", "Select tissue/celltype:", 
+                                            choices=getHumanMirExp()),
+                             tags$p("Source: ", tags$a(href="http://genome.cshlp.org/content/27/10/1769","McCall et al., NAR 2017"))
+                             ),
+                        tabPanel(title="From some mouse profiles",
+                             selectizeInput("mirexp_mouse", "Select tissue/celltype:",
+                                            choices=getMouseMirExp()),
+                             tags$p("Source: ", tags$a(href="https://doi.org/10.1093/nar/gkaa323","Kern et al., NAR 2020"),
+                                    " and ", tags$a(href="https://doi.org/10.1016/j.neuron.2011.11.010","He et al., Neuron 2012")),
+                             tags$p("Note that this quantification is not hairpin-specific, but at the precursor level."))
+                      ),
+                      sliderInput(inputId = "mir_cut_off2", label="Select miRNA expression cut-off:",
+                                  min = 10, max = 100, post  = " %", value = 50 ),
+                      "Keep only the top ..% expressed miRNAs"
+                      
+                      )), br(),
+                    footer = "Note: If no miRNAs are uploaded/selected, enrichment 
+                              searches will be performed with all microRNAs of the given species")
                 # eventually enable this as upload or selection from pre-loaded tissues?
         ),
         tabItem("tab_input",
