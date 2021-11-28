@@ -1,9 +1,3 @@
-genes_placeholder <- "Enter your genes as symbols or ensembl IDs, separated by spaces, commas, or linebreaks. E.g.:
-EZH2, YY1, SHANK3, ...\nor:
-ENSG00000106462, ENSG00000100811, ..."
-ggplot_themes <- setdiff(grep("^theme_",ls(getNamespace("ggplot2"), all.names=TRUE),value=TRUE), 
-                         paste0("theme_",c("all_null","set","update","get","replace","void")))
-
 #' @import shiny DT shinydashboard shinycssloaders
 #' @export
 enrichMiR.ui <- function(){
@@ -14,25 +8,27 @@ enrichMiR.ui <- function(){
   library(shinycssloaders)
   library(plotly)
   library(ggplot2)
-  
+
+  genes_placeholder <- paste("Enter your genes as symbols or ensembl IDs,",
+                             "separated by spaces, commas, or linebreaks. E.g.:
+EZH2, YY1, SHANK3, ...\nor:
+ENSG00000106462, ENSG00000100811, ...")
+  ggplot_themes <- setdiff(grep("^theme_",ls(getNamespace("ggplot2"), 
+                                             all.names=TRUE),value=TRUE), 
+                           paste0("theme_",c("all_null","set","update",
+                                             "get","replace","void")))
+    
   ui <- dashboardPage(
-    dashboardHeader(title = "EnrichMe", titleWidth = "300px"),
+    dashboardHeader(title = "enrichMir", titleWidth = "300px"),
     ## Sidebar content
     dashboardSidebar(width = "300px",
       sidebarMenu(
+        menuItem("Introduction", tabName = "tab_intro"),
         menuItem("Species and miRNAs", tabName = "tab_species"),
         menuItem("Input genes/DEA", tabName = "tab_input"),
-        menuItem("Enrichment analysis",
-          menuSubItem("Enrichment Options", tabName = "tab_enrich_op"),
-          menuSubItem("Enrich!", tabName = "tab_enrich"),
-          menuSubItem("CD Plot", tabName = "tab_cdplot")
-        ),
-        menuItem("Co-localization", 
-          menuSubItem("colocalization mode", tabName = "tab_co_mode"),
-          menuSubItem("options",tabName = "tab_co_options"),
-          menuSubItem("colocalize", tabName = "tab_colocalize")
-        ),
-        menuItem("About", tabName="tab_about")
+        menuItem("Enrichment Options", tabName = "tab_enrich_op"),
+        menuItem("Enrichment analysis", tabName = "tab_enrich"),
+        menuItem("CD Plot", tabName = "tab_cdplot")
       )
     ),
     
@@ -49,6 +45,26 @@ enrichMiR.ui <- function(){
 # }
 # "))),
       tabItems(
+        tabItem(tabName = "tab_intro",
+          box(title="enrichMiR: miRNA (and RBP) target enrichment analysis", 
+              width=12, tags$p(
+                "This app will allow you to identify miRNAs whose targets are ",
+                "enriched among genesets of interest or a differential ",
+                "expression signature, and produce related visualizations.",
+                "Although the app was chiefly developed (and benchmarked) for ",
+                "miRNAs, some support is also offered to run the same analyses",
+                " using RNA-binding proteins."), tags$br(),
+              tags$p("To get started, take a ", 
+                     actionLink("helpLink", "quick tour"),
+                     " of the app."), tags$br(),
+              tags$p( style="text-align: right;",
+                      paste("enrichMiR version",packageVersion("enrichMiR")),
+                      "; ", tags$a( href="http://schrattlab.ethz.ch",
+                                    "Schratt lab", target="_blank") )
+          ),
+          box(width=12, title="Test benchmark", collapsible=TRUE, 
+              collapsed=TRUE, "Forthcoming...")
+        ),
         tabItem(tabName = "tab_species",
           box(title = "Select Species and Collection", width=12,
             selectInput(inputId = "species", "Species", width = '98%',
