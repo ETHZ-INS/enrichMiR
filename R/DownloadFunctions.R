@@ -200,6 +200,7 @@
     a$best_stype[is.na(a$best_stype) & a$`Sites_7mer_m8`> 0] <- "7mer-m8"
     a$best_stype[is.na(a$best_stype) & a$`Sites_7mer_1a`> 0] <- "7mer-1a"
     a$best_stype[is.na(a$best_stype)] <- "no site"
+    a$best_stype <- as.factor(a$best_stype)
   }
   a <- DataFrame(a)
   metadata(a)$feature.synonyms <- syn

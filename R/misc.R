@@ -78,6 +78,7 @@ recapitalizeMiRs <- function(x){
     dea <- .homogenizeDEA(dea)
     x <- sign(dea$logFC)*-log10(dea$FDR)
   }else{
+    dea <- dea[!is.na(dea[[field]]),]
     x <- dea[[field]]
   }
   names(x) <- row.names(dea)
