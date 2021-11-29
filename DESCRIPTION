@@ -1,7 +1,7 @@
 Package: enrichMiR
 Type: Package
 Title: miRNA target enrichment analysis
-Version: 0.99.5
+Version: 0.99.6
 Date: 2018-09-26
 Authors@R: c(
     person("Pierre-Luc", "Germain", email="pierre-luc.germain@hest.ethz.ch", role=c("cre","aut"), comment=c(ORCID="0000-0003-3418-4218")),
@@ -12,4 +12,4 @@ Suggests: knitr, rmarkdown, fgsea, goseq, aggregation, viper
 Description: miRNA target enrichment analysis
 License: GPL
 VignetteBuilder: knitr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
