@@ -172,7 +172,10 @@
   syn <- as.character(tmp[,2])
   names(syn) <- tmp[,1]
   syn <- c(syn, .ens2symbol(species))
-  if(keepMers) keep <- c(keep, grep("^Number of", colnames(a), value=TRUE))
+  if(keepMers){
+    keep <- c(keep, grep("^Number of", colnames(a), value=TRUE))
+    if(type=="conserved") keep <- keep[-grep("nonconserved",keep)]
+    keep <- keep[-grep("6mer",keep)]}
   a <- a[,keep]
   colnames(a)[1:4] <- c("set","feature","sites","score")
   a[,1] <- as.factor(a[,1])
@@ -180,6 +183,24 @@
   a[,3] <- as.integer(a[,3])
   a[[4]][a[[4]] == "NULL"] <- 0
   a[,4] <- as.numeric(a[,4])
+  if(keepMers){
+    if(type=="conserved"){
+      colnames(a)[grep("8mer",colnames(a))] <- "Sites_8mer"
+      colnames(a)[grep("7mer-m8",colnames(a))] <- "Sites_7mer_m8"
+      colnames(a)[grep("7mer-1a",colnames(a))] <- "Sites_7mer_1a"
+    }else{
+      a$`Sites_8mer` <- rowSums(a[,grep("8mer",colnames(a))],na.rm = FALSE)
+      a$`Sites_7mer_m8` <- rowSums(a[,grep("7mer-m8",colnames(a))],na.rm = FALSE)
+      a$`Sites_7mer_1a` <- rowSums(a[,grep("7mer-1a",colnames(a))],na.rm = FALSE)
+      a <- a[,-grep("Number",colnames(a))]
+    }
+    #add the best site type information
+    a$best_stype <- c()
+    a$best_stype[a$`Sites_8mer`> 0] <- "8mer"
+    a$best_stype[is.na(a$best_stype) & a$`Sites_7mer_m8`> 0] <- "7mer-m8"
+    a$best_stype[is.na(a$best_stype) & a$`Sites_7mer_1a`> 0] <- "7mer-1a"
+    a$best_stype[is.na(a$best_stype)] <- "no site"
+  }
   a <- DataFrame(a)
   metadata(a)$feature.synonyms <- syn
   metadata(a)$families <- fams[["Seed.m8"]]
