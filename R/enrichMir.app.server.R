@@ -52,7 +52,7 @@ enrichMiR.server <- function(){
         (input$input_type!="dea" && length(Gene_Subset())>1 && length(Back())>1))
        return(menuItem("Enrichment analysis", tabName = "tab_enrich", 
                        icon=icon("rocket")))
-     menuItem("Input genes/DEA", tabName="tab_input", badgeLabel="(no input!)",
+     menuItem("Enrichment analysis", tabName="tab_enrich", badgeLabel="(no input!)",
               badgeColor="red", icon=icon("times-circle"))
    })
    output$menu_cdplot <- renderMenu({
@@ -94,7 +94,7 @@ enrichMiR.server <- function(){
             is.null(Back()))) )
         return(tags$span(icon("exclamation-triangle"), "No valid gene/DEA input!",
                          style="font-weight: bold; font-color: red;"))
-      actionButton(inputId = "enrich", "Enrich!", icon = icon("search"))
+      actionButton(inputId="enrich", "Run enrichMir!", icon = icon("search"))
     })
     
     ## Include , and "" gsub
@@ -232,12 +232,8 @@ enrichMiR.server <- function(){
                                               "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"),
                                               "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_mouse.rds"),
                                               "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_rat.rds"),
-                                              "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds")),
-             "Custom - not yet" =  switch(input$species,
-                                          "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"),
-                                          "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_mouse.rds"),
-                                          "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_rat.rds"),
-                                          "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds")))
+                                              "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"))
+            )
     })
     
    
@@ -339,6 +335,7 @@ enrichMiR.server <- function(){
 #       
     
     ER <- eventReactive(input$enrich, {
+      hide("resultsbox")
       if(is.null(input$input_type) || is.null(EN_Object())) return(NULL)
       if(isTRUE(getOption("shiny.testmode"))) print("ER")
       mirexp <- miRNA_exp()
@@ -362,6 +359,7 @@ enrichMiR.server <- function(){
       if(length(sig)==0) return(NULL)
       detail <- NULL
       if(input$collection == "Targetscan all miRNA BS") detail <- "This will take a while..."
+      show("resultsbox")
       withProgress(message=msg, detail=detail, value=1, max=3, {
         o <- tryCatch(testEnrichment(sig, EN_Object(), background=bg, 
                                      sets.properties=mirexp, tests=tests, 

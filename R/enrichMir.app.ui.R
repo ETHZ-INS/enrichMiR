@@ -8,6 +8,7 @@ enrichMiR.ui <- function(){
   library(shinycssloaders)
   library(plotly)
   library(ggplot2)
+  library(shinyjs)
 
   genes_placeholder <- paste("Enter your genes as symbols or ensembl IDs,",
                              "separated by spaces, commas, or linebreaks. E.g.:
@@ -24,11 +25,14 @@ ENSG00000106462, ENSG00000100811, ...")
     dashboardSidebar(width = "300px",
        sidebarMenu(
          menuItem("Introduction", tabName = "tab_intro", icon=icon("info")),
+         tags$hr(width="80%"),
          menuItemOutput("menu_species"),
          menuItemOutput("menu_input"),
-         menuItem("Enrichment Options", tabName = "tab_enrich_op", icon=icon("cogs")),
          menuItemOutput("menu_enrich"),
-         menuItemOutput("menu_cdplot")
+         menuItemOutput("menu_cdplot"),
+         tags$hr(width="80%"),
+         menuItem("Tests benchmark", tabName="tab_benchmark",
+                  icon=icon("tachometer-alt"))
        )                     
     ),
     
@@ -44,6 +48,7 @@ ENSG00000106462, ENSG00000100811, ...")
 #   display: table-row;
 # }
 # "))),
+      useShinyjs(),
       tabItems(
         tabItem(tabName = "tab_intro",
           box(title="enrichMiR: miRNA (and RBP) target enrichment analysis", 
@@ -61,23 +66,24 @@ ENSG00000106462, ENSG00000100811, ...")
                       paste("enrichMiR version",packageVersion("enrichMiR")),
                       "; ", tags$a( href="http://schrattlab.ethz.ch",
                                     "Schratt lab", target="_blank") )
-          ),
-          box(width=12, title="Test benchmark", collapsible=TRUE, 
-              collapsed=TRUE, "Forthcoming...")
+          )
         ),
         tabItem(tabName = "tab_species",
           box(title = "Select Species and Collection", width=12,
             selectInput(inputId = "species", "Species", width = '98%',
-                        choices = c("Human", "Mouse", "Rat","Custom - not yet"), 
-                        selected = "Human"), tags$br(),
+                        choices = c("Human", "Mouse", "Rat")), tags$br(),
             selectInput(inputId="collection", width='98%',
                         label="Select a binding sites collection",
                         choices=c("scanMir miRNA BS", "Targetscan conserved miRNA BS",
                                   "Targetscan all miRNA BS", "CISBP RBP motif sites",
-                                  "miRTarBase", "Custom - not yet"),
+                                  "miRTarBase"),
                         selected="Targetscan conserved miRNA BS")
             ),
-          box(title = "Expressed miRNAs", collapsible=TRUE, collapsed=TRUE, width=12,
+          box(title="Specify expressed miRNAs", collapsible=TRUE, collapsed=TRUE, width=12,
+            tags$p("miRNA expression can be used to restrict and annotate the ",
+                   "enrichment analysis. This information can either be given ",
+                   "manually, provided by uploading a miRNA profile, or ",
+                   "fetched from pre-loaded miRNA expression profiles"),
             tabBox(id="expressed_mirna_box", width=12,
               tabPanel(title = "Custom Set",
                        "Paste a list of expressed miRNAs in 'miRBase' format", br(), br(),
@@ -166,7 +172,7 @@ ENSG00000106462, ENSG00000100811, ...")
                            " together with rat genes, use the 'Gene Symbol' format")
             ),
             tabPanel(title = "Upload DEA results", value = "dea",
-              tags$div(style="float: right;", htmlOutput("dea_res")),
+              tags$div(style="float: right; width: 100%;", htmlOutput("dea_res")),
               fileInput(inputId = "dea_input", 
                         label="Upload DEA object as '*.csv' file (see help)",
                         accept=c("text/csv", ".csv", ".tab", ".txt",
@@ -181,68 +187,44 @@ ENSG00000106462, ENSG00000100811, ...")
             )
           )
         ),
-        tabItem(tabName="tab_enrich_op",
-          box(title="Select enrichment options:", collapsible=TRUE, 
-              collapsed=FALSE, width=12,
-            sliderInput(inputId="minsize", 
-                        label=paste(
-                    "Minium number of annotated targets that is required to",
-                    "consider the miRNA-family for testing"),
-                        min = 1,max = 20,value = 5, step = 1),
-            br(),
-            box(title = "Advanced Options", collapsible=TRUE, collapsed=TRUE, width=12,
-                tags$h5(em(
-                  "We recommend to only change test settings after reading the",
-                  " EnrichMir manual and the Benchmark descriptions in the paper")),
-                tags$h5(em("By default, we always perform the 'siteoverlap'",
-                           "and the 'areamir' tests")),
-                checkboxGroupInput(inputId="tests2run",
-                                   label="Select additional tests to run",
-                                   choices=list(
-                                    "overlap" = "overlap",
-                                    "weight.overlap" ="woverlap",
-                                    "plMod" = "plMod",
-                                    "modscore" = "modscore",
-                                    "ks" = "ks",
-                                    "mw" = "mw",
-                                    "regmir" = "regmir"),
-                                   selected=NULL, inline=FALSE, width=NULL)
-              )
-            )
-          ),
         tabItem(tabName = "tab_enrich",
-          column(4, uiOutput("enrichbtn")), 
-          br(), br(), br(),
-          column(9, id="sel_test_div", 
-                 selectInput("view_test", "View test", choices=c(), width="90%")),
-          column(3, style="margin-top: 30px;", 
-                 checkboxInput("view_all", "advanced")),
-          # box(width=12, title="Select test to view", collapsible=TRUE, collapsed=TRUE,
-          #     tabBox(id="test_type", width=12, 
-          #            tabPanel(title = "Binary Test", value = "binary",
-          #                     selectInput("view_binary", "Interested in up- or downregulated genes:", choices = c("")),
-          #                     # radioButtons(inputId = "up_down", label = "Interested in up- or downregulated genes:",
-          #                     #              choices = c("Up" = ".up",
-          #                     #                          "Down" = ".down"),
-          #                     #              selected = ".down"),
-          #                     "A hypergeometric test on the number of binding sites will be performed to calculate significance"),
-          #            tabPanel(title = "Continuous Test",value = "continous",
-          #                     tags$h4(em("Only with DEA-Input")),br(),
-          #                     br(),
-          #                     "In continuous testing mode, all genes get used for enrichment analysis.Here, we employ an analytic 
-          #                     rank-based enrichment analysis using a conversion of the scores as weights."),
-          #            tabPanel(title = "Advanced - Select test by name",value = "advanced",
-          #                     tags$h4(em("In case you've selected additional tests for the Enrichment Analyses,
-          #                                you can select them here. Again, please refer to the manual as 
-          #                                well as the benchmark results for individual test infos!")),br(),
-          #                     selectInput("view_test", "View test", choices = c(""))
-          #            )
-          #     ),
-          #     tags$h5("Name of chosen test:"),
-          #     verbatimTextOutput(outputId = "test_info"),
-          #     ),
-          box(width=12, title="Enrichment Plot", collapsible=TRUE, collapsed=TRUE,
-            withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))),
+          column(3, uiOutput("enrichbtn")), 
+          box(width=9, title="Enrichment options", collapsible=TRUE, collapsed=TRUE,
+              sliderInput(inputId="minsize", 
+                          label=paste(
+                            "Minium number of annotated targets that is required to",
+                            "consider the miRNA-family for testing"),
+                          min = 1,max = 20,value = 5, step = 1),
+              br(),
+              box(width="100%", title = "Advanced Options", collapsible=TRUE, collapsed=TRUE, 
+                  tags$h5(em(
+                    "We recommend to only change test settings after reading the",
+                    " EnrichMir manual and the Benchmark descriptions in the paper")),
+                  tags$h5(em("By default, we always perform the 'siteoverlap'",
+                             "and the 'areamir' tests")),
+                  checkboxGroupInput(inputId="tests2run",
+                                     label="Select additional tests to run",
+                                     choices=list(
+                                       "overlap" = "overlap",
+                                       "weight.overlap" ="woverlap",
+                                       "plMod" = "plMod",
+                                       "modscore" = "modscore",
+                                       "ks" = "ks",
+                                       "mw" = "mw",
+                                       "regmir" = "regmir"),
+                                     selected=NULL, inline=FALSE, width=NULL)
+              )
+            ),
+          box(width=12, id="resultsbox", title="Results", collapsible=TRUE, collapsed=TRUE,
+            column(9, id="sel_test_div", 
+                   selectInput("view_test", "Select test to visualize", 
+                               choices=c(), width="90%")),
+            column(3, style="margin-top: 30px;", 
+                   checkboxInput("view_all", "advanced")),
+            tabBox(id="enrichresults_out", width=12,
+              tabPanel(title="Enrichment plot", 
+                withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))), tags$br(),
+                box(title="Plot options", width=12, collapsible=TRUE, collapsed=TRUE,
             column(6,sliderInput(inputId="label.sig.thres",
                                  "Significance threshold to display labels",
                                  min=0, max=0.25, value=0.05, step=0.01)),
@@ -256,15 +238,17 @@ ENSG00000106462, ENSG00000100811, ...")
                                    choices=c("p.value","FDR"), selected="FDR")),
             column(6, selectInput("bubble_theme", "Theme", 
                                   choices=ggplot_themes))
-          ),
-          box(width=12, title="Table", collapsible=TRUE, collapsed = TRUE,
-            checkboxGroupInput(inputId="columns2show",
-                               label="Select add. columns to be shown:",
-                               choices=list( "miRNA names"="members",
-                                             "predicted target genes"="genes"),
-                               selected=NULL, inline=TRUE),
-            withSpinner(DTOutput("hits_table")),
-            downloadLink('dl_hits', label = "Download all"))
+                )),
+              tabPanel(title="Results table", 
+                 withSpinner(DTOutput("hits_table")),
+                 column(8, checkboxGroupInput( inputId="columns2show",
+                   label="Select add. columns to be shown:",
+                   choices=list("miRNA names"="members",
+                                "predicted target genes"="genes"),
+                   selected=NULL, inline=TRUE)),
+                 column(4, downloadLink('dl_hits', label = "Download all")))
+            )
+          )
         ),
         tabItem(tabName = "tab_cdplot",
           box(width=12, title="CD Plot", 
@@ -278,88 +262,7 @@ ENSG00000106462, ENSG00000100811, ...")
               column(6, actionButton("cd_plot_dl", "Download"))
           )
         ),
-        tabItem(tabName = "tab_co_mode",
-          tags$h3("Find miRNA colocalizations"), tags$br(),
-          "We strongly recommend to filter miRNAs, especially when using 'ScanMir Sites' or 'All Targetscan Sites'",
-          tabBox(id="tabbox_co_mode", width=12,
-                 tabPanel(title="In expressed genes", value="expression_coloc",
-                          radioButtons(inputId = "expr_coloc_mode",label = "Choose colocalization type:", choices = c("miRNA - miRNA" = "MM",
-                                                                                                                      "miRNA - RBP" = "MR",
-                                                                                                                      "miRNA - custom" = "MC"),
-                                       selected = "MM"), br(),
-                          fileInput(inputId = "expr_custominput", label = "Upload custom object as '*.csv' file (see help)",  accept = c(
-                            "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv"))
-                 ),
-                 tabPanel(title = "In subset", value = "subset_coloc",
-                          radioButtons(inputId = "expr_sub_mode",label = "Choose colocalization type:", choices = c("miRNA - miRNA" = "MM",
-                                                                                                                    "miRNA - RBP" = "MR",
-                                                                                                                    "miRNA - custom" = "MC"),
-                                       selected = "MM"), br(),
-                          fileInput(inputId = "sub_custominput", label = "Upload custom object as '*.csv' file (see help)",  accept = c(
-                            "text/csv",
-                            "text/comma-separated-values,text/plain",
-                            ".csv"))
-                 )
-          ),
-          tags$h3("Help text"),
-          column(12,helpText("Include a brief explanation of the two modi. Until now, only Targetscan miRNA sites can be used")),
-        ),
-        tabItem(tabName = "tab_co_options",
-          box(title = "Options", width = 12,
-            helpText("Choose one of the following:"),
-            tabBox(id="tabbox_co_dist", width=12,
-               tabPanel(title="Min. Distance", value="min_dist_tab",
-                        sliderInput(inputId = "min_dist",label = "Select a minimum distance between motifs", 
-                                    min = 0, max=250, value = 8,step = 1),
-                        helpText("Minimum number of nucleotides to be located between two motifs that is taken into consideration for the search."), br(),
-                        helpText("By specifying different min / max values, users can search for certain",
-                                 "types of functional colocalization. As example, mutual miRNA blocking is",
-                                 "suggested to happen within a distance of 0-7Nt. Cooperative repression of",
-                                 "two miRNAs is reported to happen within a distance of ca. 8-60Nt.At bigger",
-                                 "distances, miRNAs are suggested to act independently on given targets. To search",
-                                 "for enrichment of motif pairs on the whole transcript, select 'Minimum Distance", 
-                                 "= 0'")
-               ),
-               tabPanel(title="Max. Distance", value="max_dist_tab",
-                        sliderInput(inputId = "max_dist",label = "Select a maximum distance between motifs", 
-                                    min = 0, max=250, value = 7,step = 1),
-                        helpText("Maximum number of nucleotides to be located between two motifs that is taken into consideration for the search."), br(),
-                        helpText("By specifying different min / max values, users can search for certain",
-                                 "types of functional colocalization. As example, mutual miRNA blocking is",
-                                 "suggested to happen within a distance of 0-7Nt. Cooperative repression of",
-                                 "two miRNAs is reported to happen within a distance of ca. 8-60Nt.At bigger",
-                                 "distances, miRNAs are suggested to act independently on given targets. To search",
-                                 "for enrichment of motif pairs on the whole transcript, select 'Minimum Distance", 
-                                 "= 0'")
-               ),
-               tabPanel(title="Distance Range", value="range_tab",
-                        sliderInput(inputId = "range",label = "Select a distance range between motifs", 
-                                    min = 0, max=250, value = c(8,60),step = 1),
-                        helpText("Distance range of nucleotides to be located between two motifs that is taken into consideration for the search."), br(),
-                        helpText("By specifying different min / max values, users can search for certain",
-                                 "types of functional colocalization. As example, mutual miRNA blocking is",
-                                 "suggested to happen within a distance of 0-7Nt. Cooperative repression of",
-                                 "two miRNAs is reported to happen within a distance of ca. 8-60Nt.At bigger",
-                                 "distances, miRNAs are suggested to act independently on given targets. To search",
-                                 "for enrichment of motif pairs on the whole transcript, select 'Minimum Distance", 
-                                 "= 0'")
-               )
-            ), 
-            box(title = "Report option", width = 12,
-                sliderInput(inputId = "min_pairs",label = "Select the minium number of detected pairs displayed in the results:",min = 0,max = 25, step = 1, value = 5)
-            )
-          )
-        ),
-        tabItem(tabName = "tab_colocalize",
-          column(2,actionButton(inputId = "colocalize", "Search for Colocalization!", icon = icon("search"))),
-          column(10, tags$h5(textOutput("Searching for colocalizations. This might take some time!"))),
-          box(width=12, title="Table", collapsible=TRUE, collapsed = TRUE,
-              withSpinner(DTOutput("coloc_table"))),
-          box(width = 12, title = "Some kind of plot",
-              helpText("Either a heatmap and / or a bubble plot or a barplot with the top pairs"))
-        )
+        tabItem(tabName = "tab_benchmark", "Forthcoming")
       )
     )
   )
