@@ -28,9 +28,43 @@ enrichMiR.server <- function(){
 
  function(input, output, session){
 
-    
+   ##############################
+   ## Menu items
+   
+   output$menu_species <- renderMenu({
+     menuItem("Species and miRNAs", tabName = "tab_species", icon=icon("folder-open"),
+              badgeLabel=input$species, badgeColor="light-blue")
+   })
+   output$menu_input <- renderMenu({
+     if(input$input_type=="dea" && !is.null(DEA()))
+       return(menuItem("Input genes/DEA", tabName = "tab_input", badgeLabel="DEA",
+                       badgeColor="light-blue", icon=icon("file-alt")))
+     if(input$input_type!="dea" && length(Gene_Subset())>1 && 
+        length(Back())>1)
+       return(menuItem("Input genes/DEA", tabName = "tab_input", 
+                       badgeLabel=paste0("set(",length(Gene_Subset()),")"),
+                       badgeColor="light-blue", icon=icon("file-alt")))
+     menuItem("Input genes/DEA", tabName = "tab_input", badgeLabel="none", 
+              badgeColor="red", icon=icon("file-alt"))
+   })
+   output$menu_enrich <- renderMenu({
+     if((input$input_type=="dea" && !is.null(DEA())) ||
+        (input$input_type!="dea" && length(Gene_Subset())>1 && length(Back())>1))
+       return(menuItem("Enrichment analysis", tabName = "tab_enrich", 
+                       icon=icon("rocket")))
+     menuItem("Input genes/DEA", tabName="tab_input", badgeLabel="(no input!)",
+              badgeColor="red", icon=icon("times-circle"))
+   })
+   output$menu_cdplot <- renderMenu({
+     if(is.null(DEA()) || input$input_type!="dea")
+       return(menuItem("CD Plot", tabName="tab_cdplot", badgeLabel="(requires DEA)",
+                              badgeColor="red", icon=icon("times-circle")))
+     menuItem("CD Plot", tabName="tab_cdplot", icon=icon("poll"))
+   })
+   
     ##############################
     ## initialize expression info
+  
     
     DEA <- reactive({ #initialize dea
       upFile <- input$dea_input
@@ -125,7 +159,7 @@ enrichMiR.server <- function(){
     observeEvent(input$example_GOI, {
       goi <- paste(.exampleGeneset(), collapse=", ")
       bg <- paste(.exampleBackground(), collapse=", ")
-      if(input$Species != "Human"){
+      if(tolower(input$species) != "human"){
         goi <- tools::toTitleCase(tolower(goi))
         bg <- tools::toTitleCase(tolower(bg))
       }
@@ -205,9 +239,6 @@ enrichMiR.server <- function(){
                                           "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_rat.rds"),
                                           "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds")))
     })
-
-                                 
-   
     
    
     ##############################

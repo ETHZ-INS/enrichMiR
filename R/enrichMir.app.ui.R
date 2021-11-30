@@ -22,14 +22,14 @@ ENSG00000106462, ENSG00000100811, ...")
     dashboardHeader(title = "enrichMir", titleWidth = "300px"),
     ## Sidebar content
     dashboardSidebar(width = "300px",
-      sidebarMenu(
-        menuItem("Introduction", tabName = "tab_intro"),
-        menuItem("Species and miRNAs", tabName = "tab_species"),
-        menuItem("Input genes/DEA", tabName = "tab_input"),
-        menuItem("Enrichment Options", tabName = "tab_enrich_op"),
-        menuItem("Enrichment analysis", tabName = "tab_enrich"),
-        menuItem("CD Plot", tabName = "tab_cdplot")
-      )
+       sidebarMenu(
+         menuItem("Introduction", tabName = "tab_intro", icon=icon("info")),
+         menuItemOutput("menu_species"),
+         menuItemOutput("menu_input"),
+         menuItem("Enrichment Options", tabName = "tab_enrich_op", icon=icon("cogs")),
+         menuItemOutput("menu_enrich"),
+         menuItemOutput("menu_cdplot")
+       )                     
     ),
     
     ## Body Content
@@ -100,7 +100,8 @@ ENSG00000106462, ENSG00000100811, ...")
                             min = 10, max = 100, post  = " %", value = 50 ),
                 "Keep only the top ..% expressed miRNAs"
               ),
-              tabPanel(title="Use preset expression profile", style="border: 1px solid;",
+              tabPanel(title="Use preset expression profile",
+                tags$p("You may use either human or preset miRNA expression profiles from two sources:"),
                 tabBox(id="mirexp_preset", width=12,
                   tabPanel(title="From the human microRNAome package",
                     selectizeInput("mirexp_human", "Select tissue/celltype:", 
