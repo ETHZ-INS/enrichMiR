@@ -13,6 +13,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   library(ggplot2)
   library(enrichMiR)
   library(GO.db)
+  library(rintrojs)
   
   baseDataPath="/mnt/schratt/enrichMiR_data/"
   if(is.null(bData)) bData <- lapply(list(
@@ -58,23 +59,64 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    bDataLoaded <- lapply(bData, as.list)
    
    ##############################
+   ## Introduction
+   
+   introSteps <- data.frame(
+     element=c("#menu_species", "#collection_input", "#exprMirs_box", 
+               "#expressed_miRNAs_box", "#menu_input"),
+     intro=c(
+       "The first step in using the enrichMiR app is to make sure that you're
+       working with the right species and annotation. To set this, you open 
+       the 'Species and miRNAs' tab.",
+       "Once you've selected a species, you will be able to see and select one
+       of its available target annotations (see the help button for information
+       about the annotations). For the sake of this example, select the human
+       'targetScan conserved miRNA BS'.",
+       "This is optional, but you can also specify expressed miRNAs by expanding
+       this box (click the \"+\" on the right).<br/>This will be used to 
+       restrict the miRNAs considered for enrichment analysis. In addition, you
+       will be able to visualize given expression values in the results.",
+       "There are three ways to provide this information:<br/>
+       1) you can specify a list of expressed miRNAs in 'Custom set';<br/>
+       2) you can upload a table of miRNA expression levels;<br/>
+       3) you can pick pre-compiled miRNA expression profiles for your 
+       tissue/celltype of interest.<br/><br/>Not that you do not necessarily
+       need to specify expressed miRNA, but this is likely to give you better
+       results.",
+       "Once this is done, the next step is to provide the signal in which 
+       enrichment should be looked for (e.g. your genes of interest, or 
+       differential expression signature). To do this, click on the Input tab."
+     )
+   )
+   
+   observeEvent(input$helpLink,
+                introjs(session,
+                        options=list(steps=introSteps, "nextLabel"="Next",
+                                     "prevLabel"="Previous"),
+                        events=list(onbeforechange=readCallback("switchTabs"))
+                        ))
+   
+   ##############################
    ## Menu items
    
    output$menu_species <- renderMenu({
-     menuItem("Species and miRNAs", tabName = "tab_species", icon=icon("folder-open"),
-              badgeLabel=input$species, badgeColor="light-blue")
+     menuItem( "Species and miRNAs", tabName="tab_species", 
+               expandedName="menu_species", icon=icon("folder-open"), 
+               badgeLabel=input$species, badgeColor="light-blue")
    })
    output$menu_input <- renderMenu({
      if(input$input_type=="dea" && !is.null(DEA()))
-       return(menuItem("Input genes/DEA", tabName = "tab_input", badgeLabel="DEA",
-                       badgeColor="light-blue", icon=icon("file-alt")))
+       return(menuItem("Input genes/DEA", tabName="tab_input", badgeLabel="DEA",
+                       badgeColor="light-blue", icon=icon("file-alt"),
+                       expandedName="menu_input"))
      if(input$input_type!="dea" && length(Gene_Subset())>1 && 
         length(Back())>1)
        return(menuItem("Input genes/DEA", tabName = "tab_input", 
                        badgeLabel=paste0("set(",length(Gene_Subset()),")"),
-                       badgeColor="light-blue", icon=icon("file-alt")))
+                       badgeColor="light-blue", icon=icon("file-alt"),
+                       expandedName="menu_input"))
      menuItem("Input genes/DEA", tabName = "tab_input", badgeLabel="none", 
-              badgeColor="red", icon=icon("file-alt"))
+              badgeColor="red", icon=icon("file-alt"), expandedName="menu_input")
    })
    output$menu_enrich <- renderMenu({
      if((input$input_type=="dea" && !is.null(DEA())) ||
@@ -430,7 +472,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                         showModal(modalDialog(
                           title = "There was an error with your request:",
                           tags$pre(as.character(e)),
-                          "This typically happens when there is a mismatch between your different input data (e.g. wrong species)"
+                          "This typically happens when there is a mismatch 
+                          between your different input data (e.g. wrong species)"
                         ))
                       })
       })

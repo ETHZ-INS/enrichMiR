@@ -8,7 +8,7 @@ enrichMiR.ui <- function(){
   library(shinycssloaders)
   library(plotly)
   library(ggplot2)
-  library(shinyjs)
+  library(rintrojs)
 
   genes_placeholder <- paste("Enter your genes as symbols or ensembl IDs,",
                              "separated by spaces, commas, or linebreaks. E.g.:
@@ -48,7 +48,7 @@ ENSG00000106462, ENSG00000100811, ...")
 #   display: table-row;
 # }
 # "))),
-      useShinyjs(),
+      useShinyjs(), introjsUI(),
       tabItems(
         tabItem(tabName = "tab_intro",
           box(title="enrichMiR: miRNA (and RBP) target enrichment analysis", 
@@ -69,19 +69,24 @@ ENSG00000106462, ENSG00000100811, ...")
           )
         ),
         tabItem(tabName = "tab_species",
-          box(title = "Select Species and Collection", width=12,
+          box(title="Select Species and Collection", width=12,
             column(7, selectInput(inputId = "species", "Species", width='98%',
                         choices = c("Human", "Mouse", "Rat")), tags$br(),
-              selectInput(inputId="collection", width='98%', choices=c(),
-                label="Select a binding sites collection",
-                selected="Targetscan conserved miRNA BS")
-              ),
+               tags$div(id="collection_input",
+                  actionButton(inputId="help_collections", style="float:right;",
+                           icon=icon("question-circle"), label=""),
+                  selectInput(inputId="collection", width='98%', choices=c(),
+                    label="Select a binding sites collection",
+                    selected="Targetscan conserved miRNA BS")
+                  )),
             column(5, withSpinner(textOutput("collection_details")))),
-          box(title="Specify expressed miRNAs", collapsible=TRUE, collapsed=TRUE, width=12,
+          tags$div(id="exprMirs_box", box(title="Specify expressed miRNAs", 
+              collapsible=TRUE, collapsed=TRUE, width=12,
             tags$p("miRNA expression can be used to restrict and annotate the ",
                    "enrichment analysis. This information can either be given ",
                    "manually, provided by uploading a miRNA profile, or ",
                    "fetched from pre-loaded miRNA expression profiles"),
+            tags$div(id="expressed_mirna_box", 
             tabBox(id="expressed_mirna_box", width=12,
               tabPanel(title = "Custom Set",
                        "Paste a list of expressed miRNAs in 'miRBase' format", br(), br(),
@@ -107,9 +112,9 @@ ENSG00000106462, ENSG00000100811, ...")
               tabPanel(title="Use preset expression profile",
                 uiOutput("mirexp_preset")
               )
-            ), br(),
+            )), br(),
             footer="Note: If no miRNAs are uploaded/selected, enrichment 
-                    searches will be performed with all microRNAs of the given species")
+                    searches will be performed with all microRNAs of the given species"))
         # eventually enable this as upload or selection from pre-loaded tissues?
         ),
         tabItem("tab_input",
