@@ -72,11 +72,8 @@ ENSG00000106462, ENSG00000100811, ...")
           box(title = "Select Species and Collection", width=12,
             column(7, selectInput(inputId = "species", "Species", width='98%',
                         choices = c("Human", "Mouse", "Rat")), tags$br(),
-              selectInput(inputId="collection", width='98%',
+              selectInput(inputId="collection", width='98%', choices=c(),
                 label="Select a binding sites collection",
-                choices=c("scanMir miRNA BS", "Targetscan conserved miRNA BS",
-                          "Targetscan all miRNA BS", "CISBP RBP motif sites",
-                          "miRTarBase"),
                 selected="Targetscan conserved miRNA BS")
               ),
             column(5, withSpinner(textOutput("collection_details")))),
@@ -173,7 +170,7 @@ ENSG00000106462, ENSG00000100811, ...")
                           label=paste(
                             "Minium number of annotated targets that is required to",
                             "consider the miRNA-family for testing"),
-                          min = 1,max = 20,value = 5, step = 1),
+                          min=1, max=20, value=5, step=1),
               br(),
               box(width="100%", title = "Advanced Options", collapsible=TRUE, collapsed=TRUE, 
                   tags$h5(em(
@@ -194,7 +191,8 @@ ENSG00000106462, ENSG00000100811, ...")
                                      selected=NULL, inline=FALSE, width=NULL)
               )
             ),
-          box(width=12, id="resultsbox", title="Results", collapsible=TRUE, collapsed=TRUE,
+          tags$div(id="resultsbox", style="display: none;", 
+          box(width=12, title="Results", collapsible=TRUE,
             column(9, id="sel_test_div", 
                    selectInput("view_test", "Select test to visualize", 
                                choices=c(), width="90%")),
@@ -202,7 +200,10 @@ ENSG00000106462, ENSG00000100811, ...")
                    checkboxInput("view_all", "advanced")),
             tabBox(id="enrichresults_out", width=12,
               tabPanel(title="Enrichment plot", 
-                withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))), tags$br(),
+                tags$p("Hover on a point to view family members and ",
+                       "enrichment-related statistics."),
+                withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))), 
+                tags$br(), tags$br(), tags$br(), 
                 box(title="Plot options", width=12, collapsible=TRUE, collapsed=TRUE,
             column(6,sliderInput(inputId="label.sig.thres",
                                  "Significance threshold to display labels",
@@ -227,18 +228,33 @@ ENSG00000106462, ENSG00000100811, ...")
                    selected=NULL, inline=TRUE)),
                  column(4, downloadLink('dl_hits', label = "Download all")))
             )
-          )
+          ))
         ),
         tabItem(tabName = "tab_cdplot",
           box(width=12, title="CD Plot", 
-              column(6,selectizeInput(inputId="mir_fam", choices=c(),
+              tags$h3(id="cdplot_na", style="font-color: red;", 
+                      icon("exclamation-triangle"), 
+                      "Cumulative distribution plots require the use of a DEA input."),
+              tags$div(id="cdplot_outer", style="display: none;",
+                column(6,selectizeInput(inputId="mir_fam", choices=c(),
                                       label="Select miRNA family to display")),
-              column(6,selectInput(inputId="CD_type", "Split by",
+                column(6,selectInput(inputId="CD_type", "Split by",
                                    choices=c("sites","score"))),
-              uiOutput("CDplotUI"),
-              column(6, selectInput("CDplot_theme", "Theme", 
-                                    choices=ggplot_themes)),
-              column(6, actionButton("cd_plot_dl", "Download"))
+                withSpinner(jqui_resizable(plotOutput("cd_plot", width='100%', 
+                                                      height='400px'))),
+                tags$br(), tags$br(), tags$br(), tags$br(), 
+                box(width=12, title="Plotting options", collapsible=TRUE, 
+                    collapsed=TRUE,
+                  column(6,sliderInput(inputId="CDplot_xaxis",
+                                       "logFC to display on x.axis",
+                                       min=0, max=8, value=0, step=0.5)),
+                  column(6,sliderInput(inputId="CD_k", "Approximate number of sets",
+                                       min=2, max=6, value=3, step=1)),
+                  column(6, selectInput("CDplot_theme", "Theme", 
+                                        choices=ggplot_themes)),
+                  column(6, actionButton("cd_plot_dl", "Download"))                  
+                )
+              )
           )
         ),
         tabItem(tabName = "tab_benchmark", "Forthcoming")

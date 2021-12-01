@@ -2,29 +2,39 @@
 #' 
 #' @param bData A named, nested list, the first level being species, the second
 #' different binding annotations (see vignette for format details)
+#' @param logCallsFile Optional path to a file when the date of enrichment calls
+#' will be logged.
 #'
 #' @return A shiny server function
 #' @export
 #' @import ggplot2 DT GO.db
-enrichMiR.server <- function(bData=NULL){
+enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   library(DT)
   library(ggplot2)
   library(enrichMiR)
   library(GO.db)
   
-  if(is.null(bData)) bData <- list(
-    Human=list(
-      "Targetscan conserved miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_human.rds",
-      "Targetscan all miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_AllSites_human.rds",
-      "CISBP RBP motif sites"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"),
-    Mouse=list(
-      "Targetscan conserved miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Mouse_ConPred_mouse.rds",
-      "Targetscan all miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_AllSites_mouse.rds",
-      "CISBP RBP motif sites"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_mouse.rds"),
-    Rat=list(
-      "Targetscan conserved miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_rat.rds",
-      "Targetscan all miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_AllSites_rat.rds")
-    )
+  baseDataPath="/mnt/schratt/enrichMiR_data/"
+  if(is.null(bData)) bData <- lapply(list(
+    Human=c(
+      "Targetscan conserved miRNA BS"=
+        "Targetscan/20211124_Targetscan8_Human_ConPred_human.rds",
+      "Targetscan all miRNA BS"=
+        "Targetscan/20211124_Targetscan8_Human_AllPred_human.rds",
+      "oRNAment"=
+        "oRNAment/human_coding_MSS05_gene_3UTR_pred.rds"),
+    Mouse=c(
+      "Targetscan conserved miRNA BS"=
+        "Targetscan/20211124_Targetscan8_Mouse_ConPred_mouse.rds",
+      "Targetscan all miRNA BS"=
+        "Targetscan/20211124_Targetscan8_Mouse_AllPred_mouse.rds",
+      "oRNAment"="oRNAment/mouse_coding_MSS05_gene_3UTR_pred.rds"),
+    Rat=c(
+      "Targetscan conserved miRNA BS (from mouse)"=
+        "Targetscan/20211124_Targetscan_Mouse_ConSitse_positions_rat.rds",
+      "Targetscan all miRNA BS (from mouse)"=
+        "Targetscan/20211124_Targetscan_Mouse_AllSites_positions_rat.rds")
+    ), function(x) setNames(paste0(baseDataPath,x), names(x)))
   
   dtwrapper <- function(d, pageLength=25, hide_cols){
     datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
@@ -45,7 +55,7 @@ enrichMiR.server <- function(bData=NULL){
 
  function(input, output, session){
 
-   bDataLoaded <- bData
+   bDataLoaded <- lapply(bData, as.list)
    
    ##############################
    ## Menu items
@@ -228,7 +238,7 @@ enrichMiR.server <- function(bData=NULL){
     
     Gene_Subset <- reactive({
       if(isTRUE(getOption("shiny.testmode"))) print("Gene_Subset")
-      if(is.null(input$input_type)) return(NULL)
+      if(is.null(input$input_type) || is.null(EN_Object())) return(NULL)
       if(input$input_type == "dea"){
         if(is.null(input$dea_input)) return(NULL)
         d <- DEA()
@@ -253,9 +263,11 @@ enrichMiR.server <- function(bData=NULL){
 
     
     EN_Object <- reactive({
-      if(is.null(input$collection)) return(NULL)
+      if(isTRUE(getOption("shiny.testmode"))) print("EN_Object")
+      if(is.null(input$collection) || is.null(input$species) ||
+         is.null(bDataLoaded[[input$species]][[input$collection]])) return(NULL)
       if(is.character(bDataLoaded[[input$species]][[input$collection]]))
-        bDataLoaded[[input$species]][[input$collection]] <-
+        bDataLoaded[[input$species]][[input$collection]] <<-
           readRDS(bDataLoaded[[input$species]][[input$collection]])
       bDataLoaded[[input$species]][[input$collection]]
     })
@@ -270,22 +282,27 @@ enrichMiR.server <- function(bData=NULL){
     ##############################
     ## CD plot
     
-    output$CDplotUI <- renderUI({
-      if( input$input_type!="dea" || is.null(DEA()) )
-        return(tags$h3(style="font-color: red;", icon("exclamation-triangle"), 
-                "Cumulative distribution plots require the use of a DEA input."))
-      tagList(
-        withSpinner(jqui_resizable(plotOutput("cd_plot", width='100%', height='400px'))),
-        br(),br(),br(),br(),br(),
-        column(6,sliderInput(inputId="CDplot_xaxis", "logFC to display on x.axis",
-                             min=0.5, max=5, value=2, step=0.5)),
-        column(6,sliderInput(inputId="CD_k", "Approximate number of sets",
-                             min=2, max=6, value=2, step=1))
-      )
+    observe({
+      if( input$input_type!="dea" || is.null(DEA()) ){
+        hideElement("cdplot_outer")
+        showElement("cdplot_na")
+      }else{
+        hideElement("cdplot_na")
+        showElement("cdplot_outer")
+      }
+    })
+
+    CDtypeOptions <- reactive({
+      if(is.null(EN_Object())) return(NULL)
+      options <- c( Automatic="auto", "Best site type"="best_stype", 
+                    Score="score", "Number of sites"="sites",
+                    "Site type"="type" )
+      options[options %in% c("auto",colnames(EN_Object()))]
     })
     
     observe({
       if(!is.null(EN_Object())){
+        updateSelectInput(session, "CD_type", choices=CDtypeOptions())
         if(!is.null(m <- metadata(EN_Object())$families)){
         updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
         }
@@ -301,8 +318,17 @@ enrichMiR.server <- function(bData=NULL){
       dea <- DEA()
       TS <- EN_Object()
       dea <- .applySynonyms(dea, TS)
-      p <- CDplot2(dea, TS, setName=input$mir_fam, by = input$CD_type, k=input$CD_k) + 
-        xlim(-input$CDplot_xaxis, input$CDplot_xaxis)
+      legname <- names(CDtypeOptions())[CDtypeOptions()==input$CD_type]
+      if(input$CD_type=="auto") legname <- names(CDtypeOptions())[2]
+      p <- CDplotWrapper(dea, TS, setName=input$mir_fam, 
+                         by=input$CD_type, k=input$CD_k) + labs(colour=legname)
+      if(input$CDplot_xaxis==0){
+        q <- quantile(dea$logFC, c(0.01, 0.99))
+        p <- p + xlim(q[1],q[2])
+      }else{
+        p <- p + xlim(-input$CDplot_xaxis, input$CDplot_xaxis)
+      }
+        
       if(!is.null(input$CDplot_theme))
         p <- tryCatch(p + getFromNamespace(input$CDplot_theme, "ggplot2")(), 
                       error=function(e){ warning(e); p })
@@ -310,6 +336,9 @@ enrichMiR.server <- function(bData=NULL){
     })
               
     output$cd_plot <- renderPlot({
+      if(!is.null(logCallsFile))
+        writeLines(paste(Sys.Date(),session$token,"CDplot"), logCallsFile,
+                   append=TRUE)
       CDplot_obj()
     })
     
@@ -365,7 +394,7 @@ enrichMiR.server <- function(bData=NULL){
 #       
     
     ER <- eventReactive(input$enrich, {
-      hide("resultsbox")
+      hideElement("resultsbox")
       if(is.null(input$input_type) || is.null(EN_Object())) return(NULL)
       if(isTRUE(getOption("shiny.testmode"))) print("ER")
       mirexp <- miRNA_exp()
@@ -389,7 +418,10 @@ enrichMiR.server <- function(bData=NULL){
       if(length(sig)==0) return(NULL)
       detail <- NULL
       if(input$collection == "Targetscan all miRNA BS") detail <- "This will take a while..."
-      show("resultsbox")
+      if(!is.null(logCallsFile))
+        writeLines(paste(Sys.Date(),session$token,"enrich"), logCallsFile,
+                   append=TRUE)
+      showElement("resultsbox")
       withProgress(message=msg, detail=detail, value=1, max=3, {
         o <- tryCatch(testEnrichment(sig, EN_Object(), background=bg, 
                                      sets.properties=mirexp, tests=tests, 
