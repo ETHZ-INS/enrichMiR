@@ -11,7 +11,8 @@
 #' @param k The number of groups to form. Only applicable if by = "sites" or
 #'   "score".
 #' @param by The variable by which to form the groups; either "sites", "score",
-#'   "best_stype" or "type".
+#'   "best_stype" or "type". If unspecified, will determine the best depending
+#'   on the available annotation data.
 #' @param sameFreq Logical; whether to divide so as to obtained groups with
 #'   similar frequencies (rather than groups of similar width)
 #' @param pvals Logical; whether to print the p-values of KS tests between sets
@@ -21,8 +22,10 @@
 #'
 #' @return A ggplot.
 #' @export
-CDplotWrapper <- function(dea, sets, setName, k=3, by=c("sites","score","best_stype","type"), 
-                    sameFreq=NULL, line.size=1.2, point.size=0.8, checkSynonyms=TRUE, pvals=FALSE,...){
+CDplotWrapper <- function(dea, sets, setName, k=3, 
+                          by=c("auto","sites","score","best_stype","type"), 
+                          sameFreq=NULL, line.size=1.2, point.size=0.8, 
+                          checkSynonyms=TRUE, pvals=FALSE, ...){
   message("Preparing inputs...")
   dea <- .homogenizeDEA(dea)
   if(checkSynonyms) dea <- .applySynonyms(dea, sets)
@@ -30,7 +33,10 @@ CDplotWrapper <- function(dea, sets, setName, k=3, by=c("sites","score","best_st
   sets <- sets[sets$set==setName,]
   if(is.null(sets$sites)) sets$sites <- 1
   by <- match.arg(by)
-  if(by != "type" && !(by %in% colnames(sets))) stop("`by` not available in `sets`.")
+  if(by=="auto")
+    by <- head(intersect(c("best_stype", "score", "sites"), colnames(sets)),1)
+  if(by != "type" && !(by %in% colnames(sets))) 
+    stop("`by` not available in `sets`.")
   if(nrow(sets)==0) stop("setName not found in `sets`.")
   if(is.null(dim(dea))){
     if(!is.numeric(dea) || is.null(names(dea)))
@@ -54,7 +60,8 @@ CDplotWrapper <- function(dea, sets, setName, k=3, by=c("sites","score","best_st
       #get set info
       sets <- as.data.table(sets)
       sets <- melt(sets, id.vars = c("feature"),
-                    measure.vars = c("Sites_8mer", "Sites_7mer_m8", "Sites_7mer_1a"))
+                    measure.vars = c("Sites_8mer", "Sites_7mer_m8", 
+                                     "Sites_7mer_1a"))
       sets <- sets[sets$value != 0,]
       sets$type[sets$variable == "Sites_8mer"] <- "8mer"
       sets$type[sets$variable == "Sites_7mer_m8"] <- "7mer-m8"
@@ -77,7 +84,8 @@ CDplotWrapper <- function(dea, sets, setName, k=3, by=c("sites","score","best_st
       by2 <- by_df$type
       names(by2) <- by_df$feature
     }
-    p <- CDplot(dea, by=by2, k=length(levels(as.factor(by2))), sameFreq=sameFreq, size=line.size, pvals = pvals, ...)
+    p <- CDplot(dea, by=by2, k=length(levels(as.factor(by2))), 
+                sameFreq=sameFreq, size=line.size, pvals = pvals, ...)
   }else{
     by <- rowsum(sets[[by]], sets$feature)[,1]
     by2 <- by[names(dea)]
@@ -87,7 +95,8 @@ CDplotWrapper <- function(dea, sets, setName, k=3, by=c("sites","score","best_st
       names(ll) <- c("non-targets","targets")
       p <- CDplot(ll, size=line.size, pvals = pvals, ...)
     }else{
-      p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size, pvals = pvals, ...)
+      p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size, 
+                  pvals=pvals, ...)
     }
   }
   if(point.size>0) p <- p + geom_point(size=point.size)
