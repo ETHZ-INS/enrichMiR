@@ -70,15 +70,16 @@ ENSG00000106462, ENSG00000100811, ...")
         ),
         tabItem(tabName = "tab_species",
           box(title = "Select Species and Collection", width=12,
-            selectInput(inputId = "species", "Species", width = '98%',
+            column(7, selectInput(inputId = "species", "Species", width='98%',
                         choices = c("Human", "Mouse", "Rat")), tags$br(),
-            selectInput(inputId="collection", width='98%',
-                        label="Select a binding sites collection",
-                        choices=c("scanMir miRNA BS", "Targetscan conserved miRNA BS",
-                                  "Targetscan all miRNA BS", "CISBP RBP motif sites",
-                                  "miRTarBase"),
-                        selected="Targetscan conserved miRNA BS")
-            ),
+              selectInput(inputId="collection", width='98%',
+                label="Select a binding sites collection",
+                choices=c("scanMir miRNA BS", "Targetscan conserved miRNA BS",
+                          "Targetscan all miRNA BS", "CISBP RBP motif sites",
+                          "miRTarBase"),
+                selected="Targetscan conserved miRNA BS")
+              ),
+            column(5, withSpinner(textOutput("collection_details")))),
           box(title="Specify expressed miRNAs", collapsible=TRUE, collapsed=TRUE, width=12,
             tags$p("miRNA expression can be used to restrict and annotate the ",
                    "enrichment analysis. This information can either be given ",
@@ -107,29 +108,7 @@ ENSG00000106462, ENSG00000100811, ...")
                 "Keep only the top ..% expressed miRNAs"
               ),
               tabPanel(title="Use preset expression profile",
-                tags$p("You may use either human or preset miRNA expression profiles from two sources:"),
-                tabBox(id="mirexp_preset", width=12,
-                  tabPanel(title="From the human microRNAome package",
-                    selectizeInput("mirexp_human", "Select tissue/celltype:", 
-                                  choices=getHumanMirExp()),
-                    tags$p("Source: ", 
-                           tags$a(href="http://genome.cshlp.org/content/27/10/1769",
-                                  "McCall et al., NAR 2017"))
-                  ),
-                tabPanel(title="From some mouse profiles",
-                  selectizeInput("mirexp_mouse", "Select tissue/celltype:",
-                                choices=getMouseMirExp()),
-                  tags$p("Source: ",
-                         tags$a(href="https://doi.org/10.1093/nar/gkaa323",
-                                "Kern et al., NAR 2020"), " and ",
-                         tags$a(href="https://doi.org/10.1016/j.neuron.2011.11.010",
-                                "He et al., Neuron 2012")),
-                  tags$p("Note that this quantification is not hairpin-specific,",
-                         " but at the precursor level."))
-                ),
-                sliderInput(inputId = "mir_cut_off2", label="Select miRNA expression cut-off:",
-                            min = 10, max = 100, post  = " %", value = 50 ),
-                "Keep only the top ..% expressed miRNAs"
+                uiOutput("mirexp_preset")
               )
             ), br(),
             footer="Note: If no miRNAs are uploaded/selected, enrichment 

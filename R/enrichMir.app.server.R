@@ -1,13 +1,30 @@
 #' enrichMiR.server
+#' 
+#' @param bData A named, nested list, the first level being species, the second
+#' different binding annotations (see vignette for format details)
 #'
 #' @return A shiny server function
 #' @export
 #' @import ggplot2 DT GO.db
-enrichMiR.server <- function(){
+enrichMiR.server <- function(bData=NULL){
   library(DT)
   library(ggplot2)
   library(enrichMiR)
   library(GO.db)
+  
+  if(is.null(bData)) bData <- list(
+    Human=list(
+      "Targetscan conserved miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_human.rds",
+      "Targetscan all miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_AllSites_human.rds",
+      "CISBP RBP motif sites"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"),
+    Mouse=list(
+      "Targetscan conserved miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Mouse_ConPred_mouse.rds",
+      "Targetscan all miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_AllSites_mouse.rds",
+      "CISBP RBP motif sites"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_mouse.rds"),
+    Rat=list(
+      "Targetscan conserved miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_rat.rds",
+      "Targetscan all miRNA BS"="/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_AllSites_rat.rds")
+    )
   
   dtwrapper <- function(d, pageLength=25, hide_cols){
     datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
@@ -28,6 +45,8 @@ enrichMiR.server <- function(){
 
  function(input, output, session){
 
+   bDataLoaded <- bData
+   
    ##############################
    ## Menu items
    
@@ -60,6 +79,11 @@ enrichMiR.server <- function(){
        return(menuItem("CD Plot", tabName="tab_cdplot", badgeLabel="(requires DEA)",
                               badgeColor="red", icon=icon("times-circle")))
      menuItem("CD Plot", tabName="tab_cdplot", icon=icon("poll"))
+   })
+   
+   observe({
+     if(!is.null(input$species))
+       updateSelectInput(session, "collection", choices=names(bData[[input$species]]))
    })
    
     ##############################
@@ -107,6 +131,36 @@ enrichMiR.server <- function(){
         b <- gsub("\\..*","",b)
       }
     })
+    
+    output$mirexp_preset <- renderUI({
+      if(tolower(input$species) == "human"){
+        return(tagList(
+          tags$h4("From the human microRNAome package"),
+          selectizeInput("mirexp_human", "Select tissue/celltype:", 
+                         choices=getHumanMirExp()),
+          tags$p("Source: ", 
+                 tags$a(href="http://genome.cshlp.org/content/27/10/1769",
+                        "McCall et al., NAR 2017")),
+          
+        ))
+      }else if(tolower(input$species) == "mouse"){
+        return(tagList(
+          tags$h4("From published mouse profiles"),
+          selectizeInput("mirexp_mouse", "Select tissue/celltype:",
+                         choices=getMouseMirExp()),
+          tags$p("Source: ",
+                 tags$a(href="https://doi.org/10.1093/nar/gkaa323",
+                        "Kern et al., NAR 2020"), " and ",
+                 tags$a(href="https://doi.org/10.1016/j.neuron.2011.11.010",
+                        "He et al., Neuron 2012")),
+          tags$p("Expression is given in logCPM, i.e. log-transformed ",
+                 "counts-per-million reads"),
+          tags$p("Note that this quantification is not hairpin-specific,",
+                 " but at the precursor level.")))
+          
+      }
+      tags$p("Preset miRNA expression profiles are only available for human and mouse.")
+    })
         
     miRNA_exp <- reactive({
       if(isTRUE(getOption("shiny.testmode"))) print("miRNA_exp")
@@ -116,19 +170,20 @@ enrichMiR.server <- function(){
         return(trimInputList(input$exp_mirna_list))
       }
       if(input$expressed_mirna_box=="Use preset expression profile"){
-        if(input$mirexp_preset=="From the human microRNAome package"){
+        if(tolower(input$species) == "human"){
           if(is.null(input$mirexp_human) || 
              is.null(x <- getHumanMirExp(input$mirexp_human))) return(NULL)
           x <- head(x,round((input$mir_cut_off2/100)*length(x)))
-          return(data.frame(row.names=names(x), expression=as.numeric(x)))
-        }else{
+          return(data.frame(row.names=names(x), expression=as.numeric(x)))          
+        }else if(tolower(input$species) == "mouse"){
           if(is.null(input$mirexp_mouse) || 
              is.null(x <- getMouseMirExp(input$mirexp_mouse))) return(NULL)
           x <- head(x,round((input$mir_cut_off2/100)*length(x)))
           x <- setNames(rep(x,each=2),
                         paste0(rep(names(x),each=2), c("-5p","-3p")))
-          return(data.frame(row.names=names(x), expression=as.numeric(x)))
+          return(data.frame(row.names=names(x), expression=as.numeric(x)))          
         }
+        return(NULL)
       }
       if(is.null(input$exp_mirna_file)) return(NULL)
       mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
@@ -183,14 +238,8 @@ enrichMiR.server <- function(){
           g <- trimInputList(input$genes_of_interest)
           g <- gsub("\\..*","",g)
         }else{
-          Sp <- switch(input$species,
-                               "Human" = "Hs",
-                               "Mouse" = "Mm",
-                               "Rat" = "Rn",
-                               "Custom - not yet" = "Hs")
-          ens <- switch(input$genes_format,
-                                "Ens" = TRUE,
-                                "GS" = FALSE)
+          Sp <- switch(input$species, Human="Hs", Mouse="Mm", Rat="Rn")
+          ens <- switch(input$genes_format, "Ens"=TRUE, "GS"=FALSE)
           return(as.character(unlist(getGOgenes(go_ids=input$go_term, 
                                                 species=Sp,ensembl_ids=ens))))
         }
@@ -204,38 +253,19 @@ enrichMiR.server <- function(){
 
     
     EN_Object <- reactive({
-      if(is.null(EN_Object)) return(NULL)
-      if(isTRUE(getOption("shiny.testmode"))) print("EN_Object")
-      switch(input$collection,
-            #Loading everywhere the conserved files for now, except for the "all_Sites" object
-             # "scanMir miRNA BS" = switch(input$species,
-             #                                       "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Human_ConSites_human.rds"),
-             #                                       "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Mouse_ConSites_mouse.rds"),
-             #                                       "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Mouse_ConSites_rat.rds"),
-             #                                       "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Human_ConSites_human.rds")),
-             "Targetscan conserved miRNA BS" = switch(input$species,
-                                                        "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_human.rds"),
-                                                        "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_mouse.rds"),
-                                                        "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan8_Human_ConPred_rat.rds"),
-                                                        "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20211124_Targetscan_Human_ConSites_human.rds")),
-             "Targetscan all miRNA BS" = switch(input$species,
-                                                       "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_AllSites_human.rds"),
-                                                       "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_AllSites_mouse.rds"),
-                                                       "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_AllSites_rat.rds"),
-                                                       "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_AllSites_human.rds")),
-             "CISBP RBP motif sites" = switch(input$species,
-                                                         "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"),
-                                                         "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_mouse.rds"),
-                                                         "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_rat.rds"),
-                                                         "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds")),
-             "miRTarBase" = switch(input$species,
-                                              "Human" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"),
-                                              "Mouse" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_mouse.rds"),
-                                              "Rat" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Mouse_ConSites_rat.rds"),
-                                              "Custom - not yet" = readRDS("/mnt/schratt/enrichMiR_data/Targetscan/20201102_Targetscan_Human_ConSites_human.rds"))
-            )
+      if(is.null(input$collection)) return(NULL)
+      if(is.character(bDataLoaded[[input$species]][[input$collection]]))
+        bDataLoaded[[input$species]][[input$collection]] <-
+          readRDS(bDataLoaded[[input$species]][[input$collection]])
+      bDataLoaded[[input$species]][[input$collection]]
     })
     
+    output$collection_details <- renderText({
+      if(is.null(EN_Object())) return(NULL)
+      paste(nrow(EN_Object()), "bindings of ", length(unique(EN_Object()$set)),
+            "families on ", length(unique(EN_Object()$feature)), 
+            "transcripts/genes")
+    })
    
     ##############################
     ## CD plot
