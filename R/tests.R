@@ -82,7 +82,7 @@ siteoverlap <- function(signal, sets){
                         pvalue=p1
                     )
                   }))
-  res$pvalue[res$pvalue==0] <- min(res$pvalue[res$pvalue>0])/10
+  res[res[,"pvalue"]==0,"pvalue"] <- min(res[res[,"pvalue"]>0,"pvalue"])/10
   res <- as.data.frame(res)
   res <- res[order(res$pvalue),]
   for(i in 1:4) res[[i]] <- as.integer(res[[i]])
