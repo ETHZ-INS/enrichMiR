@@ -307,6 +307,7 @@ availableTests <- function(x=NULL, sets=NULL){
       setsSites <- !is.null(dim(sets)) && "sites" %in% colnames(sets)
     }
   }
+  if(!setsScore && !setsSites) return(c("overlap"))
   tests <- c("regmir.bb")
   if(sigBinary) tests <- c(tests, c("overlap","siteoverlap","woverlap","regmir.bb"))
   if(sigContinuous) tests <- c(tests, c("mw","ks","ks2","gsea","areamir"))

@@ -96,6 +96,16 @@ Here is a brief description of each type of collection:"),
                tags$a(href="https://www.bioconductor.org/packages/devel/bioc/html/scanMiR.html",
                       "scanMiR", target="_blank"),
                "a transcript-level affinity prediction method."),
+             tags$li(tags$b("miRTarBase: "),
+                     "Experimentally-validated miRNA targets from the ",
+                     tags$a(href="https://mirtarbase.cuhk.edu.cn/~miRTarBase/",
+                            "miRTarBase", target="_blank"),
+                     "database. While these targets are more trustworthy, a 
+                     sufficient number of targets is available for only a 
+                     proportion of the miRNAs, and some targets might have been
+                     missed due to the cellular context of the experiments. 
+                     Because this collection does not include individual sites,
+                     only the simplest over-representation test is available."),
              tags$li(tags$b("oRNAment: "),
                "RNA binding protein (RBPs) bindings from the ",
                tags$a(href="http://rnabiology.ircm.qc.ca", "oRNAment", 
