@@ -453,7 +453,11 @@
   
   
   #add the ensembl/symbol conversion
-  syn <- .ens2symbol(species = species,level = "gene",report.element = "ens")
+  if(level == "gene"){
+    syn <- .ens2symbol(species = species,level = "gene",report.element = "ens")
+  }else{
+    syn <- .ens2symbol(species = species,level = "tx",report.element = "ens")
+  }
   
   sc <- DataFrame(sc)
   metadata(sc)$feature.synonyms <- syn
