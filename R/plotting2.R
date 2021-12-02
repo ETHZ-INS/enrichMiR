@@ -33,6 +33,8 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
   sets <- sets[sets$set==setName,]
   if(is.null(sets$sites)) sets$sites <- 1
   by <- match.arg(by)
+  if(by=="auto" || by=="best_stype")
+    sets <- .addBestType(sets)
   if(by=="auto")
     by <- head(intersect(c("best_stype", "score", "sites"), colnames(sets)),1)
   if(by != "type" && !(by %in% colnames(sets))) 

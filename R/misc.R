@@ -393,3 +393,18 @@ getMouseMirExp <- function(x=NULL){
 .exampleGeneset <- function(){
   head(.exampleBackground(),60)
 }
+
+
+.addBestType <- function(x){
+  stopifnot(!is.null(dim(x)))
+  if(!is.null(x$best_stype)) return(x)
+  if(length(w <- grep("[6-8]mer", colnames(x)))<2) return(x)
+  x$best_stype <- apply(as.matrix(x[,w]), 1, FUN=function(y){
+    if(length(i <- which(as.numeric(y)>0))==0) return(0)
+    head(i,1)
+  })
+  x$best_stype <- factor(x$best_stype, levels=c(0L, rev(seq_along(w))), 
+                         labels=c("none",rev(gsub("Sites_","",colnames(x)[w]))))
+  levels(x$best_stype) <- gsub("_","-",levels(x$best_stype))
+  x
+}
