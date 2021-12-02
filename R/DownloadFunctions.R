@@ -56,7 +56,7 @@
   sit_ty <- data.frame("Site Type" = c(1,2,3,4),"type" = c("7mer-1a","7mer-m8","8mer","6mer"),check.names = FALSE)
   a <- merge(a,sit_ty,by="Site Type")
   
-  syn <- c(syn, .ens2symbol(species))
+  syn <- c(syn, .ens2symbol(species,level = "gene",report.element = "sym"))
   keep <- c("Seed.m8", "Gene Symbol","UTR_start","UTR end","score","weighted_score","type")
   a <- a[,keep]
   colnames(a)[1:7] <- c("set","feature","start","end","score","weighted_score","type")
@@ -99,26 +99,6 @@
   #filter for the miRNA species
   miRFam <- miRFam[miRFam$Species.ID == spec,]
   miRFam
-}
-
-.ens2symbol <- function(species=c("human","mouse","rat")){
-  species <- match.arg(species)
-  symbol <- switch(species,
-                   human="hgnc_symbol",
-                   mouse="mgi_symbol",
-                   rat="rgd_symbol",
-                   "uniprot_gn_symbol")
-  ensembl <- switch(species,
-               human = useMart("ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl"),
-               mouse = useMart("ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl"),
-               rat = useMart("ENSEMBL_MART_ENSEMBL",dataset="rnorvegicus_gene_ensembl"), 
-               stop("No matched species"))
-  anno <- getBM(attributes=c("ensembl_gene_id",symbol), mart = ensembl)
-  anno <- anno[anno[,2]!="",]
-  anno <- anno[!duplicated(anno[,1]),]
-  e2s <- anno[,2]
-  names(e2s) <- anno[,1]
-  e2s
 }
 
 
@@ -171,7 +151,7 @@
   tmp <- a[!duplicated(a[,1:2]),1:2]
   syn <- as.character(tmp[,2])
   names(syn) <- tmp[,1]
-  syn <- c(syn, .ens2symbol(species))
+  syn <- c(syn, .ens2symbol(species,level = "gene",report.element = "sym"))
   if(keepMers){
     keep <- c(keep, grep("^Number of", colnames(a), value=TRUE))
     if(type=="conserved") keep <- keep[-grep("nonconserved",keep)]
@@ -194,13 +174,6 @@
       a$`Sites_7mer_1a` <- rowSums(a[,grep("7mer-1a",colnames(a))],na.rm = FALSE)
       a <- a[,-grep("Number",colnames(a))]
     }
-    #add the best site type information
-    a$best_stype <- c()
-    a$best_stype[a$`Sites_8mer`> 0] <- "8mer"
-    a$best_stype[is.na(a$best_stype) & a$`Sites_7mer_m8`> 0] <- "7mer-m8"
-    a$best_stype[is.na(a$best_stype) & a$`Sites_7mer_1a`> 0] <- "7mer-1a"
-    a$best_stype[is.na(a$best_stype)] <- "no site"
-    a$best_stype <- as.factor(a$best_stype)
   }
   a <- DataFrame(a)
   metadata(a)$feature.synonyms <- syn
@@ -434,5 +407,124 @@
 }
 
 
+
+#Prepares a DataFrame that is compatible with EnrichMiR from scanMiR "runFullScan" aggregations (sc)
+.prepScanMir_can <- function(sc,species = c("human","mouse","rat"),level = c("gene","transcript"),include6mers = FALSE){
+
+  #get the Targetscan miRNA families
+  species <- match.arg(species)
+  level <- match.arg(level)
+  fams <- .getTargetscan_miRfamilies(species)
+  
+  if(class(sc) == "IndexedFst") sc <- as.data.frame(sc)
+  sc[colnames(sc) %in% c("non-canonical","ORF.canonical","ORF.non-canonical")] <- NULL
+  if(!include6mers) sc[["6mer"]] <- NULL
+  sc$sites <- rowSums(sc[,grep("mer",colnames(sc))])
+  sc$repression <- sc$repression / 1000
+  colnames(sc)[colnames(sc) == "repression"] <- "score"
+  colnames(sc)[colnames(sc) == "miRNA"] <- "set"
+  colnames(sc)[colnames(sc) == "transcript"] <- "feature"
+  colnames(sc)[colnames(sc) == "8mer"] <- "Sites_8mer"
+  colnames(sc)[colnames(sc) == "7mer"] <- "Sites_7mer"
+  if(include6mers) colnames(sc)[colnames(sc) == "6mer"] <- "Sites_6mer"
+  sc <- sc[sc$sites > 0,]
+  
+  #filter out non protein-coding biotypes
+  anno <- .ensbiotype_df(species = species,level = "tx")
+  anno <- anno[anno$transcript_biotype == "protein_coding",]
+  sc <- sc[sc$feature %in% anno$ensembl_transcript_id,]
+  
+  #potential gene aggregation
+  if(level == "gene"){
+    anno <- .enstx2gene_df(species = species)
+    sc <- merge(sc,anno,by.x = "feature",by.y = "ensembl_transcript_id",all.x = TRUE)
+    sc <- sc[!is.na(sc$ensembl_gene_id),]
+    sc <- sc[order(sc$score),]
+    sc <- sc[!duplicated(sc$ensembl_gene_id),]
+    sc$feature <- NULL
+    colnames(sc)[colnames(sc) == "ensembl_gene_id"] <- "feature"
+  }
+  
+  sc <- sc[,c(grep("feature",colnames(sc)),grep("set",colnames(sc)),grep("sites",colnames(sc)),grep("score",colnames(sc)),grep("mer",colnames(sc)))]
+  sc[,1] <- as.factor(sc[,1])
+  sc[,2] <- as.factor(sc[,2])
+  sc[,3] <- as.integer(sc[,3])
+  sc[,4] <- as.numeric(sc[,4])
+  
+  
+  #add the ensembl/symbol conversion
+  if(level == "gene"){
+    syn <- .ens2symbol(species = species,level = "gene",report.element = "ens")
+  }else{
+    syn <- .ens2symbol(species = species,level = "tx",report.element = "ens")
+  }
+  
+  sc <- DataFrame(sc)
+  metadata(sc)$feature.synonyms <- syn
+  metadata(sc)$families <- fams[["Seed.m8"]]
+  names(metadata(sc)$families) <- fams[["MiRBase.ID"]]
+  metadata(sc)$families <- droplevels(as.factor(metadata(sc)$families))
+  sc
+}
+
+
+.ens2symbol <- function(species=c("human","mouse","rat"),level = c("tx","gene"), report.element = c("sym","ens")){
+  species <- match.arg(species)
+  level <- match.arg(level)
+  report <- match.arg(report.element)
+  symbol <- switch(species,
+                   human="hgnc_symbol",
+                   mouse="mgi_symbol",
+                   rat="rgd_symbol",
+                   "uniprot_gn_symbol")
+  ensembl <- switch(species,
+                    human = useMart("ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl"),
+                    mouse = useMart("ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl"),
+                    rat = useMart("ENSEMBL_MART_ENSEMBL",dataset="rnorvegicus_gene_ensembl"), 
+                    stop("No matched species"))
+  if(level == "gene"){
+    anno <- getBM(attributes=c("ensembl_gene_id",symbol), mart = ensembl)
+  }else{
+    anno <- getBM(attributes=c("ensembl_transcript_id",symbol), mart = ensembl)
+  }
+  anno <- anno[anno[,2]!="",]
+  anno <- anno[!duplicated(anno[,1]),]
+  if(report=="sym"){
+    e2s <- anno[,2]
+    names(e2s) <- anno[,1]
+  }else {
+    e2s <- anno[,1]
+    names(e2s) <- anno[,2]
+  }
+  e2s
+}
+
+
+.ensbiotype_df <- function(species=c("human","mouse","rat"),level = c("tx","gene")){
+  species <- match.arg(species)
+  level <- match.arg(level)
+  ensembl <- switch(species,
+                    human = useMart("ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl"),
+                    mouse = useMart("ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl"),
+                    rat = useMart("ENSEMBL_MART_ENSEMBL",dataset="rnorvegicus_gene_ensembl"), 
+                    stop("No matched species"))
+  if(level == "gene"){
+    anno <- getBM(attributes=c("ensembl_gene_id","gene_biotype"), mart = ensembl)
+  }else{
+    anno <- getBM(attributes=c("ensembl_transcript_id","transcript_biotype"), mart = ensembl)
+  }
+  anno
+}
+
+.enstx2gene_df <- function(species=c("human","mouse","rat")){
+  species <- match.arg(species)
+  ensembl <- switch(species,
+                    human = useMart("ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl"),
+                    mouse = useMart("ENSEMBL_MART_ENSEMBL",dataset="mmusculus_gene_ensembl"),
+                    rat = useMart("ENSEMBL_MART_ENSEMBL",dataset="rnorvegicus_gene_ensembl"), 
+                    stop("No matched species"))
+  anno <- getBM(attributes=c("ensembl_transcript_id","ensembl_gene_id"), mart = ensembl)
+  anno
+}
 
 
