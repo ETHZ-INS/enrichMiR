@@ -408,3 +408,26 @@ getMouseMirExp <- function(x=NULL){
   levels(x$best_stype) <- gsub("_","-",levels(x$best_stype))
   x
 }
+
+.aggregateByFamilies <- function(ts, propTolerated=0.05){
+  md <- metadata(ts)
+  fam <- md$families
+  if(is.null(md$families)) return(ts)
+  prop <- sum(levels(ts$set) %in% md$families)
+  if(prop>=(1-propTolerated)) return(ts)
+  if(length(missng <- setdiff(levels(ts$set), names(md$families)))>0){
+    warning("Some sets had no indicated family!")
+    md$families <- c(
+      setNames(as.character(md$families),names(md$families)),
+      setNames(missng,missng))
+  }
+  levels(ts$set) <- as.character(md$families[levels(ts$set)])
+  dt <- as.data.table(as.data.frame(ts))
+  rm(ts)
+  dt <- setkey(dt, set, feature)
+  dt <- unique(dt[,c("set","feature","sites")], by=c("set","feature"))
+  ts <- DataFrame(dt)
+  rm(dt)
+  metadata(ts) <- md
+  ts
+}

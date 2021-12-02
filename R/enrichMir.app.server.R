@@ -40,7 +40,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       "Targetscan all miRNA BS (from mouse)"=
         "Targetscan/20211124_Targetscan_Mouse_AllSites_positions_rat.rds",
       "miRTarBase"=
-        "miRTarBase/miRTarBase8.rat.rds")
+        "miRTarBase/miRTarBase8.rat.rds",
+      "scanMiR"="scanMiR/scanMiR_rnor6_merged.rds")
     ), function(x) setNames(paste0(baseDataPath,x), names(x)))
   
   dtwrapper <- function(d, pageLength=25, hide_cols){
@@ -404,7 +405,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(any(grepl("\\.up$|\\.down$",nn)))
         choices <- list("Downregulated genes"=grep("\\.down$",nn,value=TRUE),
                         "Upregulated genes"=grep("\\.up$",nn,value=TRUE))
-      if(length(tt <- setdiff(grep("overlap|regmir", nn, value=TRUE), unlist(choices)))>0)
+      if(length(tt <- setdiff(grep("overlap|regmir", nn, value=TRUE), 
+                              unlist(choices)))>0)
         choices$Binary <- tt
       if(length(tt <- setdiff(nn, unlist(choices)))>0)
         choices$Continuous <- tt
@@ -439,7 +441,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         sig <- DEA()
         bg <- NULL
         standard_tests <- c("siteoverlap","areamir")
-        standard_tests <- c("areamir")
+        #standard_tests <- c("areamir")
       }else{
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
         sig <- Gene_Subset()
@@ -509,7 +511,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(is.null(id) || is.null(ER())) return(tags$p(HTML("&nbsp;")))
       test <- input$view_test
       if(is.null(test) || test=="") test <- NULL
-      rr <- getResults(ER(), test=test, flatten=TRUE)
+      rr <- getResults(ER(), test=test, flatten=TRUE, getFeatures=FALSE)
       rr <- rr[id[1,2]+1,]
       if(is.null(rr$members)) return(tags$p(row.names(rr)))
       tags$p(tags$b("Members: "), gsub(";", "; ", rr$members))

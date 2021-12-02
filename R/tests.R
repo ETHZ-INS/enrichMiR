@@ -17,6 +17,7 @@
 overlap <- function(signal, sets, alternative=c("greater","less","two.sided")){
   alternative <- match.arg(alternative)
   if(!.checkSets(sets, matrixAlternative="logical")){
+    sets <- .aggregateByFamilies(sets)
     if("sites" %in% colnames(sets)){
       sets$sites <- sets$sites > 0
       sets <- .setsToScoreMatrix(signal, sets, column="sites", keepSparse=TRUE)
@@ -45,7 +46,8 @@ overlap <- function(signal, sets, alternative=c("greater","less","two.sided")){
 #'
 #' Applies Fisher's test to the number of binding sites among a set of features 
 #' (vs all other binding sites in that set of features).
-#' Of note, this application violates the assumptions of Fisher's exact test.
+#' This is an old apply-based implementation. For a much faster vectorial 
+#' implementation, see `siteoverlap2`
 #'
 #' @param signal A named logical vector indicating which features are 
 #' differentially-expressed
@@ -58,6 +60,7 @@ overlap <- function(signal, sets, alternative=c("greater","less","two.sided")){
 #'
 #' @export
 siteoverlap <- function(signal, sets){
+  sets <- .aggregateByFamilies(sets)
   tested <- names(signal)
   significant <- names(signal)[signal]
   allBS.bg <- sum(sets[which(!(sets$feature %in% significant)),"sites"])
@@ -95,37 +98,50 @@ siteoverlap <- function(signal, sets){
 
 
 
-
-# Sparse Matrix version, not working yet
-#
-# siteoverlap <- function(signal, sets, 
-#                         alternative=c("greater","less","two.sided")){
-#   alternative <- match.arg(alternative)
-#   if(!.checkSets(sets, "sites", matrixAlternative="numeric")){
-#     sets <- .setsToScoreMatrix(signal, sets, column="sites", keepSparse=TRUE)
-#   }else{
-#     sets <- sets[row.names(sets) %in% names(signal),]
-#   }
-#   signal <- signal[row.names(sets)]
-#   BS.in <- colSums(sets[which(signal),,drop=FALSE])
-#   otherBS.in <- sum(sets[which(signal),,drop=FALSE])-BS.in
-#   BS.inBG <- colSums(sets[which(!signal),,drop=FALSE])
-#   otherBS.inBG <- sum(sets[which(!signal),,drop=FALSE])-BS.inBG
-#   enrichment <- ((1+BS.in)/(otherBS.in))/((1+BS.inBG)/(otherBS.inBG))
-#   expected <- sum(signal)*(sigAndSet+notSigAndSet)/nrow(sets)
-#   res <- data.frame( overlap=colSums(sets[which(signal),,drop=FALSE]>0),
-#                      sites.overlap=BS.in,
-#                      enrichment=round(log2(enrichment),3),
-#                      pvalue=fisher.test.p(BS.in, otherBS.in,
-#                                           BS.inBG, otherBS.inBG,
-#                                           alternative=alternative) )
-#   res$FDR <- p.adjust(res$pvalue, method="fdr")
-#   res[order(res$FDR,res$pvalue),]
-# }
-
-
-
-
+#' siteoverlap2
+#'
+#' Applies Fisher's test to the number of binding sites among a set of features 
+#' (vs all other binding sites in that set of features).
+#' Of note, this application violates the assumptions of Fisher's exact test.
+#'
+#' @param signal A named logical vector indicating which features are 
+#' differentially-expressed
+#' @param sets A data.frame with at least the following columns: 
+#' 'set', 'feature', 'sites'.
+#' @param alternative Test alternative (defaults to 'greater' to test for
+#' over-representation)
+#'
+#' @return a data.frame.
+#'
+#' @export
+siteoverlap2 <- function(signal, sets,
+                        alternative=c("greater","less","two.sided")){
+  alternative <- match.arg(alternative)
+  if(!.checkSets(sets, "sites", matrixAlternative="numeric")){
+    sets <- .aggregateByFamilies(sets)
+    sets <- .setsToScoreMatrix(signal, sets, column="sites", keepSparse=TRUE)
+  }else{
+    sets <- sets[row.names(sets) %in% names(signal),]
+  }
+  signal <- signal[row.names(sets)]
+  BS.in <- colSums(sets[which(signal),,drop=FALSE])
+  otherBS.in <- sum(sets[which(signal),,drop=FALSE])-BS.in
+  BS.inBG <- colSums(sets[which(!signal),,drop=FALSE])
+  otherBS.inBG <- sum(sets[which(!signal),,drop=FALSE])-BS.inBG
+  enrichment <- ((1+BS.in)/(otherBS.in))/((1+BS.inBG)/(otherBS.inBG))
+  expected <- sum(signal)*(BS.in+BS.inBG)/nrow(sets)
+  res <- data.frame( overlap=colSums(sets[which(signal),,drop=FALSE]>0),
+                     sites.overlap=BS.in,
+                     #BS.inBG=BS.inBG,
+                     #otherBS.in=otherBS.in,
+                     enrichment=round(log2(enrichment),3),
+                     pvalue=fisher.test.p(BS.in, otherBS.in,
+                                          BS.inBG, otherBS.inBG,
+                                          alternative=alternative) )
+  res[res$pvalue==0,"pvalue"] <- min(res[res$pvalue>0,"pvalue"])/10
+  res$FDR <- p.adjust(res$pvalue, method="fdr")
+  res[order(res$FDR,res$pvalue),]
+}
 
 
 

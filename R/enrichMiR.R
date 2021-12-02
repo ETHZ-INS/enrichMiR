@@ -85,16 +85,24 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
       stop("The following tests are not available with this kind of input: ", 
            paste(bad.tests, collapse=", "))
   }
+  
+  
+  # setsizes <- setsizes[setsizes>=minSize & setsizes<=maxSize]
+  # sets <- sets[sets$set %in% names(setsizes),]
   sets.properties <- .filterMatchSets(sets, sets.properties)
   # restrict sets according to properties and sizes
   sets <- sets[sets$set %in% row.names(sets.properties),]
-  sets.properties$set_size <- table(sets$set)[row.names(sets.properties)]
-  sets.properties <- sets.properties[sets.properties$set_size >= minSize & 
-                                       sets.properties$set_size <= maxSize,
-                                     , drop=FALSE]
-  sets <- sets[sets$set %in% row.names(sets.properties),]
+  setsizes <- table(sets$set)
+  sets.properties$set_size <- setsizes[row.names(sets.properties)]
+  if(!is.null(sets.properties$members) && 
+     length(w <- is.na(sets.properties$set_size))>0)
+    sets.properties$set_size[w] <- 
+    sapply(strsplit(sets.properties$members[w], ";"), FUN=function(x){
+      sum(setsizes[x],na.rm=TRUE)
+    })
+  setsizes <- setsizes[setsizes>=minSize & setsizes<=maxSize]
+  sets <- sets[sets$set %in% names(setsizes),]
   if(is.factor(sets$set)) sets$set <- droplevels(sets$set)
-
   binary.signatures <- list()
   signature <- NULL
   if(!is.null(dim(x))){
@@ -254,7 +262,15 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
         if(object@info$type == "colocalization"){
           res[[paste0(f,"_miRNA")]] <- sapply(object@overlaps[[f]][res$miRNA], collapse=",", FUN=paste)
         }else{
-          res[[paste0("genes.", f)]] <- sapply(object@overlaps[[f]][row.names(res)], collapse=",", FUN=paste) 
+          if(all(row.names(res) %in% names(object@overlaps[[f]]))){
+            res[[paste0("genes.", f)]] <- sapply(object@overlaps[[f]][row.names(res)], collapse=",", FUN=paste)
+          }else if(!is.null(res$members)){
+            # this is quite slow...
+            ov <- sapply(strsplit(res$members, ";"), FUN=function(x){
+              x <- object@overlaps[[f]][intersect(x, names(object@overlaps[[f]]))]
+              paste(sort(unique(unlist(x, use.names=FALSE))), collapse=",")
+            })
+          }
         }
       }else{
         res <- DataFrame(res)
@@ -341,7 +357,7 @@ availableTests <- function(x=NULL, sets=NULL){
   sets <- sets[as.integer(sets$feature) %in% i,]
   sets$features <- droplevels(sets$feature)
   tt <- table(sets$set)
-  i <- which(levels(sets$set) %in% names(tt)[tt>=min.size && tt<max.size])
+  i <- which(levels(sets$set) %in% names(tt)[tt>=min.size & tt<max.size])
   if(length(i)==0) stop(.noMatchingFeatures())
   sets <- sets[as.integer(sets$set) %in% i,]
   sets$set <- droplevels(sets$set)
@@ -438,10 +454,10 @@ availableTests <- function(x=NULL, sets=NULL){
   if(is.null(metadata(sets)) || is.null(metadata(sets)$feature.synonyms))
     return(x)
   ss <- metadata(sets)$feature.synonyms
-  if(is.null(dim(x)) && any(grepl("^ENS",head(names(x)))))
-    names(x) <- gsub("\\.[0-9]+$", "", names(x))
-  if(!is.null(dim(x)) && any(grepl("^ENS",head(row.names(x)))))
-    row.names(x) <- gsub("\\.[0-9]+$", "", row.names(x))
+  if(is.null(dim(x)) && any(w <- grepl("^ENS",(names(x)))))
+    names(x)[w] <- gsub("\\.[0-9]+$", "", names(x)[w])
+  if(!is.null(dim(x)) && any(w <- grepl("^ENS",(row.names(x)))))
+    row.names(x)[w] <- gsub("\\.[0-9]+$", "", row.names(x)[w])
   if(is.null(dim(x)) && any(names(x) %in% names(ss))){
     n <- names(x)
     w <- which(n %in% names(ss))
@@ -460,7 +476,7 @@ availableTests <- function(x=NULL, sets=NULL){
     n <- row.names(x)
     w <- which(n %in% names(ss))
     n[w] <- as.character(ss[n[w]])
-    w <- duplicated(n)
+    w <- duplicated(n) | is.na(n)
     x <- x[!w,]
     row.names(x) <- n[!w]
   }
