@@ -60,6 +60,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    
    ##############################
    ## Introduction & help
+   ## See app.intro.R for the actualy content
    
    startIntro <- function(session){
      introjs(session, options=list(steps=.getAppIntro(), "nextLabel"="Next",

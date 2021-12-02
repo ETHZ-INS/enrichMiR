@@ -77,16 +77,6 @@
   )
 }
 
-
-observeEvent(input$help_collections, showModal(.getHelpModal("collections")))
-observeEvent(input$help_enrichplot, showModal(.getHelpModal("enrichplot")))
-observeEvent(input$help_cdplot, showModal(.getHelpModal("cdplot")))
-modalDialog(
-  title = "There was an error with your request:",
-  tags$pre(as.character(e)),
-  "This typically happens when there is a mismatch 
-                    between your different input data (e.g. wrong species)"
-)
 .getHelpModal <- function(topic){
   switch(topic,
          collections=modalDialog(title="Binding sites collections", tags$p(
