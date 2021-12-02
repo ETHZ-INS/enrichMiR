@@ -141,6 +141,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     })
     observeEvent(input$example_dea, {
       data(exampleDEA, package="enrichMiR")
+      if(input$species != "Human"){
+        row.names(exampleDEA) <-
+          tools::toTitleCase(tolower(row.names(exampleDEA)))
+      }
       DEA(exampleDEA)
     })
     
@@ -352,12 +356,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     CDplot_obj <- reactive({
       if( input$input_type=="dea" && is.null(DEA()) ) return(NULL)
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
-      if(sum(EN_Object()$set==input$mir_fam)<8){
-        return("This miRNA has an insufficient number of targets in the collection.")
-      }
+      if(isTRUE(getOption("shiny.testmode"))) print("CDplot_obj")
+      if(sum(EN_Object()$set==input$mir_fam)<8) return(FALSE)
       dea <- DEA()
       TS <- EN_Object()
       dea <- .applySynonyms(dea, TS)
+      if(sum(levels(TS$feature) %in% row.names(dea))<8) return(FALSE)
       legname <- names(CDtypeOptions())[CDtypeOptions()==input$CD_type]
       if(input$CD_type=="auto")
         legname <- ifelse(length(CDtypeOptions())>1, names(CDtypeOptions())[2],
@@ -378,10 +382,15 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     })
               
     output$cd_plot <- renderPlot({
+      p <- CDplot_obj()
+      validate( need(!isFALSE(p),
+             "This miRNA has an insufficient number of targets in the collection.
+             (This could be because the species of the collection does not 
+             match that of the input).") )
       if(!is.null(logCallsFile))
         writeLines(paste(Sys.Date(),session$token,"CDplot"), logCallsFile,
                    append=TRUE)
-      CDplot_obj()
+      p
     })
     
     output$cd_plot_dl <- downloadHandler(
