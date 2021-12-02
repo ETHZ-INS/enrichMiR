@@ -68,7 +68,8 @@ ENSG00000106462, ENSG00000100811, ...")
                                     "Schratt lab", target="_blank") )
           )
         ),
-        tabItem(tabName = "tab_species",
+        
+        tabItem(tabName = "tab_species", ############ SPECIES / COLLECTION
           box(title="Select Species and Collection", width=12,
             column(7, selectInput(inputId = "species", "Species", width='98%',
                         choices = c("Human", "Mouse", "Rat")), tags$br(),
@@ -117,7 +118,9 @@ ENSG00000106462, ENSG00000100811, ...")
                     searches will be performed with all microRNAs of the given species"))
         # eventually enable this as upload or selection from pre-loaded tissues?
         ),
-        tabItem("tab_input",
+        
+        
+        tabItem("tab_input", ############ INPUT
           tabBox(id="input_type", width=12,
             tabPanel(title = "Select geneset & background", 
               tags$p("In this mode, your genes of interest are compared against a background of genes."),
@@ -168,7 +171,9 @@ ENSG00000106462, ENSG00000100811, ...")
             )
           )
         ),
-        tabItem(tabName = "tab_enrich",
+        
+        
+        tabItem(tabName = "tab_enrich", ###### ENRICHMENT ANALYSIS
           column(3, uiOutput("enrichbtn")), 
           box(width=9, title="Enrichment options", collapsible=TRUE, collapsed=TRUE,
               sliderInput(inputId="minsize", 
@@ -235,7 +240,9 @@ ENSG00000106462, ENSG00000100811, ...")
             )
           ))
         ),
-        tabItem(tabName = "tab_cdplot",
+        
+        
+        tabItem(tabName = "tab_cdplot",  ######### CD plot
           box(width=12, title="CD Plot", 
               tags$h3(id="cdplot_na", style="font-color: red;", 
                       icon("exclamation-triangle"), 
