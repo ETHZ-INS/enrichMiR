@@ -4,7 +4,7 @@
 \alias{.fetch_mirtarbase}
 \title{importFrom Matrix sparseMatrix miRTarBase}
 \usage{
-.fetch_mirtarbase(species, returnType = c("dataframe", "matrix"))
+.fetch_mirtarbase(species, returnType = c("DataFrame", "matrix"))
 }
 \description{
 importFrom Matrix sparseMatrix miRTarBase

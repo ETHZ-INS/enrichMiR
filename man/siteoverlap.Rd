@@ -22,5 +22,6 @@ a data.frame.
 \description{
 Applies Fisher's test to the number of binding sites among a set of features 
 (vs all other binding sites in that set of features).
-Of note, this application violates the assumptions of Fisher's exact test.
+This is an old apply-based implementation. For a much faster vectorial 
+implementation, see `siteoverlap2`
 }
