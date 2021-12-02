@@ -1,7 +1,7 @@
 Package: enrichMiR
 Type: Package
 Title: miRNA target enrichment analysis
-Version: 0.99.6
+Version: 0.99.7
 Date: 2018-09-26
 Authors@R: c(
     person("Pierre-Luc", "Germain", email="pierre-luc.germain@hest.ethz.ch", role=c("cre","aut"), comment=c(ORCID="0000-0003-3418-4218")),
