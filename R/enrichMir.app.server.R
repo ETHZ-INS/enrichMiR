@@ -115,26 +115,30 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     ##############################
     ## initialize expression info
   
-    
-    DEA <- reactive({ #initialize dea
+    DEA <- reactiveVal(NULL)
+   
+    observeEvent(input$dea_input, {
       upFile <- input$dea_input
-      ##if (is.null(upFile)) return(NULL)
-      if (is.null(upFile)){ ## TEMPORARY - BECAUSE I'M LAZY
-        updf <- readRDS("/mnt/schratt/enrichMiR_benchmark/data/bartel_HEK.deaList.rds")[[1]]
-      }else{
-        updf <- data.table::fread(upFile$datapath)
-      }
+      if (is.null(upFile)) return(NULL)
+      updf <- data.table::fread(upFile$datapath)
       updf <- enrichMiR:::.homogenizeDEA(updf)
-      if(nrow(updf)==0) return(NULL)
-      updf
+      if(nrow(updf)>1) DEA(updf)
+    })
+    observeEvent(input$example_dea, {
+      data(exampleDEA, package="enrichMiR")
+      DEA(exampleDEA)
     })
     
     output$dea_res <- renderUI({
       if(is.null(DEA()))
         return(tags$span(icon("exclamation-triangle"), "No valid file uploaded",
                          style="font-weight: bold; font-color: red;"))
-      tags$span(icon("check-circle"), "Valid file",
-                style="font-weight: bold; font-color: forestgreen;")
+      tagList( tags$span(icon("check-circle"), "Valid file",
+                         style="font-weight: bold; font-color: forestgreen;"),
+               tags$p(nrow(DEA())," features, of which ", 
+                      sum(DEA()$FDR<=input$dea_sig_th), " have a significance
+                      below or equal to the selected FDR threshold (",
+                      input$dea_sig_th, ")."))
     })
     
     output$enrichbtn <- renderUI({
@@ -421,7 +425,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         if(is.null(DEA())) return(NULL)
         sig <- DEA()
         bg <- NULL
-        standard_tests <- c("siteoverlap")#,"areamir")
+        standard_tests <- c("siteoverlap","areamir")
+        standard_tests <- c("areamir")
       }else{
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
         sig <- Gene_Subset()
@@ -429,37 +434,41 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         standard_tests <- c("siteoverlap")
       }
       tests <- c(standard_tests, input$tests2run)
-      msg <- paste0("Performing enrichment analyses with the following tests: ",paste(tests,collapse=", "))
+      msg <- paste0("Performing enrichment analyses with the following tests: ",
+                    paste(tests,collapse=", "))
       message(msg)
       if(length(sig)==0) return(NULL)
       detail <- NULL
-      if(input$collection == "Targetscan all miRNA BS") detail <- "This will take a while..."
+      if(input$collection == "Targetscan all miRNA BS")
+        detail <- "This will take a while..."
       if(!is.null(logCallsFile))
         writeLines(paste(Sys.Date(),session$token,"enrich"), logCallsFile,
                    append=TRUE)
       showElement("resultsbox")
       withProgress(message=msg, detail=detail, value=1, max=3, {
-        o <- tryCatch(testEnrichment(sig, EN_Object(), background=bg, 
-                                     sets.properties=mirexp, tests=tests, 
-                                     minSize=input$minsize, th.FDR=input$dea_sig_th),
-                      error=function(e){
-                        showModal(modalDialog(
-                          title = "There was an error with your request:",
-                          tags$pre(as.character(e)),
-                          "This typically happens when there is a mismatch 
-                          between your different input data (e.g. wrong species)"
-                        ))
-                      })
+        tryCatch(testEnrichment(sig, EN_Object(), background=bg, 
+                                sets.properties=mirexp, tests=tests, 
+                                minSize=input$minsize, th.FDR=input$dea_sig_th),
+                error=function(e){
+                  showModal(modalDialog(
+                    title = "There was an error with your request:",
+                    tags$pre(as.character(e)),
+                    "This typically happens when there is a mismatch 
+                    between your different input data (e.g. wrong species)"
+                  ))
+                })
       })
     })
     
     output$bubble_plot <- renderPlotly({
       if(is.null(ER())) return(NULL)
+      if(isTRUE(getOption("shiny.testmode"))) print("bubble_plot")
       test <- input$view_test
       if(is.null(test) || test==""){
         er <- getResults(ER(), getFeatures=FALSE, flatten=TRUE)
         er$FDR <- er$FDR.geomean
-        er$enrichment <- rowMeans(er[,grep("nrichment|beta|coefficient",colnames(er)),drop=FALSE],na.rm=TRUE)
+        er$enrichment <- rowMeans(er[,grep("nrichment|beta|coefficient",
+                                           colnames(er)),drop=FALSE],na.rm=TRUE)
       }else{
         er <- getResults(ER(), test=test, getFeatures=FALSE, flatten=TRUE)
       }
@@ -473,11 +482,22 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(!is.null(input$bubble_theme))
         p <- tryCatch(p + getFromNamespace(input$bubble_theme, "ggplot2")(), 
                       error=function(e){ warning(e); p })
-      ggplotly(p, source="enrichplot")
+      forTooltip <- intersect(c("set","overlap","enrichment","set_size",
+                                "pvalue","FDR"), colnames(er))
+      ggplotly(p, source="enrichplot", tooltip=forTooltip)
     })
     
-    output$hoverinfo <- renderPrint({
-      event_data(event="plotly_hover", source="enrichplot")
+    output$hoverinfo <- renderUI({
+      id <- suppressWarnings(tryCatch(
+                        event_data(event="plotly_hover", source="enrichplot"),
+                        error=function(e) return(tags$p(HTML("&nbsp;")))))
+      if(is.null(id) || is.null(ER())) return(tags$p(HTML("&nbsp;")))
+      test <- input$view_test
+      if(is.null(test) || test=="") test <- NULL
+      rr <- getResults(ER(), test=test, flatten=TRUE)
+      rr <- rr[id[1,2]+1,]
+      if(is.null(rr$members)) return(tags$p(row.names(rr)))
+      tags$p(tags$b("Members: "), gsub(";", "; ", rr$members))
     })
     
     

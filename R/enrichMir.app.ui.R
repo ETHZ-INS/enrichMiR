@@ -87,7 +87,7 @@ ENSG00000106462, ENSG00000100811, ...")
                    "enrichment analysis. This information can either be given ",
                    "manually, provided by uploading a miRNA profile, or ",
                    "fetched from pre-loaded miRNA expression profiles"),
-            tags$div(id="expressed_mirna_box", 
+            tags$div(id="expressed_mirna_outer", 
             tabBox(id="expressed_mirna_box", width=12,
               tabPanel(title = "Custom Set",
                        "Paste a list of expressed miRNAs in 'miRBase' format", br(), br(),
@@ -156,18 +156,22 @@ ENSG00000106462, ENSG00000100811, ...")
                            " together with rat genes, use the 'Gene Symbol' format")
             ),
             tabPanel(title = "Upload DEA results", value = "dea",
-              tags$div(style="float: right; width: 100%;", htmlOutput("dea_res")),
-              fileInput(inputId = "dea_input", 
-                        label="Upload DEA object as '*.csv' file (see help)",
-                        accept=c("text/csv", ".csv", ".tab", ".txt",
-                                 "text/comma-separated-values,text/plain")), 
-              br(),
-              sliderInput(inputId = "dea_sig_th", label = "Select significance thresshold",
-                          min = 0.01, max = 0.5, value = 0.05, step = 0.01),
-              "Upload Differential Expression Analyses (DEAs) as table with at 
-              least following information: Provide ENSEMBL_ID or Gene Symbol as 
-              identifier in the first column (same format as for the background),
-              as well as logFC-values and FDR-values"
+              fluidRow(       
+                column(8, fileInput( inputId = "dea_input", 
+                  label="Upload DEA object as '*.csv' file (see help)",
+                  accept=c("text/csv", ".csv", ".tab", ".txt",
+                           "text/comma-separated-values,text/plain")),
+                       "Or: ", actionButton("example_dea", "Use example DEA"),
+                  tags$hr(), tags$br(),
+                  tags$p("Upload Differential Expression Analyses (DEAs) as table
+                with at least following information: Provide ENSEMBL_ID or Gene 
+                Symbol as identifier in the first column (same format as for 
+                the background), as well as logFC-values and FDR-values")),
+                column(4, htmlOutput("dea_res"), tags$br(), tags$hr(), tags$br(),
+                     sliderInput(inputId = "dea_sig_th", 
+                                 label="Select significance threshold",
+                                 min=0.01, max=0.5, value=0.05, step=0.01))
+              )
             )
           )
         ),
@@ -213,7 +217,7 @@ ENSG00000106462, ENSG00000100811, ...")
                 tags$p("Hover on a point to view family members and ",
                        "enrichment-related statistics."),
                 withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))), 
-                tags$br(), tags$br(), tags$br(), 
+                tags$br(), htmlOutput("hoverinfo"), tags$br(), 
                 box(title="Plot options", width=12, collapsible=TRUE, collapsed=TRUE,
             column(6,sliderInput(inputId="label.sig.thres",
                                  "Significance threshold to display labels",

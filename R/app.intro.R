@@ -1,8 +1,8 @@
 .getAppIntro <- function(){
   data.frame(
     element=c("#menu_species", "#collection_input", "#exprMirs_box", 
-              "#expressed_miRNAs_box", "#menu_input", "#input_type",
-              "#menu_input", "#menu_enrich", "#enrich"),
+              "#expressed_mirna_outer", "#menu_input", "#input_type",
+              "#example_dea", "#menu_input", "#menu_enrich", "#enrich"),
     intro=c(
       "The first step in using the enrichMiR app is to make sure that you're
        working with the right species and annotation. To set this, you open 
@@ -37,7 +37,8 @@
       analysis! See the corresponding help button for more information about the
       choice of a background.<br/><br/>
       For the purpose of this example, select the 'Upload DEA results' tab.",
-      #### add btn to get example DEA
+      "For this tutorial, we'll use an in-built example DEA, which you can load
+      using the 'Use example DEA' button.",
       "If you've provided a valid input, the input menu on the left will show
       a blue badge instead of a red one.",
       "We're now ready to launch the enrichment analysis!<br/>First go to the 
