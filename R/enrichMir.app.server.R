@@ -59,16 +59,20 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    bDataLoaded <- lapply(bData, as.list)
    
    ##############################
-   ## Introduction
+   ## Introduction & help
    
-   introSteps <- .getAppIntro()
+   startIntro <- function(session){
+     introjs(session, options=list(steps=.getAppIntro(), "nextLabel"="Next",
+                                   "prevLabel"="Previous"),
+             events=list(onbeforechange=readCallback("switchTabs")))
+   }
    
-   observeEvent(input$helpLink,
-                introjs(session,
-                        options=list(steps=introSteps, "nextLabel"="Next",
-                                     "prevLabel"="Previous"),
-                        events=list(onbeforechange=readCallback("switchTabs"))
-                        ))
+   observeEvent(input$helpLink, startIntro(session))
+   observeEvent(input$helpBtn, startIntro(session))
+
+   observeEvent(input$help_collections, showModal(.getHelpModal("collections")))
+   observeEvent(input$help_enrichplot, showModal(.getHelpModal("enrichplot")))
+   observeEvent(input$help_cdplot, showModal(.getHelpModal("cdplot")))
    
    ##############################
    ## Menu items
@@ -103,8 +107,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    output$menu_cdplot <- renderMenu({
      if(is.null(DEA()) || input$input_type!="dea")
        return(menuItem("CD Plot", tabName="tab_cdplot", badgeLabel="(requires DEA)",
-                              badgeColor="red", icon=icon("times-circle")))
-     menuItem("CD Plot", tabName="tab_cdplot", icon=icon("poll"))
+                       badgeColor="red", icon=icon("times-circle"),
+                       expandedName="menu_cdplot"))
+     menuItem("CD Plot", tabName="tab_cdplot", icon=icon("poll"),
+              expandedName="menu_cdplot")
    })
    
    observe({

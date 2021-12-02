@@ -20,7 +20,10 @@ ENSG00000106462, ENSG00000100811, ...")
                                              "get","replace","void")))
     
   ui <- dashboardPage(
-    dashboardHeader(title = "enrichMir", titleWidth = "300px"),
+    dashboardHeader(title = "enrichMir", titleWidth = "300px",
+                    tags$li(class="dropdown",
+                            actionLink("helpBtn", label="Help",
+                                       icon=icon("question")))),
     ## Sidebar content
     dashboardSidebar(width = "300px",
        sidebarMenu(
@@ -178,7 +181,7 @@ ENSG00000106462, ENSG00000100811, ...")
         
         
         tabItem(tabName = "tab_enrich", ###### ENRICHMENT ANALYSIS
-          column(3, uiOutput("enrichbtn")), 
+          column(3, tags$div(id="enrichbtn_outer", uiOutput("enrichbtn"))), 
           box(width=9, title="Enrichment options", collapsible=TRUE, collapsed=TRUE,
               sliderInput(inputId="minsize", 
                           label=paste(
@@ -205,7 +208,7 @@ ENSG00000106462, ENSG00000100811, ...")
                                      selected=NULL, inline=FALSE, width=NULL)
               )
             ),
-          tags$div(id="resultsbox", style="display: none;", 
+          tags$div(id="resultsbox", style="display: none; height: 100%;", 
           box(width=12, title="Results", collapsible=TRUE,
             column(9, id="sel_test_div", 
                    selectInput("view_test", "Select test to visualize", 
@@ -214,8 +217,11 @@ ENSG00000106462, ENSG00000100811, ...")
                    checkboxInput("view_all", "advanced")),
             tabBox(id="enrichresults_out", width=12,
               tabPanel(title="Enrichment plot", 
-                tags$p("Hover on a point to view family members and ",
-                       "enrichment-related statistics."),
+                fluidRow(
+                  column(11, tags$p("Hover on a point to view family members ",
+                                    " and enrichment-related statistics.")),
+                  column(1, actionButton(inputId="help_enrichplot", 
+                                      icon=icon("question-circle"), label=""))),
                 withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))), 
                 tags$br(), htmlOutput("hoverinfo"), tags$br(), 
                 box(title="Plot options", width=12, collapsible=TRUE, collapsed=TRUE,
@@ -252,10 +258,13 @@ ENSG00000106462, ENSG00000100811, ...")
                       icon("exclamation-triangle"), 
                       "Cumulative distribution plots require the use of a DEA input."),
               tags$div(id="cdplot_outer", style="display: none;",
-                column(6,selectizeInput(inputId="mir_fam", choices=c(),
+                fluidRow(
+                  column(6,selectizeInput(inputId="mir_fam", choices=c(),
                                       label="Select miRNA family to display")),
-                column(6,selectInput(inputId="CD_type", "Split by",
+                  column(5,selectInput(inputId="CD_type", "Split by",
                                    choices=c("sites","score"))),
+                  column(1, actionButton(inputId="help_cdplot", 
+                                    icon=icon("question-circle"), label=""))),
                 withSpinner(jqui_resizable(plotOutput("cd_plot", width='100%', 
                                                       height='400px'))),
                 tags$br(), tags$br(), tags$br(), tags$br(), 
