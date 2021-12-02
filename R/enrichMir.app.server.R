@@ -22,6 +22,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         "Targetscan/20211124_Targetscan8_Human_ConPred_human.rds",
       "Targetscan all miRNA BS"=
         "Targetscan/20211124_Targetscan8_Human_AllPred_human.rds",
+      "miRTarBase"=
+        "miRTarBase/miRTarBase8.human.rds",
       "oRNAment"=
         "oRNAment/human_coding_MSS05_gene_3UTR_pred.rds"),
     Mouse=c(
@@ -29,12 +31,16 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         "Targetscan/20211124_Targetscan8_Mouse_ConPred_mouse.rds",
       "Targetscan all miRNA BS"=
         "Targetscan/20211124_Targetscan8_Mouse_AllPred_mouse.rds",
+      "miRTarBase"=
+        "miRTarBase/miRTarBase8.mouse.rds",
       "oRNAment"="oRNAment/mouse_coding_MSS05_gene_3UTR_pred.rds"),
     Rat=c(
       "Targetscan conserved miRNA BS (from mouse)"=
         "Targetscan/20211124_Targetscan_Mouse_ConSitse_positions_rat.rds",
       "Targetscan all miRNA BS (from mouse)"=
-        "Targetscan/20211124_Targetscan_Mouse_AllSites_positions_rat.rds")
+        "Targetscan/20211124_Targetscan_Mouse_AllSites_positions_rat.rds",
+      "miRTarBase"=
+        "miRTarBase/miRTarBase8.rat.rds")
     ), function(x) setNames(paste0(baseDataPath,x), names(x)))
   
   dtwrapper <- function(d, pageLength=25, hide_cols){
@@ -59,16 +65,22 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    bDataLoaded <- lapply(bData, as.list)
    
    ##############################
-   ## Introduction
+   ## Introduction & help
+   ## See app.intro.R for the actualy content
    
-   introSteps <- .getAppIntro()
+   startIntro <- function(session){
+     introjs(session, options=list(steps=.getAppIntro(), "nextLabel"="Next",
+                                   "prevLabel"="Previous"),
+             events=list(onbeforechange=readCallback("switchTabs")))
+   }
    
-   observeEvent(input$helpLink,
-                introjs(session,
-                        options=list(steps=introSteps, "nextLabel"="Next",
-                                     "prevLabel"="Previous"),
-                        events=list(onbeforechange=readCallback("switchTabs"))
-                        ))
+   observeEvent(input$helpLink, startIntro(session))
+   observeEvent(input$helpBtn, startIntro(session))
+
+   observeEvent(input$help_collections, showModal(.getHelpModal("collections")))
+   observeEvent(input$help_enrichplot, showModal(.getHelpModal("enrichplot")))
+   observeEvent(input$help_cdplot, showModal(.getHelpModal("cdplot")))
+   observeEvent(input$help_help_tests, showModal(.getHelpModal("tests")))
    
    ##############################
    ## Menu items
@@ -103,8 +115,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    output$menu_cdplot <- renderMenu({
      if(is.null(DEA()) || input$input_type!="dea")
        return(menuItem("CD Plot", tabName="tab_cdplot", badgeLabel="(requires DEA)",
-                              badgeColor="red", icon=icon("times-circle")))
-     menuItem("CD Plot", tabName="tab_cdplot", icon=icon("poll"))
+                       badgeColor="red", icon=icon("times-circle"),
+                       expandedName="menu_cdplot"))
+     menuItem("CD Plot", tabName="tab_cdplot", icon=icon("poll"),
+              expandedName="menu_cdplot")
    })
    
    observe({
@@ -314,6 +328,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
 
     CDtypeOptions <- reactive({
       if(is.null(EN_Object())) return(NULL)
+      if(!any(c("sites","score","best_stype") %in% colnames(EN_Object())))
+        return(c(Automatic="auto"))
       options <- c( Automatic="auto", "Best site type"="best_stype", 
                     Score="score", "Number of sites"="sites",
                     "Site type"="type" )
@@ -324,7 +340,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(!is.null(EN_Object())){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
         if(!is.null(m <- metadata(EN_Object())$families)){
-        updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
+          updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
+        }else{
+          updateSelectizeInput(session, "mir_fam", 
+                               choices=levels(EN_Object()$set), server=TRUE)
         }
       }
     })
@@ -332,14 +351,16 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     CDplot_obj <- reactive({
       if( input$input_type=="dea" && is.null(DEA()) ) return(NULL)
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
-      validate(
-        need(any(EN_Object()$set %in% input$mir_fam), "This miRNA has no annotated Binding Site")
-      )
+      if(sum(EN_Object()$set==input$mir_fam)<8){
+        return("This miRNA has an insufficient number of targets in the collection.")
+      }
       dea <- DEA()
       TS <- EN_Object()
       dea <- .applySynonyms(dea, TS)
       legname <- names(CDtypeOptions())[CDtypeOptions()==input$CD_type]
-      if(input$CD_type=="auto") legname <- names(CDtypeOptions())[2]
+      if(input$CD_type=="auto")
+        legname <- ifelse(length(CDtypeOptions())>1, names(CDtypeOptions())[2],
+                          "Target?")
       p <- CDplotWrapper(dea, TS, setName=input$mir_fam, 
                          by=input$CD_type, k=input$CD_k) + labs(colour=legname)
       if(input$CDplot_xaxis==0){
@@ -376,11 +397,6 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     ##############################
     ## Enrichment analysis
     
-    # Get choices for all tests
-    observe({
-      if(!is.null(ER())) updateSelectInput(session, "view_test", choices=c("",names(ER())))
-    })
-    
     testsAvailable <- reactive({
       if(is.null(ER())) return(c())
       nn <- names(ER())
@@ -394,10 +410,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         choices$Continuous <- tt
       choices <- lapply(choices, FUN=function(x){ names(x) <- x; x})
       if(length(nn)>1) choices[["All tests"]] <- c("merged"="")
-      if(isTRUE(input$view_all)) return(choices)
-      choices <- lapply(choices, FUN=function(x) 
-        head(grep("siteoverlap|areamir",as.character(x),value=TRUE),1))
-      choices[lengths(choices)>0]
+      choices
     })
     
     # Get user-friendly choices just for siteoverlap
@@ -434,6 +447,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         standard_tests <- c("siteoverlap")
       }
       tests <- c(standard_tests, input$tests2run)
+      if(!any(c("sites","score") %in% colnames(EN_Object())))
+        tests <- "overlap"
       msg <- paste0("Performing enrichment analyses with the following tests: ",
                     paste(tests,collapse=", "))
       message(msg)

@@ -185,18 +185,22 @@
 
 
 #' importFrom Matrix sparseMatrix miRTarBase
-.fetch_mirtarbase <- function(species, returnType=c("dataframe","matrix")){
+.fetch_mirtarbase <- function(species, returnType=c("DataFrame","matrix")){
+  options(timeout=500)
   returnType <- match.arg(returnType)
   species <- switch(species, human="hsa", mouse="mmu", rat="rno", species)
   tmp <- tempfile()
-  download.file(paste0("http://mirtarbase.cuhk.edu.cn/cache/download/8.0/", 
-                       species, "_MTI.xls"), destfile = tmp)
+  download.file(paste0("https://mirtarbase.cuhk.edu.cn/~miRTarBase/miRTarBase_2022/cache/download/8.0/", 
+                       species, "_MTI.xls", ifelse(species=="hsa", "x","")),
+                destfile=tmp, extra=c(timeout=999))
   e <- readxl::read_excel(tmp)
   e <- e[,c(2,4)]
   e <- as.data.frame(e)
   e[,1] <- as.factor(e[,1])
   e[,2] <- as.factor(e[,2])
-  if(returnType=="dataframe"){
+  e <- e[!duplicated(e),]
+  if(returnType=="DataFrame"){
+    e <- DataFrame(e)
     colnames(e) <- c("set","feature")
     return(e)
   }

@@ -20,7 +20,10 @@ ENSG00000106462, ENSG00000100811, ...")
                                              "get","replace","void")))
     
   ui <- dashboardPage(
-    dashboardHeader(title = "enrichMir", titleWidth = "300px"),
+    dashboardHeader(title = "enrichMir", titleWidth = "300px",
+                    tags$li(class="dropdown",
+                            actionLink("helpBtn", label="Help",
+                                       icon=icon("question")))),
     ## Sidebar content
     dashboardSidebar(width = "300px",
        sidebarMenu(
@@ -178,7 +181,7 @@ ENSG00000106462, ENSG00000100811, ...")
         
         
         tabItem(tabName = "tab_enrich", ###### ENRICHMENT ANALYSIS
-          column(3, uiOutput("enrichbtn")), 
+          column(3, tags$div(id="enrichbtn_outer", uiOutput("enrichbtn"))), 
           box(width=9, title="Enrichment options", collapsible=TRUE, collapsed=TRUE,
               sliderInput(inputId="minsize", 
                           label=paste(
@@ -189,9 +192,9 @@ ENSG00000106462, ENSG00000100811, ...")
               box(width="100%", title = "Advanced Options", collapsible=TRUE, collapsed=TRUE, 
                   tags$h5(em(
                     "We recommend to only change test settings after reading the",
-                    " EnrichMir manual and the Benchmark descriptions in the paper")),
+                    " enrichMir documentation and the benchmark.")),
                   tags$h5(em("By default, we always perform the 'siteoverlap'",
-                             "and the 'areamir' tests")),
+                             "and (with DEA inputs) the 'areamir' tests")),
                   checkboxGroupInput(inputId="tests2run",
                                      label="Select additional tests to run",
                                      choices=list(
@@ -205,17 +208,23 @@ ENSG00000106462, ENSG00000100811, ...")
                                      selected=NULL, inline=FALSE, width=NULL)
               )
             ),
-          tags$div(id="resultsbox", style="display: none;", 
+          tags$div(id="resultsbox", style="display: none; height: 100%;", 
           box(width=12, title="Results", collapsible=TRUE,
-            column(9, id="sel_test_div", 
-                   selectInput("view_test", "Select test to visualize", 
-                               choices=c(), width="90%")),
-            column(3, style="margin-top: 30px;", 
-                   checkboxInput("view_all", "advanced")),
+            fluidRow(
+              column(7, id="sel_test_div", 
+                     selectInput("view_test", "Select test to visualize", 
+                                 choices=c())),
+              column(1, style="margin-top: 25px;", 
+                     actionButton(inputId="help_tests", 
+                                  icon=icon("question-circle"), label="")),
+            ),
             tabBox(id="enrichresults_out", width=12,
               tabPanel(title="Enrichment plot", 
-                tags$p("Hover on a point to view family members and ",
-                       "enrichment-related statistics."),
+                fluidRow(
+                  column(11, tags$p("Hover on a point to view family members ",
+                                    " and enrichment-related statistics.")),
+                  column(1, actionButton(inputId="help_enrichplot", 
+                                      icon=icon("question-circle"), label=""))),
                 withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))), 
                 tags$br(), htmlOutput("hoverinfo"), tags$br(), 
                 box(title="Plot options", width=12, collapsible=TRUE, collapsed=TRUE,
@@ -252,10 +261,13 @@ ENSG00000106462, ENSG00000100811, ...")
                       icon("exclamation-triangle"), 
                       "Cumulative distribution plots require the use of a DEA input."),
               tags$div(id="cdplot_outer", style="display: none;",
-                column(6,selectizeInput(inputId="mir_fam", choices=c(),
+                fluidRow(
+                  column(6,selectizeInput(inputId="mir_fam", choices=c(),
                                       label="Select miRNA family to display")),
-                column(6,selectInput(inputId="CD_type", "Split by",
+                  column(5,selectInput(inputId="CD_type", "Split by",
                                    choices=c("sites","score"))),
+                  column(1, actionButton(inputId="help_cdplot", 
+                                    icon=icon("question-circle"), label=""))),
                 withSpinner(jqui_resizable(plotOutput("cd_plot", width='100%', 
                                                       height='400px'))),
                 tags$br(), tags$br(), tags$br(), tags$br(), 
