@@ -61,33 +61,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    ##############################
    ## Introduction
    
-   introSteps <- data.frame(
-     element=c("#menu_species", "#collection_input", "#exprMirs_box", 
-               "#expressed_miRNAs_box", "#menu_input"),
-     intro=c(
-       "The first step in using the enrichMiR app is to make sure that you're
-       working with the right species and annotation. To set this, you open 
-       the 'Species and miRNAs' tab.",
-       "Once you've selected a species, you will be able to see and select one
-       of its available target annotations (see the help button for information
-       about the annotations). For the sake of this example, select the human
-       'targetScan conserved miRNA BS'.",
-       "This is optional, but you can also specify expressed miRNAs by expanding
-       this box (click the \"+\" on the right).<br/>This will be used to 
-       restrict the miRNAs considered for enrichment analysis. In addition, you
-       will be able to visualize given expression values in the results.",
-       "There are three ways to provide this information:<br/>
-       1) you can specify a list of expressed miRNAs in 'Custom set';<br/>
-       2) you can upload a table of miRNA expression levels;<br/>
-       3) you can pick pre-compiled miRNA expression profiles for your 
-       tissue/celltype of interest.<br/><br/>Not that you do not necessarily
-       need to specify expressed miRNA, but this is likely to give you better
-       results.",
-       "Once this is done, the next step is to provide the signal in which 
-       enrichment should be looked for (e.g. your genes of interest, or 
-       differential expression signature). To do this, click on the Input tab."
-     )
-   )
+   introSteps <- .getAppIntro()
    
    observeEvent(input$helpLink,
                 introjs(session,
@@ -122,9 +96,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
      if((input$input_type=="dea" && !is.null(DEA())) ||
         (input$input_type!="dea" && length(Gene_Subset())>1 && length(Back())>1))
        return(menuItem("Enrichment analysis", tabName = "tab_enrich", 
-                       icon=icon("rocket")))
+                       icon=icon("rocket"), expandedName="menu_enrich"))
      menuItem("Enrichment analysis", tabName="tab_enrich", badgeLabel="(no input!)",
-              badgeColor="red", icon=icon("times-circle"))
+              badgeColor="red", icon=icon("times-circle"), expandedName="menu_enrich")
    })
    output$menu_cdplot <- renderMenu({
      if(is.null(DEA()) || input$input_type!="dea")
