@@ -192,9 +192,9 @@ ENSG00000106462, ENSG00000100811, ...")
               box(width="100%", title = "Advanced Options", collapsible=TRUE, collapsed=TRUE, 
                   tags$h5(em(
                     "We recommend to only change test settings after reading the",
-                    " EnrichMir manual and the Benchmark descriptions in the paper")),
+                    " enrichMir documentation and the benchmark.")),
                   tags$h5(em("By default, we always perform the 'siteoverlap'",
-                             "and the 'areamir' tests")),
+                             "and (with DEA inputs) the 'areamir' tests")),
                   checkboxGroupInput(inputId="tests2run",
                                      label="Select additional tests to run",
                                      choices=list(
@@ -210,11 +210,14 @@ ENSG00000106462, ENSG00000100811, ...")
             ),
           tags$div(id="resultsbox", style="display: none; height: 100%;", 
           box(width=12, title="Results", collapsible=TRUE,
-            column(9, id="sel_test_div", 
-                   selectInput("view_test", "Select test to visualize", 
-                               choices=c(), width="90%")),
-            column(3, style="margin-top: 30px;", 
-                   checkboxInput("view_all", "advanced")),
+            fluidRow(
+              column(7, id="sel_test_div", 
+                     selectInput("view_test", "Select test to visualize", 
+                                 choices=c())),
+              column(1, style="margin-top: 25px;", 
+                     actionButton(inputId="help_tests", 
+                                  icon=icon("question-circle"), label="")),
+            ),
             tabBox(id="enrichresults_out", width=12,
               tabPanel(title="Enrichment plot", 
                 fluidRow(

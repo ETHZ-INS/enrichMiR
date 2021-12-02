@@ -74,6 +74,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$help_collections, showModal(.getHelpModal("collections")))
    observeEvent(input$help_enrichplot, showModal(.getHelpModal("enrichplot")))
    observeEvent(input$help_cdplot, showModal(.getHelpModal("cdplot")))
+   observeEvent(input$help_help_tests, showModal(.getHelpModal("tests")))
    
    ##############################
    ## Menu items
@@ -382,11 +383,6 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     
     ##############################
     ## Enrichment analysis
-    
-    # Get choices for all tests
-    observe({
-      if(!is.null(ER())) updateSelectInput(session, "view_test", choices=c("",names(ER())))
-    })
     
     testsAvailable <- reactive({
       if(is.null(ER())) return(c())

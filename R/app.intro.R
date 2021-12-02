@@ -135,6 +135,21 @@ Here is a brief description of each type of collection:"),
             gradual dose-response pattern, meaning that targets with stronger 
             binding sites also have stronger log-foldchanges.")
          ),
+         tests=modalDialog(title="Enrichment tests", tags$p(
+            "enrichMiR implements different statistical tests for target 
+            enrichment. Some tests depend on continous inputs (and hence require
+            a DEA analysis to be provided), while others are binary, based on 
+            the membership in a gene set. When the input is a DEA, each binary
+            tests will be performed on both significantly upregulated and 
+            downregulated genes."
+           ), tags$p(
+             "Some tests gave poor performances in the benchmark, and should 
+             therefore not be used. By default, the 'siteoverlap' and 'areamir' 
+             tests are enabled -- these are those that gave the best performance."
+           ), tags$p(
+             "For more information on the tests, please see the documentation."
+           )
+         ),
          modalDialog(title=topic,
                      "No help currently available for this topic.")
   )
