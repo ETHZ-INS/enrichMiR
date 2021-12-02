@@ -499,7 +499,11 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(!is.null(input$bubble_theme))
         p <- tryCatch(p + getFromNamespace(input$bubble_theme, "ggplot2")(), 
                       error=function(e){ warning(e); p })
-      ggplotly(p)
+      ggplotly(p, source="enrichplot")
+    })
+    
+    output$hoverinfo <- renderPrint({
+      event_data(event="plotly_hover", source="enrichplot")
     })
     
     
