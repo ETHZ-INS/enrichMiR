@@ -240,7 +240,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       # if(ncol(mirup)!=2 || !is.numeric(mirup[,2])){
       #   showModal("The miRNA data you entered is not valid")
       # }
-      mirup <- mirup[order(mirup[[2]]),]
+      mirup <- mirup[order(mirup[[2]], decreasing=TRUE),]
       colnames(mirup)[1] <- "name"
       colnames(mirup)[2] <- "expression"
       mirup <- mirup[1:((input$mir_cut_off/100)*nrow(mirup)),]
@@ -338,13 +338,13 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     CDtypeOptions <- reactive({
       if(is.null(EN_Object())) return(NULL)
       CN <- colnames(EN_Object())
-      if(!any(c("sites","score","best_stype") %in% CN))
+      if(!any(c("sites","score","best_stype","type") %in% CN))
         return(c(Automatic="auto"))
       options <- c( Automatic="auto", "Best site type"="best_stype", 
                     Score="score", "Number of sites"="sites",
                     "Site type"="type" )
       if(!("best_stype" %in% CN) && sum(grepl("[6-8]mer",CN))>1)
-        CN <- c(CN,"best_stype")
+        CN <- unique(c(CN,"best_stype", "type"))
       options[options %in% c("auto",CN)]
     })
     
@@ -508,6 +508,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }
       col.field <- "expression"
       if(is.null(er$expression)) col.field <- NULL
+      er$set <- row.names(er)
       
       p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
                       sig.field=input$sig.field, col.field=col.field, 
@@ -516,7 +517,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(!is.null(input$bubble_theme))
         p <- tryCatch(p + getFromNamespace(input$bubble_theme, "ggplot2")(), 
                       error=function(e){ warning(e); p })
-      forTooltip <- intersect(c("set","overlap","enrichment","set_size",
+      forTooltip <- intersect(c("set","label","overlap","enrichment","set_size",
                                 "pvalue","FDR"), colnames(er))
       ggplotly(p, source="enrichplot", tooltip=forTooltip)
     })

@@ -242,7 +242,7 @@ ENSG00000106462, ENSG00000100811, ...")
                                    label="Max number of Labels")),
             column(6, radioButtons(inputId="sig.field", 
                                    label="Display on y-axis:",
-                                   choices=c("p.value","FDR"), selected="FDR")),
+                                   choices=c("pvalue","FDR"), selected="FDR")),
             column(6, selectInput("bubble_theme", "Theme", 
                                   choices=ggplot_themes))
                 )),

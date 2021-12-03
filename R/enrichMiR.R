@@ -304,7 +304,7 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
 #' @examples
 #' availableTests()
 availableTests <- function(x=NULL, sets=NULL){
-  sigBinary <- sigContinuous <- setsScore <- TRUE
+  sigBinary <- sigContinuous <- setsScore <- setsSites <- TRUE
   if(!is.null(x)){
     sigBinary <- !is.null(dim(x)) || is.logical(x) || is.character(x)
     sigContinuous <- !is.null(dim(x)) || is.numeric(x)
