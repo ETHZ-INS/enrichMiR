@@ -14,6 +14,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   library(enrichMiR)
   library(GO.db)
   library(rintrojs)
+  library(shinyjs)
   
   baseDataPath="/mnt/schratt/enrichMiR_data/"
   if(is.null(bData)) bData <- lapply(list(
@@ -36,9 +37,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       "oRNAment"="oRNAment/mouse_coding_MSS05_gene_3UTR_pred.rds"),
     Rat=c(
       "Targetscan conserved miRNA BS (from mouse)"=
-        "Targetscan/20211124_Targetscan_Mouse_ConSitse_positions_rat.rds",
+        "Targetscan/20211124_Targetscan8_Mouse_ConPred_rat.rds",
       "Targetscan all miRNA BS (from mouse)"=
-        "Targetscan/20211124_Targetscan_Mouse_AllSites_positions_rat.rds",
+        "Targetscan/20211124_Targetscan8_Mouse_AllPred_rat.rds",
       "miRTarBase"=
         "miRTarBase/miRTarBase8.rat.rds",
       "scanMiR"="scanMiR/scanMiR_rnor6_merged.rds")
@@ -136,7 +137,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       upFile <- input$dea_input
       if (is.null(upFile)) return(NULL)
       updf <- data.table::fread(upFile$datapath)
-      updf <- enrichMiR:::.homogenizeDEA(updf)
+      updf <- .homogenizeDEA(updf)
       if(nrow(updf)>1) DEA(updf)
     })
     observeEvent(input$example_dea, {
@@ -166,7 +167,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
             is.null(Gene_Subset()) || length(Gene_Subset())<2 ||
             is.null(Back()))) )
         return(tags$span(icon("exclamation-triangle"), "No valid gene/DEA input!",
-                         style="font-weight: bold; font-color: red;"))
+                         style="font-weight:bold; font-color:red; font-size:120%;"))
       actionButton(inputId="enrich", "Run enrichMir!", icon = icon("search"))
     })
     
@@ -222,20 +223,23 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         if(tolower(input$species) == "human"){
           if(is.null(input$mirexp_human) || 
              is.null(x <- getHumanMirExp(input$mirexp_human))) return(NULL)
-          x <- head(x,round((input$mir_cut_off2/100)*length(x)))
-          return(data.frame(row.names=names(x), expression=as.numeric(x)))          
+          x <- head(sort(x,decreasing=TRUE),round((input$mir_cut_off2/100)*length(x)))
+          return(data.frame(row.names=names(x), expression=as.numeric(x)))     
         }else if(tolower(input$species) == "mouse"){
           if(is.null(input$mirexp_mouse) || 
              is.null(x <- getMouseMirExp(input$mirexp_mouse))) return(NULL)
           x <- head(x,round((input$mir_cut_off2/100)*length(x)))
-          x <- setNames(rep(x,each=2),
-                        paste0(rep(names(x),each=2), c("-5p","-3p")))
-          return(data.frame(row.names=names(x), expression=as.numeric(x)))          
+          x <- setNames(rep(x,each=3),
+                        paste0(rep(names(x),each=3), c("","-5p","-3p")))
+          return(data.frame(row.names=names(x), expression=as.numeric(x)))
         }
         return(NULL)
       }
       if(is.null(input$exp_mirna_file)) return(NULL)
       mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
+      # if(ncol(mirup)!=2 || !is.numeric(mirup[,2])){
+      #   showModal("The miRNA data you entered is not valid")
+      # }
       mirup <- mirup[order(mirup[[2]]),]
       colnames(mirup)[1] <- "name"
       colnames(mirup)[2] <- "expression"
@@ -333,12 +337,15 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
 
     CDtypeOptions <- reactive({
       if(is.null(EN_Object())) return(NULL)
-      if(!any(c("sites","score","best_stype") %in% colnames(EN_Object())))
+      CN <- colnames(EN_Object())
+      if(!any(c("sites","score","best_stype") %in% CN))
         return(c(Automatic="auto"))
       options <- c( Automatic="auto", "Best site type"="best_stype", 
                     Score="score", "Number of sites"="sites",
                     "Site type"="type" )
-      options[options %in% c("auto",colnames(EN_Object()))]
+      if(!("best_stype" %in% CN) && sum(grepl("[6-8]mer",CN))>1)
+        CN <- c(CN,"best_stype")
+      options[options %in% c("auto",CN)]
     })
     
     observe({
@@ -357,11 +364,11 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if( input$input_type=="dea" && is.null(DEA()) ) return(NULL)
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
       if(isTRUE(getOption("shiny.testmode"))) print("CDplot_obj")
-      if(sum(EN_Object()$set==input$mir_fam)<8) return(FALSE)
+      if(sum(EN_Object()$set==input$mir_fam)<5) return(FALSE)
       dea <- DEA()
       TS <- EN_Object()
       dea <- .applySynonyms(dea, TS)
-      if(sum(levels(TS$feature) %in% row.names(dea))<8) return(FALSE)
+      if(sum(levels(TS$feature) %in% row.names(dea))<10) return(FALSE)
       legname <- names(CDtypeOptions())[CDtypeOptions()==input$CD_type]
       if(input$CD_type=="auto")
         legname <- ifelse(length(CDtypeOptions())>1, names(CDtypeOptions())[2],
@@ -460,6 +467,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       tests <- c(standard_tests, input$tests2run)
       if(!any(c("sites","score") %in% colnames(EN_Object())))
         tests <- "overlap"
+      tests <- intersect(tests, availableTests(EN_Object()))
       msg <- paste0("Performing enrichment analyses with the following tests: ",
                     paste(tests,collapse=", "))
       message(msg)

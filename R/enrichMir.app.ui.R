@@ -20,7 +20,7 @@ ENSG00000106462, ENSG00000100811, ...")
                                              "get","replace","void")))
     
   ui <- dashboardPage(
-    dashboardHeader(title = "enrichMir", titleWidth = "300px",
+    dashboardHeader(title = "enrichMiR", titleWidth = "300px",
                     tags$li(class="dropdown",
                             actionLink("helpBtn", label="Help",
                                        icon=icon("question")))),
@@ -114,7 +114,10 @@ ENSG00000106462, ENSG00000100811, ...")
                 "Keep only the top ..% expressed miRNAs"
               ),
               tabPanel(title="Use preset expression profile",
-                uiOutput("mirexp_preset")
+                withSpinner(uiOutput("mirexp_preset")),
+                sliderInput(inputId = "mir_cut_off2", label = "Select miRNA expression cut-off:",
+                            min = 10, max = 100, post  = " %", value = 50 ),
+                "Keep only the top ..% expressed miRNAs"
               )
             )), br(),
             footer="Note: If no miRNAs are uploaded/selected, enrichment 
@@ -181,7 +184,8 @@ ENSG00000106462, ENSG00000100811, ...")
         
         
         tabItem(tabName = "tab_enrich", ###### ENRICHMENT ANALYSIS
-          column(3, tags$div(id="enrichbtn_outer", uiOutput("enrichbtn"))), 
+          column(3, tags$div(id="enrichbtn_outer", 
+                             withSpinner(uiOutput("enrichbtn")))), 
           box(width=9, title="Enrichment options", collapsible=TRUE, collapsed=TRUE,
               sliderInput(inputId="minsize", 
                           label=paste(
@@ -243,13 +247,15 @@ ENSG00000106462, ENSG00000100811, ...")
                                   choices=ggplot_themes))
                 )),
               tabPanel(title="Results table", 
-                 withSpinner(DTOutput("hits_table")),
-                 column(8, checkboxGroupInput( inputId="columns2show",
+                fluidRow(
+                 column(8, checkboxGroupInput(
+                   inputId="columns2show", selected=NULL, inline=TRUE,
                    label="Select add. columns to be shown:",
                    choices=list("miRNA names"="members",
-                                "predicted target genes"="genes"),
-                   selected=NULL, inline=TRUE)),
-                 column(4, downloadLink('dl_hits', label = "Download all")))
+                                "predicted target genes"="genes") )),
+                 column(4, downloadLink('dl_hits', label = "Download all"))),
+                 withSpinner(DTOutput("hits_table")), tags$br()
+              )
             )
           ))
         ),
