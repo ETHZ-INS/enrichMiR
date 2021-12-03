@@ -334,10 +334,14 @@ gsea <- function(signal, sets, maxSize=300, nperm=2000, ...){
 
 .TS2regulon <- function(x, likelihood="score"){
   x <- as.data.frame(x)
-  if(likelihood=="score"){
-    x$likelihood <- .censorScore(x[[likelihood]])
+  if(likelihood %in% colnames(x)){
+    if(likelihood=="score"){
+      x$likelihood <- .censorScore(x[[likelihood]])
+    }else{
+      x$likelihood <- x[[likelihood]]
+    }
   }else{
-    x$likelihood <- x[[likelihood]]
+    x$likelihood <- 1L
   }
   lapply(split(x,x$set, drop=TRUE), FUN=function(x){
     y <- list(  tfmode=rep(-1,nrow(x)),
