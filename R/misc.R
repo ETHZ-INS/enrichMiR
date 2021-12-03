@@ -60,7 +60,9 @@ recapitalizeMiRs <- function(x){
       stop("`restrictSign`, if given, should be -1 or 1.")
     dea$FDR[sign(dea$logFC)!=restrictSign] <- 1
   }
-  dea <- dea[order(dea$FDR, dea$PValue),]
+  dea <- dea[order(dea$FDR),]
+  if("PValue" %in% colnames(dea))
+    dea <- dea[order(dea$FDR, dea$PValue),]
   if(sum(bi <- (dea$FDR<=th & abs(dea$logFC)>=th.alfc),na.rm=TRUE) < min.at.th){
     if(verbose) message("Insufficient genes passing the defined FDR; will use",
                         "the top ", alt.top, " genes.")
@@ -282,6 +284,7 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
 #' @examples
 #' head(getHumanMirExp("thyroid"))
 getHumanMirExp <- function(x=NULL){
+  library(SummarizedExperiment)
   data("microRNAome", package="microRNAome")
   if(is.null(x)) return(sort(unique(microRNAome$cell_tissue)))
   if(!(x %in% microRNAome$cell_tissue)) return(NULL)
