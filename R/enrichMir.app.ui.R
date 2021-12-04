@@ -155,7 +155,8 @@ ENSG00000106462, ENSG00000100811, ...")
                             label="Gene List", 
                             rows=5, width="100%",
                             value=NULL,
-                            placeholder=genes_placeholder,
+                            placeholder=paste(genes_placeholder,"
+Note that the background should also include the genes of interest!"),
                             resize="vertical"),br(),
               actionButton("example_GOI", "Example genes"),
               footer=paste("Note: If you want to use the Targetscan miRNA annotations",

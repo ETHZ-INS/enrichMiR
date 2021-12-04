@@ -127,6 +127,15 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
      if(!is.null(input$species))
        updateSelectInput(session, "collection", choices=names(bData[[input$species]]))
    })
+   observe({
+     if(!is.null(input$collection)){
+       if(grepl("oRNAment",input$collection)){
+         hideElement("exprMirs_box")
+       }else{
+         showElement("exprMirs_box")
+       }
+     }
+   })
    
     ##############################
     ## initialize expression info
