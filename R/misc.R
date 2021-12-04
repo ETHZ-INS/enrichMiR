@@ -17,7 +17,8 @@
 #' @param gformat The gene format, either 'human' (all caps) or 'mouse' (first letter capitalized)
 #' 
 #' @return An object of the same type and dimensions as `x`.
-#'
+#' 
+#' @importFrom tools toTitleCase
 #' @export
 recapitalizeGenes <- function(x, gformat="mouse"){
   gformat <- match.arg(gformat, choices=c("human","mouse"))
@@ -26,7 +27,7 @@ recapitalizeGenes <- function(x, gformat="mouse"){
     return(x)
   }
   switch(gformat,
-    mouse=sapply(x,FUN=function(x){ paste0(toupper(substring(x,1,1)), tolower(substring(x,2))) }),
+    mouse=tools::toTitleCase(tolower(x)),
     human=sapply(x,toupper)
   )
 }
@@ -412,6 +413,7 @@ getMouseMirExp <- function(x=NULL){
   x
 }
 
+#' @import data.table
 .aggregateByFamilies <- function(ts, propTolerated=0.05){
   md <- metadata(ts)
   fam <- md$families

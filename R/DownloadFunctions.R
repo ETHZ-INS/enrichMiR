@@ -264,6 +264,7 @@
   
   # Get the tx lenght
   # They use GRCx38 and Ensembl v97
+  library(AnnotationHub)
   ah <- AnnotationHub()
   if(species == "human"){
     en <- query(ah, c("EnsDb", "Homo sapiens", "v97"))
@@ -468,7 +469,9 @@
 }
 
 
-.ens2symbol <- function(species=c("human","mouse","rat"),level = c("tx","gene"), report.element = c("sym","ens")){
+.ens2symbol <- function(species=c("human","mouse","rat"),level = c("tx","gene"),
+                        report.element=c("sym","ens")){
+  library(biomaRt)
   species <- match.arg(species)
   level <- match.arg(level)
   report <- match.arg(report.element)
@@ -499,8 +502,9 @@
   e2s
 }
 
-
+# @importFrom biomaRt useMart getBM
 .ensbiotype_df <- function(species=c("human","mouse","rat"),level = c("tx","gene")){
+  library(biomaRt)
   species <- match.arg(species)
   level <- match.arg(level)
   ensembl <- switch(species,
@@ -517,6 +521,7 @@
 }
 
 .enstx2gene_df <- function(species=c("human","mouse","rat")){
+  library(biomaRt)
   species <- match.arg(species)
   ensembl <- switch(species,
                     human = useMart("ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl"),

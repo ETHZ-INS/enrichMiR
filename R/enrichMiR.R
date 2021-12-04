@@ -173,8 +173,6 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
 #' @return an enrich.results object.
 #'
 #' @export
-#'
-#' @examples
 enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, cleanNames=FALSE, ...){
   if(is.null(families)){
     data("miR_families")

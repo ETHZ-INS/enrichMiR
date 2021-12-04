@@ -236,11 +236,13 @@ setMethod("[", signature("targetAnnotationMatrix"), function(x, i, j=NULL, ...){
 #' @return An object of class `targetAnnotation`; depending on `x`, either a 
 #' `targetAnnotationMatrix` or a `targetAnnotationDF`.
 #' @rdname targetAnnotation
-#' @importFrom HDF5Array HDF5Array
-#' @import DelayedArray
 #' @export
+# @importFrom HDF5Array HDF5Array
+# @import DelayedArray
 targetAnnotation <- function(x, content="score", metadata=list(), set.properties=NULL,
                              feature.synonyms=NULL, sets.synonyms=NULL){
+  library(HDF5Array)
+  library(DelayedArray)
   if(is.character(x)){
     stopifnot(length(x)==1)
     if(grepl("\\.h5$", x)){

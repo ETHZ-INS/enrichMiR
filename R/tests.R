@@ -311,12 +311,14 @@ mw <- function(signal, sets){
 #'
 #' @return a data.frame.
 #'
-#' @importFrom fgsea fgsea
 #' @export
+# @importFrom fgsea fgseaMultilevel
 gsea <- function(signal, sets, maxSize=300, nperm=2000, ...){
+  library(fgsea)
   sets <- lapply(split(sets$feature,sets$set), tested=names(signal), 
                  FUN=function(x,tested){ intersect(unique(x),tested) })
-  res <- fgsea(sets, signal, nperm, minSize=4, maxSize=maxSize, ...)
+  res <- fgseaMultilevel(sets, signal, nPermSimple=nperm, minSize=4, 
+                         maxSize=maxSize, ...)
   res <- res[order(res$padj,res$pval),]
   colnames(res)[1:5] <- c("family","pvalue","FDR","ES","normalizedEnrichment")
   colnames(res)[8] <- "features"
@@ -363,6 +365,7 @@ gsea <- function(signal, sets, maxSize=300, nperm=2000, ...){
 #'
 #' @return a data.frame.
 #'
+#' @importFrom viper msviper
 #' @export
 areamir <- function(signal, sets, ...){
   vi <- viper::msviper(signal, regulon=.TS2regulon(as.data.frame(sets)), ...,
@@ -390,15 +393,15 @@ areamir <- function(signal, sets, ...){
 #' @param keepAll Logical, whether to return all families.
 #'
 #' @return A DataFrame.
-#' @import glmnet zetadiv S4Vectors Matrix sparseMatrixStats
+#' @import S4Vectors Matrix sparseMatrixStats
 #' @export
+# @importFrom zetadiv glm.cons
 regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE, 
                    use.intercept=FALSE, keepAll=TRUE){
   if(is.null(names(signal))) stop("`signal` should be a named vector!")
   suppressPackageStartupMessages({
     library(glmnet)
     library(zetadiv)
-    library(Matrix)
   })
   if(is.null(binary)){
     if(is.data.frame(sets) || is(sets,"DFrame")){
@@ -623,7 +626,8 @@ ebayes <- function(signal, sets, use.intercept=FALSE){
 #'
 #' @importFrom limma lmFit topTable eBayes
 #' @import stats sparseMatrixStats
-lmadd <- function(signal, sets, use.intercept=FALSE, calc.threshold=0.2, comb.threshold=0.05){
+lmadd <- function(signal, sets, use.intercept=FALSE, calc.threshold=0.2, 
+                  comb.threshold=0.05){
   if(!.checkSets(sets, "score", matrixAlternative="numeric"))
     sets <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
   signal <- signal[names(signal) %in% row.names(sets)]

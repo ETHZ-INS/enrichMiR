@@ -1,5 +1,8 @@
 #' @import shiny DT shinydashboard shinycssloaders
-#' @export
+#' @importFrom shinycssloaders withSpinner
+#' @importFrom shinyjqui jqui_resizable
+#' @importFrom shinyjs useShinyjs
+#' @importFrom rintrojs introjsUI
 enrichMiR.ui <- function(){
   library(shiny)
   library(shinyjqui)
@@ -109,14 +112,16 @@ ENSG00000106462, ENSG00000100811, ...")
                           label="Upload miRNA expression object as '*.csv' file (see help)",
                           accept=c("text/csv", ".csv",".tab",".txt",
                                    "text/comma-separated-values,text/plain")),
-                sliderInput(inputId = "mir_cut_off", label = "Select miRNA expression cut-off:",
-                            min = 10, max = 100, post  = " %", value = 50 ),
+                sliderInput(inputId="mir_cut_off", 
+                            label="Select miRNA expression cut-off:",
+                            min=10, max=100, post=" %", value=50),
                 "Keep only the top ..% expressed miRNAs"
               ),
               tabPanel(title="Use preset expression profile",
                 withSpinner(uiOutput("mirexp_preset")),
-                sliderInput(inputId = "mir_cut_off2", label = "Select miRNA expression cut-off:",
-                            min = 10, max = 100, post  = " %", value = 50 ),
+                sliderInput(inputId="mir_cut_off2", 
+                            label="Select miRNA expression cut-off:",
+                            min=10, max=100, post=" %", value=50 ),
                 "Keep only the top ..% expressed miRNAs"
               )
             )), br(),
@@ -136,11 +141,9 @@ ENSG00000106462, ENSG00000100811, ...")
                          "Paste a list of expressed genes in the selected format",
                          br(), br(),
                          textAreaInput(inputId = "genes_of_interest", 
-                                       label="Gene List", 
-                                       rows=5, width="100%",
-                                       value = NULL,
-                                       placeholder=genes_placeholder, 
-                                       resize="vertical"),
+                                       label="Gene List", rows=5, width="100%",
+                                       value=NULL, resize="vertical",
+                                       placeholder=genes_placeholder),
                 ),
                 tabPanel(title = "From Gene Ontology", value="GOI_GO",
                          radioButtons(inputId = "genes_format", label = "Select:", 

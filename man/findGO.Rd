@@ -7,9 +7,11 @@
 findGO(expr, fixed = FALSE, ontology = "BP|MF|CC")
 }
 \arguments{
-\item{expr}{The expression to query, interpreted as a regular expression if `fixed=FALSE`.}
+\item{expr}{The expression to query, interpreted as a regular expression if 
+`fixed=FALSE`.}
 
-\item{fixed}{Whether to interpret `expr` as a fixed expression, rather than a regular expression (default FALSE)}
+\item{fixed}{Whether to interpret `expr` as a fixed expression, rather than 
+a regular expression (default FALSE)}
 
 \item{ontology}{Ontology to search, default all 3 (`BP|MF|CC`)}
 }

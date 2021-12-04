@@ -8,6 +8,9 @@
 #' @return A shiny server function
 #' @export
 #' @import ggplot2 DT GO.db
+#' @importFrom rintrojs introjs
+#' @importFrom shinyjs hideElement showElement
+#' @importFrom plotly renderPlotly ggplotly event_data
 enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   library(DT)
   library(ggplot2)

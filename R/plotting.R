@@ -21,7 +21,7 @@
 #' @param ... Passed to `geom_line` (can for instance be used for `size`, etc.)
 #'
 #' @return A ggplot.
-#' @import ggplot2
+#' @import ggplot2 stats
 #' @importFrom dplyr bind_rows
 #' 
 #' @export
@@ -41,9 +41,11 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
       if(is.null(breaks)) breaks <- k
       if(sameFreq){
         k <- k+1
-        breaks <- unique(quantile(by, prob=seq(from=0, to=1, length.out=k),na.rm=TRUE))
+        breaks <- unique(quantile(by, prob=seq(from=0, to=1, length.out=k),
+                                  na.rm=TRUE))
         if(length(breaks)<k)
-          breaks <- unique(quantile(c(0,by[by!=0]), prob=seq(from=0, to=1, length.out=k),
+          breaks <- unique(quantile(c(0,by[by!=0]), 
+                                    prob=seq(from=0, to=1, length.out=k),
                                     na.rm=TRUE))
         if(length(breaks)<k){
           desiredK <- k
@@ -239,7 +241,8 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
 #' @export
 #' @import ggplot2
 enrichPlot <- function( res,
-                        enr.field=c("enrichment","normalizedEnrichment","beta","coefficient"),
+                        enr.field=c("enrichment","normalizedEnrichment","beta",
+                                    "coefficient"),
                         size.field=c("overlap", "set_size"),
                         col.field=NULL,
                         sig.field="FDR", 
