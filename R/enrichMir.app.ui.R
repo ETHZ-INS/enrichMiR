@@ -3,6 +3,7 @@
 #' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs useShinyjs
 #' @importFrom rintrojs introjsUI
+#' @export
 enrichMiR.ui <- function(){
   library(shiny)
   library(shinyjqui)

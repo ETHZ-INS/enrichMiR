@@ -407,7 +407,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
              (This could be because the species of the collection does not 
              match that of the input).") )
       if(!is.null(logCallsFile))
-        writeLines(paste(Sys.Date(),session$token,"CDplot"), logCallsFile,
+        write(paste(Sys.Date(),session$token,"CDplot"), logCallsFile,
                    append=TRUE)
       p
     })
@@ -488,7 +488,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(input$collection == "Targetscan all miRNA BS")
         detail <- "This will take a while..."
       if(!is.null(logCallsFile))
-        writeLines(paste(Sys.Date(),session$token,"enrich"), logCallsFile,
+        write(paste(Sys.Date(),session$token,"enrich"), logCallsFile,
                    append=TRUE)
       showElement("resultsbox")
       withProgress(message=msg, detail=detail, value=1, max=3, {

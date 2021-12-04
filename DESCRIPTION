@@ -9,7 +9,7 @@ Authors@R: c(
     person("Michael", "Soutschek", email="michael.soutschek@hest.ethz.ch", role="ctb"),
     person("Tomas", "Germade", email="tgermade@student.ethz.ch", role="ctb"))
 Depends: R (>= 3.6)
-Depends:
+Imports:
     DT,
     Matrix,
     S4Vectors,
@@ -29,9 +29,9 @@ Depends:
     shinyjs,
     tools,
     viper,
-    MASS
+    waiter
 Suggests: knitr, rmarkdown, aggregation, microRNAome, fgsea, goseq, glmnet,
-    GO.db, AnnotationDbi, AnnotationHub, biomaRt, zetadiv
+    GO.db, AnnotationDbi, AnnotationHub, biomaRt, zetadiv, MASS
 Description: miRNA target enrichment analysis
 License: GPL
 VignetteBuilder: knitr
