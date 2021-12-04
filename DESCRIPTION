@@ -8,6 +8,7 @@ Authors@R: c(
            role=c("cre","aut"), comment=c(ORCID="0000-0003-3418-4218")),
     person("Michael", "Soutschek", email="michael.soutschek@hest.ethz.ch", role="ctb"),
     person("Tomas", "Germade", email="tgermade@student.ethz.ch", role="ctb"))
+Depends: R (>= 3.6)
 Depends:
     DT,
     Matrix,
