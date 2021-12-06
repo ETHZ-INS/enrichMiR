@@ -364,8 +364,15 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     observe({
       if(!is.null(EN_Object())){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
-        if(!is.null(m <- names(metadata(EN_Object())$families))){
-          updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
+        names(lvl) <- lvl <- levels(EN_Object()$set)
+        if(!is.null(m <- names(metadata(EN_Object())$families)) &&
+           length(w <- which(lvl %in% m)) > 0){
+          x <- sapply(split(names(m), m[names(lvl)[w]]), FUN=function(x){
+            gsub("/(hsa-mir|rno-mir|mmu-mir)", "/", 
+                 paste(names(m)[which(m==x)], collapse="/"), ignore.case=TRUE)
+          })
+          names(lvl[names(x)]) <- as.character(x)
+          updateSelectizeInput(session, "mir_fam", choices=lvl, server=TRUE)
         }else{
           updateSelectizeInput(session, "mir_fam", 
                                choices=levels(EN_Object()$set), server=TRUE)
