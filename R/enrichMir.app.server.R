@@ -85,7 +85,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$help_collections, showModal(.getHelpModal("collections")))
    observeEvent(input$help_enrichplot, showModal(.getHelpModal("enrichplot")))
    observeEvent(input$help_cdplot, showModal(.getHelpModal("cdplot")))
-   observeEvent(input$help_help_tests, showModal(.getHelpModal("tests")))
+   observeEvent(input$help_tests, showModal(.getHelpModal("tests")))
    
    ##############################
    ## Menu items
@@ -243,6 +243,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           x <- head(x,round((input$mir_cut_off2/100)*length(x)))
           x <- setNames(rep(x,each=3),
                         paste0(rep(names(x),each=3), c("","-5p","-3p")))
+          names(x) <- gsub("mir","miR",names(x))
           return(data.frame(row.names=names(x), expression=as.numeric(x)))
         }
         return(NULL)
@@ -363,7 +364,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     observe({
       if(!is.null(EN_Object())){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
-        if(!is.null(m <- metadata(EN_Object())$families)){
+        if(!is.null(m <- names(metadata(EN_Object())$families))){
           updateSelectizeInput(session, "mir_fam", choices=m, server=TRUE)
         }else{
           updateSelectizeInput(session, "mir_fam", 
@@ -376,7 +377,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if( input$input_type=="dea" && is.null(DEA()) ) return(NULL)
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
       if(isTRUE(getOption("shiny.testmode"))) print("CDplot_obj")
-      if(sum(EN_Object()$set==input$mir_fam)<5) return(FALSE)
+      if(!is.null(m <- metadata(EN_Object())$families)){
+        set_Name <- as.character(m[input$mir_fam])
+      }else{
+        set_Name <- input$mir_fam
+      }
+      if(sum(EN_Object()$set==set_Name)<5) return(FALSE)
       dea <- DEA()
       TS <- EN_Object()
       dea <- .applySynonyms(dea, TS)
@@ -385,7 +391,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(input$CD_type=="auto")
         legname <- ifelse(length(CDtypeOptions())>1, names(CDtypeOptions())[2],
                           "Target?")
-      p <- CDplotWrapper(dea, TS, setName=input$mir_fam, 
+      print(set_Name)
+      p <- CDplotWrapper(dea, TS, setName=set_Name, 
                          by=input$CD_type, k=input$CD_k) + labs(colour=legname)
       if(input$CDplot_xaxis==0){
         q <- quantile(dea$logFC, c(0.01, 0.99))
