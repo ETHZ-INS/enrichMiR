@@ -152,9 +152,21 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     observeEvent(input$dea_input, {
       upFile <- input$dea_input
       if (is.null(upFile)) return(NULL)
-      updf <- data.table::fread(upFile$datapath)
-      updf <- .homogenizeDEA(updf)
-      if(nrow(updf)>1) DEA(updf)
+      updf <- tryCatch({
+        .homogenizeDEA(data.table::fread(upFile$datapath))
+      }, error=function(e){
+        showModal(modalDialog(
+          title = "There was an error reading your file:",
+          tags$pre(as.character(e)),
+          tags$p("Be sure to format your DEA table correctly:"),
+          tags$p("Provide ENSEMBL_ID or Gene Symbol as identifier in the ",
+                 tags$b("first")," column, as well as logFC-values and 
+                 FDR-values. The output formats of most RNAseq DEA packages 
+                 should be automatically recognized.")
+        ))
+        NULL
+      })
+      if(!is.null(updf) && nrow(updf)>1) DEA(updf)
     })
     observeEvent(input$example_dea, {
       data(exampleDEA, package="enrichMiR")
@@ -370,7 +382,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
         names(lvl) <- lvl <- levels(EN_Object()$set)
         if(!is.null(m <- metadata(EN_Object())$families) &&
-           !any(grepl("-miR-",names(m), ignore.case=TRUE))){
+           !any(grepl("-miR-",EN_Object()$set, ignore.case=TRUE))){
           if(length(w <- which(lvl %in% as.character(m)))>0)
             w <- names(lvl)[w]
             if(isTRUE(getOption("shiny.testmode"))) print("mir_fam1")

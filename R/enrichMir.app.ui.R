@@ -60,7 +60,8 @@ ENSG00000106462, ENSG00000100811, ...")
 # "))),
       useShinyjs(), introjsUI(), use_waiter(spinners = 3),
       waiter_show_on_load(html=tagList(
-        tags$h1("enrichMiR"),
+        #tags$h1("enrichMiR"),
+        tags$img(src="http://130.60.24.189:81/common/enrichMiR/enrichMiR_sticker.png"),
         tags$h3("Please wait while the application is initialized..."),
         spin_1()
       )),

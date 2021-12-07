@@ -92,17 +92,18 @@ recapitalizeMiRs <- function(x){
   if(is(x,"data.table")){
     if(any(duplicated(x[[1]]))){
       if(keepTop){
-        x <- x[order(x[[head(grep("padj|adj\\.P\\.Val|q_value|qval", colnames(x)),1)]]),]
+        x <- x[order(x[[head(grep("padj|adj\\.P\\.Val|q_value|qval|FDR", colnames(x)),1)]]),]
         x <- x[!duplicated(x[[1]]),]
       }else{
         x <- aggregate(x[,-1,drop=FALSE], by=list(gene=x[[1]]), FUN=mean)
       }
     }
+    x <- x[!is.na(x[[1]]),]
     x <- data.frame(row.names=x[[1]], as.data.frame(x[,-1,drop=FALSE]))
   }
   x <- as.data.frame(x)
-  w <- grep("^ENS",row.names(x))
-  row.names(x)[w] <- gsub("\\..*","",row.names(x)[w])
+  if(length(w <- grep("^ENS",row.names(x)))>0)
+    row.names(x)[w] <- gsub("\\..*","",row.names(x)[w])
 
   colnames(x) <- gsub("log2FoldChange|log2Fold|log2FC|log2\\(fold_change\\)|log2\\.fold_change\\.",
                       "logFC", colnames(x))
@@ -408,7 +409,7 @@ getMouseMirExp <- function(x=NULL){
     head(i,1)
   })
   x$best_stype <- factor(x$best_stype, levels=c(0L, rev(seq_along(w))), 
-                         labels=c("none",rev(gsub("Sites_","",colnames(x)[w]))))
+                         labels=c("no site",rev(gsub("Sites_","",colnames(x)[w]))))
   levels(x$best_stype) <- gsub("_","-",levels(x$best_stype))
   x
 }

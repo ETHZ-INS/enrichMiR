@@ -28,12 +28,14 @@
 CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE, 
                    dig.lab=NULL, minN=10, pvals=FALSE, ...){
   library(ggplot2)
+  factorLevels <- NULL
   if(!is.list(ll)){
     if(is.null(by)) stop("If `ll` is not already a list, `by` should be given.")
     if(length(by)!=length(ll)) stop("Lengths of ll and by differ.")
     w <- which(!is.na(by) & !is.na(ll))
     by <- by[w]
     ll <- ll[w]
+    if(is.factor(by)) factorLevels <- levels(by)
     if(is.factor(by) || is.logical(by) || length(unique(by))<7){
       ll <- split(ll, by)
     }else{
@@ -72,7 +74,11 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
   d <- dplyr::bind_rows(lapply(ll, FUN=function(x){
     data.frame( y=(seq_along(x)-1)/(length(x)-1), x=sort(x) )
   }), .id="Sets")
-  d$Sets <- factor(d$Sets, levels=unique(d$Sets))
+  if(!is.null(factorLevels)){
+    d$Sets <- factor(d$Sets, levels=intersect(factorLevels,unique(d$Sets)))
+  }else{
+    d$Sets <- factor(d$Sets, levels=unique(d$Sets))
+  }
   if(addN) levels(d$Sets) <- paste0(levels(d$Sets), " (n=",
                                     as.numeric(table(d$Sets)), ")")
   p <- ggplot(d, aes(x,y,colour=Sets)) + 
@@ -156,13 +162,20 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
       by <- as.character(sets[["type"]])
       names(by) <- sets[["feature"]]
       by <- by[names(by) %in% names(dea)]
-      by0 <- rep("no sites",length(dea[!names(dea) %in% names(by)]))
+      by0 <- rep("no site",length(dea[!names(dea) %in% names(by)]))
       names(by0) <- names(dea[!names(dea) %in% names(by)])
       by2 <- c(by,by0)
       dea <- dea[names(by2)]
     }
-    p <- CDplot(dea, by=by2, k=length(levels(as.factor(by2))), 
+    bylvls <- levels(as.factor(by2))
+    defcols <- .siteTypeColors()
+    if(all(bylvls %in% names(defcols))){
+      by2 <- factor(by2, intersect(names(defcols), bylvls))
+    }
+    p <- CDplot(dea, by=by2, k=length(bylvls), 
                 sameFreq=sameFreq, size=line.size, pvals = pvals, ...)
+    if(all(bylvls %in% names(defcols)))
+      p <- p + scale_colour_manual(values=defcols[levels(by2)])
   }else{
     by <- rowsum(sets[[by]], sets$feature)[,1]
     by2 <- by[names(dea)]
@@ -326,4 +339,14 @@ breakStrings <- function (x, minSizeForBreak = 20, lb = "\n") {
         substr(x, mid, mid) <- lb
         return(x)
     })
+}
+
+
+.siteTypeColors <- function(){
+  c(`no site` = "#000004FF",
+    `6mer` = "#3A0963FF",
+    `7mer-1a` = "#A92E5EFF", 
+    `7mer-a1` = "#A92E5EFF", 
+    `7mer-m8` = "#E65D2FFF",
+    `8mer` = "#F5DB4BFF")
 }
