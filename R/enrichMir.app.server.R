@@ -159,10 +159,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           title = "There was an error reading your file:",
           tags$pre(as.character(e)),
           tags$p("Be sure to format your DEA table correctly:"),
-          tags$p("Provide ENSEMBL_ID or Gene Symbol as identifier in the 
-                 first column, as well as logFC-values and FDR-values. The 
-                 output formats of most RNAseq DEA packages should be 
-                 automatically recognized.")
+          tags$p("Provide ENSEMBL_ID or Gene Symbol as identifier in the ",
+                 tags$b("first")," column, as well as logFC-values and 
+                 FDR-values. The output formats of most RNAseq DEA packages 
+                 should be automatically recognized.")
         ))
         NULL
       })
