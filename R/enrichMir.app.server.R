@@ -370,7 +370,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
         names(lvl) <- lvl <- levels(EN_Object()$set)
         if(!is.null(m <- metadata(EN_Object())$families) &&
-           !any(grepl("-miR-",names(m), ignore.case=TRUE))){
+           !any(grepl("-miR-",EN_Object()$set, ignore.case=TRUE))){
           if(length(w <- which(lvl %in% as.character(m)))>0)
             w <- names(lvl)[w]
             if(isTRUE(getOption("shiny.testmode"))) print("mir_fam1")
