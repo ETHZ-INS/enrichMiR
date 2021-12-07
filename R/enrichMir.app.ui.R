@@ -3,6 +3,7 @@
 #' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs useShinyjs
 #' @importFrom rintrojs introjsUI
+#' @importFrom waiter use_waiter waiter_show_on_load waiter_hide
 #' @export
 enrichMiR.ui <- function(){
   library(shiny)
@@ -13,6 +14,8 @@ enrichMiR.ui <- function(){
   library(plotly)
   library(ggplot2)
   library(rintrojs)
+  library(waiter)
+  library(shinyjs)
 
   genes_placeholder <- paste("Enter your genes as symbols or ensembl IDs,",
                              "separated by spaces, commas, or linebreaks. E.g.:
@@ -55,7 +58,12 @@ ENSG00000106462, ENSG00000100811, ...")
 #   display: table-row;
 # }
 # "))),
-      useShinyjs(), introjsUI(),
+      useShinyjs(), introjsUI(), use_waiter(spinners = 3),
+      waiter_show_on_load(html=tagList(
+        tags$h1("enrichMiR"),
+        tags$h3("Please wait while the application is initialized..."),
+        spin_1()
+      )),
       tabItems(
         tabItem(tabName = "tab_intro",
           box(title="enrichMiR: miRNA (and RBP) target enrichment analysis", 

@@ -28,6 +28,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         "Targetscan/20211124_Targetscan8_Human_AllPred_human.rds",
       "miRTarBase"=
         "miRTarBase/miRTarBase8.human.rds",
+      "scanMiR"="scanMiR/scanMiR_GRCh38_merged.rds",
       "oRNAment"=
         "oRNAment/human_coding_MSS05_gene_3UTR_pred.rds"),
     Mouse=c(
@@ -37,6 +38,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         "Targetscan/20211124_Targetscan8_Mouse_AllPred_mouse.rds",
       "miRTarBase"=
         "miRTarBase/miRTarBase8.mouse.rds",
+      "scanMiR"="scanMiR/scanMiR_GRCm38_merged.rds",
       "oRNAment"="oRNAment/mouse_coding_MSS05_gene_3UTR_pred.rds"),
     Rat=c(
       "Targetscan conserved miRNA BS (from mouse)"=
@@ -396,8 +398,11 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         legname <- ifelse(length(CDtypeOptions())>1, names(CDtypeOptions())[2],
                           "Target?")
       if(isTRUE(getOption("shiny.testmode"))) print(set_Name)
-      p <- CDplotWrapper(dea, TS, setName=set_Name, 
-                         by=input$CD_type, k=input$CD_k) + labs(colour=legname)
+      p <- tryCatch(
+        CDplotWrapper(dea, TS, setName=set_Name, 
+                      by=input$CD_type, k=input$CD_k) + labs(colour=legname),
+        error=function(e){ e })
+      if(is(p,"error")) return(FALSE)
       if(input$CDplot_xaxis==0){
         q <- quantile(dea$logFC, c(0.01, 0.99))
         p <- p + xlim(q[1],q[2])
@@ -596,7 +601,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }
     )
       
-    
+    waiter::waiter_hide()
     if(isTRUE(getOption("shiny.testmode"))) print("END LOADING")
     
   }
