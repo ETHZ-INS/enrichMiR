@@ -92,7 +92,7 @@ recapitalizeMiRs <- function(x){
   if(is(x,"data.table")){
     if(any(duplicated(x[[1]]))){
       if(keepTop){
-        x <- x[order(x[[head(grep("padj|adj\\.P\\.Val|q_value|qval", colnames(x)),1)]]),]
+        x <- x[order(x[[head(grep("padj|adj\\.P\\.Val|q_value|qval|FDR", colnames(x)),1)]]),]
         x <- x[!duplicated(x[[1]]),]
       }else{
         x <- aggregate(x[,-1,drop=FALSE], by=list(gene=x[[1]]), FUN=mean)
