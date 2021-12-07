@@ -441,7 +441,7 @@
     sc <- merge(sc,anno,by.x = "feature",by.y = "ensembl_transcript_id",all.x = TRUE)
     sc <- sc[!is.na(sc$ensembl_gene_id),]
     sc <- sc[order(sc$score),]
-    sc <- sc[!duplicated(sc$ensembl_gene_id),]
+    sc <- sc[!duplicated(sc[c("set","ensembl_gene_id")]),]
     sc$feature <- NULL
     colnames(sc)[colnames(sc) == "ensembl_gene_id"] <- "feature"
   }
