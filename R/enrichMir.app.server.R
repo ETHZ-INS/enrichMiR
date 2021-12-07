@@ -134,8 +134,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
      if(!is.null(input$collection)){
        if(grepl("oRNAment",input$collection)){
          hideElement("exprMirs_box")
+         hideElement("columns2show")
        }else{
          showElement("exprMirs_box")
+         showElement("columns2show")
        }
      }
    })
