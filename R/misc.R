@@ -98,11 +98,12 @@ recapitalizeMiRs <- function(x){
         x <- aggregate(x[,-1,drop=FALSE], by=list(gene=x[[1]]), FUN=mean)
       }
     }
+    x <- x[!is.na(x[[1]]),]
     x <- data.frame(row.names=x[[1]], as.data.frame(x[,-1,drop=FALSE]))
   }
   x <- as.data.frame(x)
-  w <- grep("^ENS",row.names(x))
-  row.names(x)[w] <- gsub("\\..*","",row.names(x)[w])
+  if(length(w <- grep("^ENS",row.names(x)))>0)
+    row.names(x)[w] <- gsub("\\..*","",row.names(x)[w])
 
   colnames(x) <- gsub("log2FoldChange|log2Fold|log2FC|log2\\(fold_change\\)|log2\\.fold_change\\.",
                       "logFC", colnames(x))
