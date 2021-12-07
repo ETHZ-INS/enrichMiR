@@ -519,7 +519,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                     title = "There was an error with your request:",
                     tags$pre(as.character(e)),
                     "This typically happens when there is a mismatch 
-                    between your different input data (e.g. wrong species)"
+                    between your different input data (e.g. wrong species or the first column of a DEA does not contain genes)"
                   ))
                 })
       })
