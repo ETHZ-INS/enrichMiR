@@ -353,7 +353,7 @@ availableTests <- function(x=NULL, sets=NULL){
   if(testOnlyAnnotated) features <- intersect(levels(sets$feature), features)
   i <- which(levels(sets$feature) %in% features)
   sets <- sets[as.integer(sets$feature) %in% i,]
-  sets$features <- droplevels(sets$feature)
+  sets$feature <- droplevels(sets$feature)
   tt <- table(sets$set)
   i <- which(levels(sets$set) %in% names(tt)[tt>=min.size & tt<max.size])
   if(length(i)==0) stop(.noMatchingFeatures())
