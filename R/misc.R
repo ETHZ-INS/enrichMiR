@@ -408,7 +408,7 @@ getMouseMirExp <- function(x=NULL){
     head(i,1)
   })
   x$best_stype <- factor(x$best_stype, levels=c(0L, rev(seq_along(w))), 
-                         labels=c("none",rev(gsub("Sites_","",colnames(x)[w]))))
+                         labels=c("no site",rev(gsub("Sites_","",colnames(x)[w]))))
   levels(x$best_stype) <- gsub("_","-",levels(x$best_stype))
   x
 }

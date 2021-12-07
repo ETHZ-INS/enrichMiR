@@ -156,7 +156,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
       by <- as.character(sets[["type"]])
       names(by) <- sets[["feature"]]
       by <- by[names(by) %in% names(dea)]
-      by0 <- rep("no sites",length(dea[!names(dea) %in% names(by)]))
+      by0 <- rep("no site",length(dea[!names(dea) %in% names(by)]))
       names(by0) <- names(dea[!names(dea) %in% names(by)])
       by2 <- c(by,by0)
       dea <- dea[names(by2)]
