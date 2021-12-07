@@ -365,18 +365,19 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(!is.null(EN_Object())){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
         names(lvl) <- lvl <- levels(EN_Object()$set)
-        if(!is.null(m <- names(metadata(EN_Object())$families)) &&
-           length(w <- which(lvl %in% m)) > 0){
-          x <- sapply(split(names(m), m[names(lvl)[w]]), FUN=function(x){
-            gsub("/(hsa-mir|rno-mir|mmu-mir)", "/", 
-                 paste(names(m)[which(m==x)], collapse="/"), ignore.case=TRUE)
-          })
-          names(lvl[names(x)]) <- as.character(x)
-          updateSelectizeInput(session, "mir_fam", choices=lvl, server=TRUE)
-        }else{
-          updateSelectizeInput(session, "mir_fam", 
-                               choices=levels(EN_Object()$set), server=TRUE)
+        if(!is.null(m <- metadata(EN_Object())$families)){
+          if(length(w <- which(lvl %in% as.character(m)))>0)
+            w <- names(lvl)[w]
+            if(isTRUE(getOption("shiny.testmode"))) print("mir_fam1")
+            x <- sapply(split(names(m), m)[w], FUN=function(x){
+              gsub("/(mir|let)", "/", gsub("/(hsa-|rno-|mmu-)", "/", 
+                   paste(x, collapse="/")), ignore.case=TRUE)
+            })
+            x <- setNames(names(x),as.character(x))
+            lvl <- c(setdiff(lvl, x),x)
+            lvl <- lvl[order(names(lvl))]
         }
+        updateSelectizeInput(session, "mir_fam", choices=lvl, server=TRUE)
       }
     })
     
@@ -384,11 +385,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if( input$input_type=="dea" && is.null(DEA()) ) return(NULL)
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
       if(isTRUE(getOption("shiny.testmode"))) print("CDplot_obj")
-      if(!is.null(m <- metadata(EN_Object())$families)){
-        set_Name <- as.character(m[input$mir_fam])
-      }else{
-        set_Name <- input$mir_fam
-      }
+      set_Name <- input$mir_fam
       if(sum(EN_Object()$set==set_Name)<5) return(FALSE)
       dea <- DEA()
       TS <- EN_Object()
@@ -398,7 +395,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(input$CD_type=="auto")
         legname <- ifelse(length(CDtypeOptions())>1, names(CDtypeOptions())[2],
                           "Target?")
-      print(set_Name)
+      if(isTRUE(getOption("shiny.testmode"))) print(set_Name)
       p <- CDplotWrapper(dea, TS, setName=set_Name, 
                          by=input$CD_type, k=input$CD_k) + labs(colour=legname)
       if(input$CDplot_xaxis==0){
