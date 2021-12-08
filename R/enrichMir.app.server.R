@@ -380,6 +380,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     observe({
       if(!is.null(EN_Object())){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
+        if(!is.factor(EN_Object()$set)) EN_Object()$set <- as.factor(EN_Object()$set)
         names(lvl) <- lvl <- levels(EN_Object()$set)
         if(!is.null(m <- metadata(EN_Object())$families) &&
            !any(grepl("-miR-",EN_Object()$set, ignore.case=TRUE))){

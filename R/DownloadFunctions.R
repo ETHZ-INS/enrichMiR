@@ -404,6 +404,8 @@
   metadata(ll)$families <- fams$RBP
   names(metadata(ll)$families) <- fams$RBP_Motif
   metadata(ll)$families <- droplevels(as.factor(metadata(ll)$families))
+  ll$set <- as.factor(ll$set)
+  ll$feature <- as.factor(ll$feature)
   return(ll)
 }
 
