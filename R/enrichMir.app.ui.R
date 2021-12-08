@@ -306,7 +306,7 @@ Note that the background should also include the genes of interest!"),
           )
         ),
         tabItem(tabName="tab_benchmark",
-          tabBox(
+          tabBox(width=12,
             tabPanel("Tests description",
               tags$p("Forthcoming")
             ),
