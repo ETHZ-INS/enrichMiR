@@ -154,7 +154,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
       #get set info
       sets <- as.data.table(sets)
       sets <- melt(sets, id.vars = c("feature"),
-                   measure.vars = c("Sites_8mer", "Sites_7mer_m8", "Sites_7mer_1a"))
+                   measure.vars = grep("[6-8]mer", colnames(sets), value=TRUE))
       sets <- sets[sets$value != 0,]
       sets$type <- gsub("Sites_","",sets$variable)
       sets$type <- gsub("_","-",sets$type)
@@ -347,6 +347,7 @@ breakStrings <- function (x, minSizeForBreak = 20, lb = "\n") {
     `6mer` = "#3A0963FF",
     `7mer-1a` = "#A92E5EFF", 
     `7mer-a1` = "#A92E5EFF", 
+    `7mer` = "#A92E5EFF",
     `7mer-m8` = "#E65D2FFF",
     `8mer` = "#F5DB4BFF")
 }
