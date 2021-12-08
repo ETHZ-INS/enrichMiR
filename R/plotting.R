@@ -347,6 +347,7 @@ breakStrings <- function (x, minSizeForBreak = 20, lb = "\n") {
     `6mer` = "#3A0963FF",
     `7mer-1a` = "#A92E5EFF", 
     `7mer-a1` = "#A92E5EFF", 
+    `7mer` = "#A92E5EFF",
     `7mer-m8` = "#E65D2FFF",
     `8mer` = "#F5DB4BFF")
 }
