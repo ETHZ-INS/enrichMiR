@@ -9,6 +9,7 @@
 #' @export
 #' @import ggplot2 DT GO.db
 #' @importFrom rintrojs introjs
+#' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs hideElement showElement
 #' @importFrom plotly renderPlotly ggplotly event_data
 enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
@@ -18,6 +19,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   library(GO.db)
   library(rintrojs)
   library(shinyjs)
+  library(shinyjqui)
   
   baseDataPath="/mnt/schratt/enrichMiR_data/"
   if(is.null(bData)) bData <- lapply(list(
@@ -384,6 +386,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     observe({
       if(!is.null(EN_Object())){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
+        if(!is.factor(EN_Object()$set)) EN_Object()$set <- as.factor(EN_Object()$set)
         names(lvl) <- lvl <- levels(EN_Object()$set)
         if(!is.null(m <- metadata(EN_Object())$families) &&
            !any(grepl("-miR-",EN_Object()$set, ignore.case=TRUE))){
@@ -435,6 +438,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       p
     })
               
+    #adapt plot_size
+    jqui_resizable(ui="#cd_plot")
+    
     output$cd_plot <- renderPlot({
       p <- CDplot_obj()
       validate( need(!isFALSE(p),
@@ -540,6 +546,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                 })
       })
     })
+    
+    #adapt plot_size
+    jqui_resizable(ui="#bubble_plot")
     
     output$bubble_plot <- renderPlotly({
       if(is.null(ER())) return(NULL)
