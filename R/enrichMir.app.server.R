@@ -65,6 +65,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   trimInputList <- function(x){
     x <- unlist(strsplit(gsub(",|;|\\t|\\r|\\s","\n",x),"\n"))
     x <- unique(x[x!=""])
+    x <- x[x[!is.na(x)]]
     if(length(x)==0) return(NULL)
     x
   }
@@ -438,9 +439,6 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       p
     })
               
-    #adapt plot_size
-    jqui_resizable(ui="#cd_plot")
-    
     output$cd_plot <- renderPlot({
       p <- CDplot_obj()
       validate( need(!isFALSE(p),
