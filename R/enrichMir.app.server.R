@@ -9,6 +9,7 @@
 #' @export
 #' @import ggplot2 DT GO.db
 #' @importFrom rintrojs introjs
+#' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs hideElement showElement
 #' @importFrom plotly renderPlotly ggplotly event_data
 enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
@@ -18,6 +19,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   library(GO.db)
   library(rintrojs)
   library(shinyjs)
+  library(shinyjqui)
   
   baseDataPath="/mnt/schratt/enrichMiR_data/"
   if(is.null(bData)) bData <- lapply(list(
@@ -432,6 +434,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       p
     })
               
+    #adapt plot_size
+    jqui_resizable(ui="#cd_plot")
+    
     output$cd_plot <- renderPlot({
       p <- CDplot_obj()
       validate( need(!isFALSE(p),
@@ -537,6 +542,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                 })
       })
     })
+    
+    #adapt plot_size
+    jqui_resizable(ui="#bubble_plot")
     
     output$bubble_plot <- renderPlotly({
       if(is.null(ER())) return(NULL)

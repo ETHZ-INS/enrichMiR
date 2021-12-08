@@ -1,13 +1,11 @@
 #' @import shiny DT shinydashboard shinycssloaders
 #' @importFrom shinycssloaders withSpinner
-#' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs useShinyjs
 #' @importFrom rintrojs introjsUI
 #' @importFrom waiter use_waiter waiter_show_on_load waiter_hide
 #' @export
 enrichMiR.ui <- function(){
   library(shiny)
-  library(shinyjqui)
   library(DT)
   library(shinydashboard)
   library(shinycssloaders)
@@ -243,7 +241,7 @@ Note that the background should also include the genes of interest!"),
                                     " and enrichment-related statistics.")),
                   column(1, actionButton(inputId="help_enrichplot", 
                                       icon=icon("question-circle"), label=""))),
-                withSpinner(jqui_resizable(plotlyOutput("bubble_plot"))), 
+                withSpinner(plotlyOutput("bubble_plot")), 
                 tags$br(), htmlOutput("hoverinfo"), tags$br(), 
                 box(title="Plot options", width=12, collapsible=TRUE, collapsed=TRUE,
             column(6,sliderInput(inputId="label.sig.thres",
@@ -288,8 +286,8 @@ Note that the background should also include the genes of interest!"),
                                    choices=c("sites","score"))),
                   column(1, actionButton(inputId="help_cdplot", 
                                     icon=icon("question-circle"), label=""))),
-                withSpinner(jqui_resizable(plotOutput("cd_plot", width='100%', 
-                                                      height='400px'))),
+                withSpinner(plotOutput("cd_plot", width='100%', 
+                                                      height='400px')),
                 tags$br(), tags$br(), tags$br(), tags$br(), 
                 box(width=12, title="Plotting options", collapsible=TRUE, 
                     collapsed=TRUE,
