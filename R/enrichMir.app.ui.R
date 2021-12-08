@@ -41,9 +41,9 @@ ENSG00000106462, ENSG00000100811, ...")
          menuItemOutput("menu_enrich"),
          menuItemOutput("menu_cdplot"),
          tags$hr(width="80%"),
-         menuItem("Tests benchmark", tabName="tab_benchmark",
+         menuItem("Tests & benchmark", tabName="tab_benchmark",
                   icon=icon("tachometer-alt"))
-       )                     
+       )
     ),
     
     ## Body Content
@@ -305,7 +305,40 @@ Note that the background should also include the genes of interest!"),
               )
           )
         ),
-        tabItem(tabName = "tab_benchmark", "Forthcoming")
+        tabItem(tabName="tab_benchmark",
+          tabBox(
+            tabPanel("Tests description",
+              tags$p("Forthcoming")
+            ),
+            tabPanel("Tests benchmark",
+              tags$h3("Benchmark of the different target enrichment tests"),
+              tags$p("The different tests were benchmarked on four datasets each
+                     involving the transcriptomic characterization of the 
+                     knockdown or over-expression of different miRNAs. The 
+                     benchmark was performed using TargetScan-predicted sites."),
+              tags$img(src="http://130.60.24.189:81/common/enrichMiR/benchmark1.png"),
+              tags$p("Panel A shows the log-rank of the true miRNA according to 
+                     the different tests (lower=better, i.e. a log-rank of 0 
+                     indicates that the true miRNA was correctly identified as
+                     the top enriched. Panel B shows the effective sensitivity 
+                     and False Discovery Rate (FDR) of the different tests at a 
+                     nominal q-value threshold of 0.05."),
+              tags$p("Gene-Set Enrichment Analysis (GSEA) and
+                     Kolmogorov-Smirnov tests give very poor performances. The
+                     site-overlap test provided an excellent ranking of the 
+                     hypotheses (i.e. true miRNA always coming out top), but 
+                     uncalibrated p-values, leading to many false positives when
+                     using a threshold of 0.05. The areamir also performed well,
+                     and although it did not always give the true result first,
+                     it had a better error control. Finally, the regmir test 
+                     provided excellent error control, but at the cost of a 
+                     lower sensitivity (and much greater computing time)."),
+              tags$p("In light of these results, the siteoverlap test was 
+                     selected as the default for binary signals, and the areamir
+                     test for continuous signals.")
+            )
+          )      
+        )
       )
     )
   )
