@@ -58,7 +58,7 @@ ENSG00000106462, ENSG00000100811, ...")
 #   display: table-row;
 # }
 # "))),
-      useShinyjs(), introjsUI(), use_waiter(spinners = 3),
+      useShinyjs(), introjsUI(), use_waiter(),
       waiter_show_on_load(html=tagList(
         #tags$h1("enrichMiR"),
         tags$img(src="http://130.60.24.189:81/common/enrichMiR/enrichMiR_sticker.png"),

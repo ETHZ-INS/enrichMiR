@@ -95,7 +95,8 @@ Here is a brief description of each type of collection:"),
                "miRNA binding site predictions using ",
                tags$a(href="https://www.bioconductor.org/packages/devel/bioc/html/scanMiR.html",
                       "scanMiR", target="_blank"),
-               "a transcript-level affinity prediction method."),
+               "a transcript-level affinity prediction method. This target 
+               annotation is compatible with both gene and transcript IDs."),
              tags$li(tags$b("miRTarBase: "),
                      "Experimentally-validated miRNA targets from the ",
                      tags$a(href="https://mirtarbase.cuhk.edu.cn/~miRTarBase/",
@@ -140,10 +141,36 @@ Here is a brief description of each type of collection:"),
            can be selected using the 'Split by' dropdown list. We recommend 
            splitting by best binding type if this information is available in 
            the collection you are using, or otherwise splitting by predicted
-           repression score. This is the default (Automatic) procedure."),
+           repression score (if available). This is the default (Automatic) 
+           procedure."),
+           tags$p(renderPlot({
+             CDplot(list("no site"=rnorm(600,mean=0,sd=0.8), 
+                         "7mer"=c(rnorm(200,0),rnorm(200, mean=-0.5)), 
+                         "8mer"=c(rnorm(100,0),rnorm(200, mean=-1))), size=1.3) + 
+               scale_color_manual(values=enrichMiR:::.siteTypeColors()[
+                 c("no site", "7mer", "8mer")]) + xlab("logFC") + xlim(-3,2)
+           })),
            tags$p("In the presence of a real miRNA effect, we expect to see a 
-            gradual dose-response pattern, meaning that targets with stronger 
-            binding sites also have stronger log-foldchanges.")
+            gradual dose-response pattern, as shown above, meaning that 
+            targets with stronger binding sites also have stronger 
+            log-foldchanges (i.e. lower logFC, in the case of an increased 
+            miRNA activity, as in this example)."),
+           tags$p("If your CD plot shows very angular lines, rather than 
+            lines that approach curves, this means that your sets do not contain
+            enough elements. An example of this is given below:"),
+           tags$p(renderPlot({
+             CDplot(list("no site"=rnorm(600,mean=0,sd=0.8), 
+                         "7mer"=c(rnorm(8,0),rnorm(15, mean=-0.5)), 
+                         "8mer"=c(-2.8, -0.5, 0.5)), size=1.3) + 
+               scale_color_manual(values=enrichMiR:::.siteTypeColors()[
+                 c("no site", "7mer", "8mer")]) + xlab("logFC") + xlim(-3,2)
+           })),
+           tags$p("In such cases, if you are using score intervals, try reducing
+            the number of sets in the plot options. If you are using sites or 
+            site types, this means that the miRNA of interest does not have 
+            enough sites of this type in your dataset. This can especially 
+            happen when using TargetScan ", tags$em("conserved"), "sites, in 
+            which case you can try using all predicted sites instead.")
          ),
          tests=modalDialog(title="Enrichment tests", tags$p(
             "enrichMiR implements different statistical tests for target 
@@ -158,6 +185,13 @@ Here is a brief description of each type of collection:"),
              tests are enabled -- these are those that gave the best performance."
            ), tags$p(
              "For more information on the tests, please see the documentation."
+           ), tags$p(
+             "Finally, note that the tests were developed and benchmarked for
+             application with predicted miRNA targets, not RNA binding proteins
+             (RBPs), which have more degenerate binding patterns. Although we 
+             offer the possibility to perform RBP target enrichment analyses, 
+             the tests were not benchmarked for that purpose, and the results 
+             should therefore be interpreted with care."
            )
          ),
          modalDialog(title=topic,

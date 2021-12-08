@@ -338,14 +338,18 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(isTRUE(getOption("shiny.testmode"))) print("EN_Object")
       if(is.null(input$collection) || is.null(input$species) ||
          is.null(bDataLoaded[[input$species]][[input$collection]])) return(NULL)
-      if(is.character(bDataLoaded[[input$species]][[input$collection]]))
+      if(is.character(bDataLoaded[[input$species]][[input$collection]])){
+        #waiter::waiter_show(html=tags$h3("Loading database..."), color="#333E4896")
         bDataLoaded[[input$species]][[input$collection]] <<-
           readRDS(bDataLoaded[[input$species]][[input$collection]])
+        #waiter::waiter_hide()
+      }
       bDataLoaded[[input$species]][[input$collection]]
     })
     
     output$collection_details <- renderText({
       if(is.null(EN_Object())) return(NULL)
+      
       paste(nrow(EN_Object()), "bindings of ", length(unique(EN_Object()$set)),
             "families on ", length(unique(EN_Object()$feature)), 
             "transcripts/genes")
