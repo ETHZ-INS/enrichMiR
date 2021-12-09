@@ -92,6 +92,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$help_enrichplot, showModal(.getHelpModal("enrichplot")))
    observeEvent(input$help_cdplot, showModal(.getHelpModal("cdplot")))
    observeEvent(input$help_tests, showModal(.getHelpModal("tests")))
+   observeEvent(input$help_testsadvanced, showModal(.getHelpModal("testsadvanced")))
+   observeEvent(input$help_deaformat, showModal(.getHelpModal("deaformat")))
    
    ##############################
    ## Menu items

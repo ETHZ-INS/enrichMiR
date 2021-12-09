@@ -115,6 +115,23 @@ Here is a brief description of each type of collection:"),
                usage for RBPs is experimental.")
             )
          ),
+         deaformat=modalDialog(title="Required format of the DEA table", 
+           tags$p("The app should recognized the differential expression tables
+                  generated from common RNAseq DEA package, provided that the
+                  genes are in the first column (which is normally the case.
+                  In case of problem, try to format your table in this way:"),
+           tags$pre(
+"Gene,logFC,PValue,FDR
+CERS2,-1.54,1.37e-19,8.85e-16
+NR6A1,-1.76,3.92e-19,1.77e-15
+TAGLN2,-1.92,4.47e-17,1.08e-13
+FTL,-1.69,1.68e-15,2.05e-12
+TPM4,-1.41,1.83e-10,6.86e-08
+..."),
+           tags$p("With most target annotations, Ensembl IDs will also be 
+                  recognized, and the scanMiR annotation supports 
+                  transcript-level DEAs with Ensembl transcript IDs.")
+         ),
          enrichplot=modalDialog(title="Enrichment plot", tags$p(
            "The enrichment plot shows the significance of the enrichment on the
            y-axis, and the magnitude of the enrichment on the x-axis. For basic

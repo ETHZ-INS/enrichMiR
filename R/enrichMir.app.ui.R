@@ -144,7 +144,8 @@ ENSG00000106462, ENSG00000100811, ...")
         tabItem("tab_input", ############ INPUT
           tabBox(id="input_type", width=12,
             tabPanel(title = "Select geneset & background", 
-              tags$p("In this mode, your genes of interest are compared against a background of genes."),
+              tags$p("In this mode, your genes of interest are compared against 
+                     a background of genes."),
               tags$h3("Genes of interest"),
               tabsetPanel(id="GOI",
                 tabPanel(title = "Custom set", value = "GOI_custom",
@@ -177,7 +178,7 @@ Note that the background should also include the genes of interest!"),
             ),
             tabPanel(title = "Upload DEA results", value = "dea",
               fluidRow(       
-                column(8, fileInput( inputId = "dea_input", 
+                column(7, fileInput( inputId = "dea_input", 
                   label="Upload DEA object as '*.csv' file (see help)",
                   accept=c("text/csv", ".csv", ".tab", ".txt",
                            "text/comma-separated-values,text/plain")),
@@ -187,7 +188,9 @@ Note that the background should also include the genes of interest!"),
                 with at least following information: Provide ENSEMBL_ID or Gene 
                 Symbol as identifier in the first column (same format as for 
                 the background), as well as logFC-values and FDR-values")),
-                column(4, htmlOutput("dea_res"), tags$br(), tags$hr(), tags$br(),
+                column(2, actionButton(inputId="help_deaformat",
+                          icon=icon("question-circle"), label="View format")),
+                column(3, htmlOutput("dea_res"), tags$br(), tags$hr(), tags$br(),
                      sliderInput(inputId = "dea_sig_th", 
                                  label="Select significance threshold",
                                  min=0.01, max=0.5, value=0.05, step=0.01))
