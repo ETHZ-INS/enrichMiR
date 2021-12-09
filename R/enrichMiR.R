@@ -123,6 +123,9 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   o <- new("enrich.results", input=list(x=x, sets.properties=sets.properties), 
            binary.signatures=binary.signatures, info=list(call=match.call(),
                                                           type = "enrichment"))
+  if(any(grep("-miR-|-mir-|-let-",head(row.names(sets.properties)))) && any(tests %in% c("siteoverlap","overlap","siteoverlap2")) && !is.null(fams <- metadata(sets)$families)){
+    o@input <- c(o@input,list(families = fams))
+  }
   if(is.null(names(binary.signatures))) names(binary.signatures) <- "features"
     o@overlaps <- lapply(binary.signatures, FUN=function(x){
       FactorList(lapply(split(sets$feature, sets$set), 
@@ -242,6 +245,24 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
       res$Partner_name <- object@input$sets.properties$Partner[res$Partner,"members"]
     }
   }else{
+    if(any(grep("-miR-|-mir-|-let-",head(row.names(object@input$sets.properties)))) && 
+       any(test %in% c("siteoverlap.down","overlap.down","siteoverlap2.down","siteoverlap.up","overlap.up","siteoverlap2.up",
+                       "siteoverlap.features","overlap.features","siteoverlap2.features")) && 
+       !is.null(object@input$families)){
+      fams <- object@input$families
+      sets.properties <- object@input$sets.properties
+      props1 <- data.frame(row.names = names(fams),seed = as.character(fams))
+      sets.properties <- merge(sets.properties,props1, by = 0, all.x = TRUE)
+      sets.properties <- setNames(aggregate(sets.properties[,"logCPM"],by = list(sets.properties$seed), FUN = sum),c("seed","logCPM"))
+      props2 <- split(names(fams),fams)
+      props2 <- data.frame(row.names=names(props2),
+                           members=sapply(props2, FUN=function(x) paste(sort(x),collapse=";")))
+      
+      sets.properties <- merge(sets.properties,props2, by.x = "seed", by.y = 0, all.x = TRUE)
+      row.names(sets.properties) <- sets.properties$seed
+      sets.properties$seed <- NULL
+      object@input$sets.properties <- sets.properties
+      }
     res <- cbind(object@input$sets.properties[row.names(res),,drop=FALSE], res)
   }
   fdr <- grep("FDR",colnames(res))
@@ -399,19 +420,21 @@ availableTests <- function(x=NULL, sets=NULL){
   }
   usets <- unique(sets$set)
   if(all(row.names(props) %in% usets)) return(props)
-  if(isS4(sets)){
-    if(is.null(metadata(sets)$alternativeNames) && !is.null(metadata(sets)$families))
-      metadata(sets)$alternativeNames <- metadata(sets)$families
-    if(!is.null(an <- metadata(sets)$alternativeNames)){
-      props <- .agDF(props, an, TRUE)
-      if(all(row.names(props) %in% usets)) return(props)
-    }
-    if(!is.null(an) && tryPrefixRemoval &&
-       !any(row.names(props) %in% usets) ){
-      names(an) <- sapply(strsplit(names(an),"-",fixed=TRUE),FUN=function(x){ paste(x[-1],collapse="-") })
-      metadata(sets)$alternativeNames <- an
-      props <- .agDF(props, sapply(strsplit(row.names(props),"-",fixed=T),FUN=function(x) paste(x[-1],collapse="-") ), FALSE)
-      return(.filterMatchSets(sets, props, tryPrefixRemoval=FALSE))
+  if(!any(grep("-miR-|-mir-|-let-",head(usets)))){
+    if(isS4(sets)){
+      if(is.null(metadata(sets)$alternativeNames) && !is.null(metadata(sets)$families))
+        metadata(sets)$alternativeNames <- metadata(sets)$families
+      if(!is.null(an <- metadata(sets)$alternativeNames)){
+        props <- .agDF(props, an, TRUE)
+        if(all(row.names(props) %in% usets)) return(props)
+      }
+      if(!is.null(an) && tryPrefixRemoval &&
+         !any(row.names(props) %in% usets) ){
+        names(an) <- sapply(strsplit(names(an),"-",fixed=TRUE),FUN=function(x){ paste(x[-1],collapse="-") })
+        metadata(sets)$alternativeNames <- an
+        props <- .agDF(props, sapply(strsplit(row.names(props),"-",fixed=T),FUN=function(x) paste(x[-1],collapse="-") ), FALSE)
+        return(.filterMatchSets(sets, props, tryPrefixRemoval=FALSE))
+      }
     }
   }
   if(!any(row.names(props) %in% usets))
