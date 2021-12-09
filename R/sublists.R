@@ -7,7 +7,7 @@
 #'
 #' @return
 #' @export
-# @import GO.db
+#' @import AnnotationDbi GO.db
 # @importFrom AnnotationDbi mget Term
 getGOgenes <- function(go_ids, species="Mm", translate.ids=TRUE,ensembl_ids = FALSE){
   library(AnnotationDbi)
