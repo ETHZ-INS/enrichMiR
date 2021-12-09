@@ -117,8 +117,9 @@ Here is a brief description of each type of collection:"),
          ),
          deaformat=modalDialog(title="Required format of the DEA table", 
            tags$p("The app should recognized the differential expression tables
-                  generated from common RNAseq DEA package, provided that the
-                  genes are in the first column (which is normally the case.
+                  generated from common RNAseq DEA package and saved as 
+                  character-delimited files, assuming that the gene names/IDs 
+                  are in the first column (which is normally the case).
                   In case of problem, try to format your table in this way:"),
            tags$pre(
 "Gene,logFC,PValue,FDR
@@ -128,9 +129,10 @@ TAGLN2,-1.92,4.47e-17,1.08e-13
 FTL,-1.69,1.68e-15,2.05e-12
 TPM4,-1.41,1.83e-10,6.86e-08
 ..."),
-           tags$p("With most target annotations, Ensembl IDs will also be 
-                  recognized, and the scanMiR annotation supports 
-                  transcript-level DEAs with Ensembl transcript IDs.")
+           tags$p("The character delimiter needs not be commas, and should be
+           automatically recognized. With most target annotations, Ensembl IDs 
+           will also be recognized, and the scanMiR annotation supports 
+           transcript-level DEAs with Ensembl transcript IDs.")
          ),
          enrichplot=modalDialog(title="Enrichment plot", tags$p(
            "The enrichment plot shows the significance of the enrichment on the
