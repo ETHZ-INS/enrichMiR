@@ -198,3 +198,93 @@ Here is a brief description of each type of collection:"),
                      "No help currently available for this topic.")
   )
 }
+
+.testDescription <- function(){
+  tagList(
+    tags$h3("Enrichment tests"),
+    tags$p("Several target enrichment tests were benchmarked (results in the 
+    benchmark tab), and are described below. The best overall tests were 
+    selected as default for the app, and although other implemented tests are
+    made available in the app's advanced options, their usage is not 
+    recommended."),
+    tags$p("The tests differ in the inputs they use, both in terms of the
+    target annotation as well as of the type of signal in which enrichment is
+    looked for. On the signal side, tests denoted as 'binary' compare features 
+    (genes or transcripts) in a given set (e.g. your significantly downregulated
+    genes) to those in a background set (i.e. over-representation analysis),
+    whereas tests denoted as 'continuous' instead rely on a numeric input 
+    signal, such as the mangitude or significance of changes in an input 
+    differential expression analysis (by default, the tests use the sign of the
+    foldchange multiplied by the -log10(FDR), which is well correlated to logFC
+    for genes with low intra-group variability, and more robust than the latter).
+    On the annotation side, tests can alsoeither use set membership (i.e. 
+    whether or not a given feature is a predicted miRNA target) or numeric 
+    values, such as the number of binding sites harbored by a given feature, 
+    or a repression score (i.e. the extent to which a given feature is 
+    predicted to be repressed by a miRNA)."),
+    tags$ul(tags$li(tags$h4("Default tests"),
+      tags$ul(tags$li(tags$b("siteoverlap")," (binary signal, set membership):",
+                      tags$br(), "The siteoverlap test is based on Fisher's 
+                      exact test, but using the number of sites on predicted 
+                      targets and in the background instead of counting each
+                      feature as one. While in theory this violates the 
+                      assumption of independence of the counts (since all the
+                      binding sites of a given transcript are either in or out
+                      of the set), leading to slightly anti-conservative 
+                      p-values, in practice this test is excellent at 
+                      identifying the most enriched miRNA."),
+              tags$li(tags$b("areamir")," (continuous signal, score or set 
+                      membership):", tags$br(), 
+                      "The areamir test is based on the analytic Rank-based 
+                      Enrichment Analysis (aREA) test implemented in the 
+                      'msviper' function of the ", tags$a("viper", target="_blank",
+                      href="https://www.bioconductor.org/packages/devel/bioc/html/viper.html"),
+                      " package. The test is akin to an analytical version of 
+                      GSEA (see below), but it can additionally use degrees or 
+                      likelihood of set membership. If repression scores are 
+                      available in the annotation, areamir will therefore use a
+                      (trimmed) version of it as set membership likelihood.")
+      )),
+      tags$li(tags$h5("Other tests implemented and evaluated"), tags$ul(
+        tags$li(tags$b("overlap")," (binary signal, set membership):",
+          tags$br(), "This test is based on Fisher's exact test, using the 
+          number of features (i.e. transcripts/genes) among predicted targets 
+          vs in the background (and therefore ignoring any site-based 
+          information."),
+        tags$li(tags$b("woverlap")," (binary signal, set membership):",
+                tags$br(), "This test is like the above 'overlap' test, but
+          corrects for UTR length using the Wallenius method, as implemented in
+          the ", tags$a("goseq", target="_blank",
+          href="https://www.bioconductor.org/packages/devel/bioc/html/goseq.html"),
+          "package."),
+        tags$li(tags$b("Mann-Whitney (KS)")," (continuous signal, set membership):",
+                tags$br(), "This is the Mann-Whitney (also known as Wilcoxon)
+                non-parametric test comparing targets and non-targets."),
+        tags$li(tags$b("Kolmogorov-Smirnov (KS)")," (continuous signal, set membership):",
+                tags$br(), "This is the Kolmogorov-Smirnov test comparing the 
+                signal distribution of targets vs non-targets."),
+        tags$li(tags$b("modscore")," (continuous signal, repression score):",
+                tags$br(), "This is a linear regression testing the relationship
+                between the input signal and the corresponding repression score
+                predicted for a given miRNA."),
+        tags$li(tags$b("modsites")," (continuous signal, number of sites):",
+                tags$br(), "This is a linear regression testing the relationship
+                between the input signal and the number of predicted binding 
+                sites for a given miRNA, correcting for UTR length."),
+        tags$li(tags$b("GSEA"), " (continuous signal, set membership)",
+          tags$br(), "This test uses the multi-level fast GeneSet Enrichment 
+          Analysis (GSEA) implemented in the ",tags$a("fgsea", target="_blank",
+          href="https://www.bioconductor.org/packages/devel/bioc/html/fgsea.html"),
+          "package, which is highly successful for Gene Ontology enrichment 
+          analysis. In the context of our benchmark, however, it performed very 
+          poorly."),
+        tags$li(tags$b("regmir"), tags$br(), 
+          "The regmir test uses lasso-regularized linear regression, which is 
+          characterized by a high specificity and low sensitivity. The test will
+          used binary or continuous inputs, as well as binary set membership or
+          predicted repression score, depending on the availability of the input.
+          Note that this test is very slow to run.")
+        ))
+      )
+  )
+}

@@ -217,11 +217,11 @@ Note that the background should also include the genes of interest!"),
                                      label="Select additional tests to run",
                                      choices=list(
                                        "overlap" = "overlap",
-                                       "weight.overlap" ="woverlap",
-                                       "plMod" = "plMod",
+                                       "weighted overlap" ="woverlap",
+                                       "modsites" = "modsites",
                                        "modscore" = "modscore",
-                                       "ks" = "ks",
-                                       "mw" = "mw",
+                                       "KS" = "ks",
+                                       "MW" = "mw",
                                        "regmir" = "regmir"),
                                      selected=NULL, inline=FALSE, width=NULL)
               )
@@ -307,9 +307,7 @@ Note that the background should also include the genes of interest!"),
         ),
         tabItem(tabName="tab_benchmark",
           tabBox(width=12,
-            tabPanel("Tests description",
-              tags$p("Forthcoming")
-            ),
+            tabPanel("Tests description", .testDescription()),
             tabPanel("Tests benchmark",
               tags$h3("Benchmark of the different target enrichment tests"),
               tags$p("The different tests were benchmarked on four datasets each
