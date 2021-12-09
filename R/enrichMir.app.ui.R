@@ -208,6 +208,8 @@ Note that the background should also include the genes of interest!"),
                           min=1, max=20, value=5, step=1),
               br(),
               box(width="100%", title = "Advanced Options", collapsible=TRUE, collapsed=TRUE, 
+                  actionButton(inputId="help_testsadvanced", style="float:right;",
+                               icon=icon("question-circle"), label=""),
                   tags$h5(em(
                     "We recommend to only change test settings after reading the",
                     " enrichMir documentation and the benchmark.")),
@@ -222,7 +224,9 @@ Note that the background should also include the genes of interest!"),
                                        "modscore" = "modscore",
                                        "KS" = "ks",
                                        "MW" = "mw",
-                                       "regmir" = "regmir"),
+                                       "regmir (continuous)" = "regmir.cc",
+                                       "regmir (binary)" = "regmir.bb"
+                                       ),
                                      selected=NULL, inline=FALSE, width=NULL)
               )
             ),

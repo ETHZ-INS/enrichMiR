@@ -73,6 +73,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
  function(input, output, session){
 
    bDataLoaded <- lapply(bData, as.list)
+   updateSelectInput(session, "species", choices=names(bData))
    
    ##############################
    ## Introduction & help
@@ -467,17 +468,17 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     
     testsAvailable <- reactive({
       if(is.null(ER())) return(c())
-      nn <- names(ER())
+      nn <- setdiff(names(ER()), "regmir.bb3")
       choices <- list()
       if(any(grepl("\\.up$|\\.down$",nn)))
         choices <- list("Downregulated genes"=grep("\\.down$",nn,value=TRUE),
                         "Upregulated genes"=grep("\\.up$",nn,value=TRUE))
-      if(length(tt <- setdiff(grep("overlap|regmir", nn, value=TRUE), 
+      if(length(tt <- setdiff(grep("overlap|regmir\\.bb", nn, value=TRUE), 
                               unlist(choices)))>0)
         choices$Binary <- tt
       if(length(tt <- setdiff(nn, unlist(choices)))>0)
         choices$Continuous <- tt
-      choices <- lapply(choices, FUN=function(x){ names(x) <- x; x})
+      choices <- lapply(choices, FUN=function(x) setNames(x,x))
       if(length(nn)>1) choices[["All tests"]] <- c("merged"="")
       choices
     })
@@ -632,13 +633,3 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     
   }
 }
-
-
-
-
-
-  
-  
-  
-
-

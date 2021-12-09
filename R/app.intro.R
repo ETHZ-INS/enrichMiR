@@ -194,6 +194,8 @@ Here is a brief description of each type of collection:"),
              should therefore be interpreted with care."
            )
          ),
+        testsadvanced=modalDialog(title="Enrichment tests (advanced)",
+                                  .testDescription()),
          modalDialog(title=topic,
                      "No help currently available for this topic.")
   )
@@ -223,27 +225,28 @@ Here is a brief description of each type of collection:"),
     or a repression score (i.e. the extent to which a given feature is 
     predicted to be repressed by a miRNA)."),
     tags$ul(tags$li(tags$h4("Default tests"),
-      tags$ul(tags$li(tags$b("siteoverlap")," (binary signal, set membership):",
-                      tags$br(), "The siteoverlap test is based on Fisher's 
-                      exact test, but using the number of sites on predicted 
-                      targets and in the background instead of counting each
-                      feature as one. While in theory this violates the 
-                      assumption of independence of the counts (since all the
-                      binding sites of a given transcript are either in or out
-                      of the set), leading to slightly anti-conservative 
-                      p-values, in practice this test is excellent at 
-                      identifying the most enriched miRNA."),
-              tags$li(tags$b("areamir")," (continuous signal, score or set 
-                      membership):", tags$br(), 
-                      "The areamir test is based on the analytic Rank-based 
-                      Enrichment Analysis (aREA) test implemented in the 
-                      'msviper' function of the ", tags$a("viper", target="_blank",
-                      href="https://www.bioconductor.org/packages/devel/bioc/html/viper.html"),
-                      " package. The test is akin to an analytical version of 
-                      GSEA (see below), but it can additionally use degrees or 
-                      likelihood of set membership. If repression scores are 
-                      available in the annotation, areamir will therefore use a
-                      (trimmed) version of it as set membership likelihood.")
+      tags$ul(
+        tags$li(tags$b("siteoverlap")," (binary signal, set membership):",
+          tags$br(), "The siteoverlap test is based on Fisher's 
+          exact test, but using the number of sites on predicted 
+          targets and in the background instead of counting each
+          feature as one. While in theory this violates the 
+          assumption of independence of the counts (since all the
+          binding sites of a given transcript are either in or out
+          of the set), leading to slightly anti-conservative 
+          p-values, in practice this test is excellent at 
+          identifying the most enriched miRNA."),
+        tags$li(tags$b("areamir")," (continuous signal, score or set 
+          membership):", tags$br(), 
+          "The areamir test is based on the analytic Rank-based 
+          Enrichment Analysis (aREA) test implemented in the 
+          'msviper' function of the ", tags$a("viper", target="_blank",
+          href="https://www.bioconductor.org/packages/devel/bioc/html/viper.html"),
+          " package. The test is akin to an analytical version of 
+          GSEA (see below), but it can additionally use degrees or 
+          likelihood of set membership. If repression scores are 
+          available in the annotation, areamir will therefore use a
+              (trimmed) version of it as set membership likelihood.")
       )),
       tags$li(tags$h5("Other tests implemented and evaluated"), tags$ul(
         tags$li(tags$b("overlap")," (binary signal, set membership):",
@@ -279,11 +282,11 @@ Here is a brief description of each type of collection:"),
           analysis. In the context of our benchmark, however, it performed very 
           poorly."),
         tags$li(tags$b("regmir"), tags$br(), 
-          "The regmir test uses lasso-regularized linear regression, which is 
-          characterized by a high specificity and low sensitivity. The test will
-          used binary or continuous inputs, as well as binary set membership or
-          predicted repression score, depending on the availability of the input.
-          Note that this test is very slow to run.")
+          "The regmir test uses constrained lasso-regularized linear regression,
+          which has a high specificity but low sensitivity. The test will use 
+          binary or continuous inputs, as well as binary set membership or
+          predicted repression score, depending on the availability of the 
+          input.")
         ))
       )
   )
