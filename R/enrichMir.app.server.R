@@ -604,7 +604,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }else{
         show_add <- input$columns2show
           if(any(show_add %in% "genes")){
-            show_add <- c(show_add,"genes.down","genes.up")
+            show_add <- c(show_add,"genes.down","genes.up","genes.features")
             show_add <- show_add[!show_add %in% "genes"]
             show <- c(show_standard,show_add)
           }else{
