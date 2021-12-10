@@ -30,7 +30,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         "Targetscan/20211124_Targetscan8_Human_AllPred_human.rds",
       "miRTarBase"=
         "miRTarBase/miRTarBase8.human.rds",
-      "scanMiR"="scanMiR/scanMiR_GRCh38_merged.rds",
+      "scanMiR (GRCh38)"="scanMiR/scanMiR_GRCh38_merged.rds",
       "oRNAment"=
         "oRNAment/human_coding_MSS05_gene_3UTR_pred.rds"),
     Mouse=c(
@@ -40,7 +40,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         "Targetscan/20211124_Targetscan8_Mouse_AllPred_mouse.rds",
       "miRTarBase"=
         "miRTarBase/miRTarBase8.mouse.rds",
-      "scanMiR"="scanMiR/scanMiR_GRCm38_merged.rds",
+      "scanMiR (GRCm38)"="scanMiR/scanMiR_GRCm38_merged.rds",
       "oRNAment"="oRNAment/mouse_coding_MSS05_gene_3UTR_pred.rds"),
     Rat=c(
       "Targetscan conserved miRNA BS (from mouse)"=
@@ -49,7 +49,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         "Targetscan/20211124_Targetscan8_Mouse_AllPred_rat.rds",
       "miRTarBase"=
         "miRTarBase/miRTarBase8.rat.rds",
-      "scanMiR"="scanMiR/scanMiR_rnor6_merged.rds")
+      "scanMiR (Rnor6)"="scanMiR/scanMiR_rnor6_merged.rds")
     ), function(x) setNames(paste0(baseDataPath,x), names(x)))
   
   dtwrapper <- function(d, pageLength=25, hide_cols){
