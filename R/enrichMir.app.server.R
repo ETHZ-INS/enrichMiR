@@ -65,7 +65,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   trimInputList <- function(x){
     x <- unlist(strsplit(gsub(",|;|\\t|\\r|\\s","\n",x),"\n"))
     x <- unique(x[x!=""])
-    x <- x[x[!is.na(x)]]
+    x <- x[!is.na(x)]
     if(length(x)==0) return(NULL)
     x
   }
@@ -111,7 +111,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
      if(input$input_type!="dea" && length(Gene_Subset())>1 && 
         length(Back())>1)
        return(menuItem("Input genes/DEA", tabName = "tab_input", 
-                       badgeLabel=paste0("set(",length(Gene_Subset()),")"),
+                       badgeLabel=paste0("set(",length(Gene_Subset()),
+                                         "/",length(Back()),")"),
                        badgeColor="light-blue", icon=icon("file-alt"),
                        expandedName="menu_input"))
      menuItem("Input genes/DEA", tabName = "tab_input", badgeLabel="none", 
@@ -147,6 +148,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
          showElement("exprMirs_box")
          showElement("columns2show")
        }
+       hideElement("resultsbox")
      }
    })
    
@@ -172,6 +174,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         ))
         NULL
       })
+      hideElement("resultsbox")
       if(!is.null(updf) && nrow(updf)>1) DEA(updf)
     })
     observeEvent(input$example_dea, {
@@ -180,6 +183,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         row.names(exampleDEA) <-
           tools::toTitleCase(tolower(row.names(exampleDEA)))
       }
+      hideElement("resultsbox")
       DEA(exampleDEA)
     })
     
@@ -207,12 +211,13 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     
     ## Include , and "" gsub
     Back <- reactive({ #initalize the background
+      hideElement("resultsbox")
       if(input$input_type == "dea"){
         if(is.null(DEA())) return(NULL)
-        row.names(DEA())
+        return(row.names(DEA()))
       }else{
         b <- trimInputList(input$background_genes)
-        b <- gsub("\\..*","",b)
+        return(gsub("\\..*","",b))
       }
     })
     
@@ -511,7 +516,6 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         sig <- DEA()
         bg <- NULL
         standard_tests <- c("siteoverlap","areamir")
-        #standard_tests <- c("areamir")
       }else{
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
         sig <- Gene_Subset()
