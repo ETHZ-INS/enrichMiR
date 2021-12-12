@@ -179,6 +179,7 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
     a[names(new.rn)] <- as.character(new.rn)
     new.rn <- a[row.names(df)]
   }
+  if(is.null(names(new.rn))) return(df)
   tt <- split(names(new.rn),new.rn)
   tt <- data.frame(row.names=names(tt),
                    members=sapply(tt, FUN=function(x) paste(sort(x),collapse=";")))
@@ -293,7 +294,8 @@ getHumanMirExp <- function(x=NULL){
   x <- assay(microRNAome)[,microRNAome$cell_tissue==x,drop=FALSE]
   row.names(x) <- gsub("/.+","",(row.names(x)))
   x <- rowSums(x)
-  sort(log1p(10^6 * x/sum(x)),decreasing=TRUE)
+  x <- sort(log1p(10^6 * x/sum(x)),decreasing=TRUE)
+  x[!duplicated(names(x))]
 }
 
 #' getMouseMirExp
@@ -317,7 +319,8 @@ getMouseMirExp <- function(x=NULL){
   data("miRNAexpMouse", package="enrichMiR")
   if(is.null(x)) return(sort(colnames(miRNAexpMouse)))
   if(!(x %in% colnames(miRNAexpMouse))) return(NULL)
-  sort(miRNAexpMouse[,x], decreasing=TRUE)
+  x <- sort(miRNAexpMouse[,x], decreasing=TRUE)
+  x[!duplicated(names(x))]
 }
 
 

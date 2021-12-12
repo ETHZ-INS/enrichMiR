@@ -536,8 +536,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(!is.null(logCallsFile))
         write(paste(Sys.Date(),session$token,"enrich"), logCallsFile,
                    append=TRUE)
-      showElement("resultsbox")
-      withProgress(message=msg, detail=detail, value=1, max=3, {
+      res <- withProgress(message=msg, detail=detail, value=1, max=3, {
         tryCatch(testEnrichment(sig, EN_Object(), background=bg, 
                                 sets.properties=mirexp, tests=tests, 
                                 minSize=input$minsize, th.FDR=input$dea_sig_th),
@@ -550,6 +549,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                   ))
                 })
       })
+      showElement("resultsbox")
+      res
     })
     
     #adapt plot_size

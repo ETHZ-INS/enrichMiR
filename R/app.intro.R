@@ -79,7 +79,8 @@
 
 .getHelpModal <- function(topic){
   switch(topic,
-         collections=modalDialog(title="Binding sites collections", tags$p(
+         collections=modalDialog(title="Binding sites collections", easyClose=TRUE,
+                                 tags$p(
 "Each collection represents a set of binding site (validated or predicted) for
 (a set of) miRNAs or families. Not all collections are available in all species.
 Here is a brief description of each type of collection:"),
@@ -115,7 +116,7 @@ Here is a brief description of each type of collection:"),
                usage for RBPs is experimental.")
             )
          ),
-         deaformat=modalDialog(title="Required format of the DEA table", 
+         deaformat=modalDialog(title="Required format of the DEA table", easyClose=TRUE,
            tags$p("The app should recognized the differential expression tables
                   generated from common RNAseq DEA package and saved as 
                   character-delimited files, assuming that the gene names/IDs 
@@ -134,7 +135,7 @@ TPM4,-1.41,1.83e-10,6.86e-08
            will also be recognized, and the scanMiR annotation supports 
            transcript-level DEAs with Ensembl transcript IDs.")
          ),
-         enrichplot=modalDialog(title="Enrichment plot", tags$p(
+         enrichplot=modalDialog(title="Enrichment plot", easyClose=TRUE, tags$p(
            "The enrichment plot shows the significance of the enrichment on the
            y-axis, and the magnitude of the enrichment on the x-axis. For basic
            overlap/over-representation tests, the enrichment is the fold 
@@ -148,7 +149,8 @@ TPM4,-1.41,1.83e-10,6.86e-08
            tags$p("Hovering on the points/families will provide extra 
                   information about the family members and the test statistics.")
          ),
-         cdplot=modalDialog(title="Cumulative distribution (CD) plots", tags$p(
+         cdplot=modalDialog(title="Cumulative distribution (CD) plots", easyClose=TRUE,
+                            tags$p(
            "Cumulative distribution plots are used to visualize differences in
            log-foldchange distributions between groups of genes/transcripts.
            Briefly, the genes in each sets are ranked according to their 
@@ -188,10 +190,11 @@ TPM4,-1.41,1.83e-10,6.86e-08
             the number of sets in the plot options. If you are using sites or 
             site types, this means that the miRNA of interest does not have 
             enough sites of this type in your dataset. This can especially 
-            happen when using TargetScan ", tags$em("conserved"), "sites, in 
-            which case you can try using all predicted sites instead.")
+            happen when using TargetScan ", tags$em("conserved"), "sites (or
+            miRTarBase sites), in which case you can try using all predicted 
+            sites instead.")
          ),
-         tests=modalDialog(title="Enrichment tests", tags$p(
+         tests=modalDialog(title="Enrichment tests", easyClose=TRUE, tags$p(
             "enrichMiR implements different statistical tests for target 
             enrichment. Some tests depend on continous inputs (and hence require
             a DEA analysis to be provided), while others are binary, based on 
@@ -213,7 +216,7 @@ TPM4,-1.41,1.83e-10,6.86e-08
              should therefore be interpreted with care."
            )
          ),
-        testsadvanced=modalDialog(title="Enrichment tests (advanced)",
+        testsadvanced=modalDialog(title="Enrichment tests (advanced)", easyClose=TRUE,
                                   .testDescription()),
          modalDialog(title=topic,
                      "No help currently available for this topic.")

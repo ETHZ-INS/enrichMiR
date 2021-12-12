@@ -67,7 +67,7 @@ ENSG00000106462, ENSG00000100811, ...")
       )),
       tabItems(
         tabItem(tabName = "tab_intro",
-          box(title="enrichMiR: miRNA (and RBP) target enrichment analysis", 
+          box(title="enrichMiR: miRNA target enrichment analysis", 
               width=12, tags$p(
                 "This app will allow you to identify miRNAs whose targets are ",
                 "enriched among genesets of interest or a differential ",
@@ -190,7 +190,8 @@ Note that the background should also include the genes of interest!"),
                 the background), as well as logFC-values and FDR-values")),
                 column(2, actionButton(inputId="help_deaformat",
                           icon=icon("question-circle"), label="View format")),
-                column(3, htmlOutput("dea_res"), tags$br(), tags$hr(), tags$br(),
+                column(3, withSpinner(htmlOutput("dea_res")), tags$br(), 
+                       tags$hr(), tags$br(),
                      sliderInput(inputId = "dea_sig_th", 
                                  label="Select significance threshold",
                                  min=0.01, max=0.5, value=0.05, step=0.01))
