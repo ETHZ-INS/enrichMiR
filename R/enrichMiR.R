@@ -245,7 +245,7 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
       res$Partner_name <- object@input$sets.properties$Partner[res$Partner,"members"]
     }
   }else{
-    if(any(grep("-miR-|-mir-|-let-",head(row.names(object@input$sets.properties)))) && 
+    if(any(grepl("-miR-|-mir-|-let-",head(row.names(object@input$sets.properties)))) && 
        any(test %in% c("siteoverlap.down","overlap.down","siteoverlap2.down","siteoverlap.up","overlap.up","siteoverlap2.up",
                        "siteoverlap.features","overlap.features","siteoverlap2.features")) && 
        !is.null(object@input$families)){
@@ -253,7 +253,10 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
       sets.properties <- object@input$sets.properties
       props1 <- data.frame(row.names = names(fams),seed = as.character(fams))
       sets.properties <- merge(sets.properties,props1, by = 0, all.x = TRUE)
-      sets.properties <- setNames(aggregate(sets.properties[,"logCPM"],by = list(sets.properties$seed), FUN = sum),c("seed","logCPM"))
+      cols <- setdiff(colnames(sets.properties), c("Row.names", "set_size", "seed"))
+      sets.properties <- setNames(aggregate(sets.properties[,cols], 
+                                            by=list(sets.properties$seed), FUN=sum),
+                                  c("seed",cols))
       props2 <- split(names(fams),fams)
       props2 <- data.frame(row.names=names(props2),
                            members=sapply(props2, FUN=function(x) paste(sort(x),collapse=";")))
@@ -420,7 +423,7 @@ availableTests <- function(x=NULL, sets=NULL){
   }
   usets <- unique(sets$set)
   if(all(row.names(props) %in% usets)) return(props)
-  if(!any(grep("-miR-|-mir-|-let-",head(usets)))){
+  if(!any(grepl("-miR-|-mir-|-let-",head(usets)))){
     if(isS4(sets)){
       if(is.null(metadata(sets)$alternativeNames) && !is.null(metadata(sets)$families))
         metadata(sets)$alternativeNames <- metadata(sets)$families
