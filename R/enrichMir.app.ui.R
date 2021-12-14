@@ -318,17 +318,23 @@ Note that the background should also include the genes of interest!"),
             tabPanel("Tests description", .testDescription()),
             tabPanel("Tests benchmark",
               tags$h3("Benchmark of the different target enrichment tests"),
-              tags$p("The different tests were benchmarked on four datasets each
-                     involving the transcriptomic characterization of the 
-                     knockdown or over-expression of different miRNAs. The 
-                     benchmark was performed using TargetScan-predicted sites."),
+              tags$p("The different tests were benchmarked on different datasets
+                     each involving the transcriptomic characterization of the 
+                     knockdown or over-expression of different miRNAs. For each
+                     experiment, the signal was further scrambled to create 
+                     further, more difficult 'pseudo-experiments', which are 
+                     averaged in the results below. The benchmark was performed 
+                     using TargetScan-predicted sites, and was then used to 
+                     guide the choice of default tests in the enrichMiR app."),
               tags$img(src="benchmark1.png"),
-              tags$p("Panel A shows the log-rank of the true miRNA according to 
-                     the different tests (lower=better, i.e. a log-rank of 0 
+              tags$p("Panel A shows the rank of the true miRNA according to 
+                     the different tests (lower=better, i.e. a rank of 1 
                      indicates that the true miRNA was correctly identified as
-                     the top enriched. Panel B shows the effective sensitivity 
+                     the top enriched). Panel B shows the effective sensitivity 
                      and False Discovery Rate (FDR) of the different tests at a 
-                     nominal q-value threshold of 0.05."),
+                     nominal q-value threshold of 0.05. One can observe that
+                     while most tests manage to rank the true hypothesis as 
+                     first, most fail to accurately control error."),
               tags$p("Gene-Set Enrichment Analysis (GSEA) and
                      Kolmogorov-Smirnov tests give very poor performances. The
                      site-overlap test provided an excellent ranking of the 

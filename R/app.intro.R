@@ -308,7 +308,7 @@ TPM4,-1.41,1.83e-10,6.86e-08
           which has a high specificity but low sensitivity. The test will use 
           binary or continuous inputs, as well as binary set membership or
           predicted repression score, depending on the availability of the 
-          input.")
+          input. The binary version of the test has shown the best performances.")
         ))
       )
   )
