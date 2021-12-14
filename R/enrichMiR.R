@@ -51,6 +51,7 @@
 #'
 #' @import S4Vectors
 #' @importFrom BiocParallel bplapply SerialParam
+#' @importFrom IRanges FactorList
 #' @export
 testEnrichment <- function( x, sets, background=NULL, tests=NULL, 
                             sets.properties=NULL, th.abs.logFC=0, th.FDR=0.05,
