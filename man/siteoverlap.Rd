@@ -4,7 +4,7 @@
 \alias{siteoverlap}
 \title{siteoverlap}
 \usage{
-siteoverlap(signal, sets)
+siteoverlap(signal, sets, alternative = c("greater", "less", "two.sided"))
 }
 \arguments{
 \item{signal}{A named logical vector indicating which features are 
@@ -22,6 +22,5 @@ a data.frame.
 \description{
 Applies Fisher's test to the number of binding sites among a set of features 
 (vs all other binding sites in that set of features).
-This is an old apply-based implementation. For a much faster vectorial 
-implementation, see `siteoverlap2`
+Of note, this application violates the assumptions of Fisher's exact test.
 }

@@ -61,7 +61,7 @@ ENSG00000106462, ENSG00000100811, ...")
       useShinyjs(), introjsUI(), use_waiter(),
       waiter_show_on_load(html=tagList(
         #tags$h1("enrichMiR"),
-        tags$img(src="http://130.60.24.189:81/common/enrichMiR/enrichMiR_sticker.png"),
+        tags$img(src="enrichMiR_sticker.png"),
         tags$h3("Please wait while the application is initialized..."),
         spin_1()
       )),
@@ -322,7 +322,7 @@ Note that the background should also include the genes of interest!"),
                      involving the transcriptomic characterization of the 
                      knockdown or over-expression of different miRNAs. The 
                      benchmark was performed using TargetScan-predicted sites."),
-              tags$img(src="http://130.60.24.189:81/common/enrichMiR/benchmark1.png"),
+              tags$img(src="benchmark1.png"),
               tags$p("Panel A shows the log-rank of the true miRNA according to 
                      the different tests (lower=better, i.e. a log-rank of 0 
                      indicates that the true miRNA was correctly identified as
