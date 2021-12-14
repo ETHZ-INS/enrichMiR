@@ -96,7 +96,10 @@ ENSG00000106462, ENSG00000100811, ...")
                     label="Select a binding sites collection",
                     selected="Targetscan conserved miRNA BS")
                   )),
-            column(5, withSpinner(textOutput("collection_details")))),
+            column(5, tags$p("Note that some collections (e.g. scanMiR) might 
+                             take a moment to load."),
+                   withSpinner(textOutput("collection_details")))
+          ),
           tags$div(id="exprMirs_box", box(title="Specify expressed miRNAs", 
               collapsible=TRUE, collapsed=TRUE, width=12,
             tags$p("miRNA expression can be used to restrict and annotate the ",
@@ -136,8 +139,7 @@ ENSG00000106462, ENSG00000100811, ...")
               )
             )), br(),
             footer="Note: If no miRNAs are uploaded/selected, enrichment 
-                    searches will be performed with all microRNAs of the given species"))
-        # eventually enable this as upload or selection from pre-loaded tissues?
+                    searches will be performed with all miRNAs of the given species"))
         ),
         
         
