@@ -268,7 +268,8 @@ Note that the background should also include the genes of interest!"),
                                    label="Display on y-axis:",
                                    choices=c("pvalue","FDR"), selected="FDR")),
             column(6, selectInput("bubble_theme", "Theme", 
-                                  choices=ggplot_themes))
+                                  choices=ggplot_themes)),
+            column(6, downloadLink('bubble_plot_dl', label="Download plot"))
                 )),
               tabPanel(title="Results table", 
                 fluidRow(
@@ -310,7 +311,7 @@ Note that the background should also include the genes of interest!"),
                                        min=2, max=6, value=3, step=1)),
                   column(6, selectInput("CDplot_theme", "Theme", 
                                         choices=ggplot_themes)),
-                  column(6, actionButton("cd_plot_dl", "Download"))                  
+                  column(6, downloadLink('cd_plot_dl', label="Download plot"))
                 )
               )
           )

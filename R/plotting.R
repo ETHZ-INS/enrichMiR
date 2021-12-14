@@ -253,6 +253,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
 #'
 #' @export
 #' @import ggplot2
+#' @importFrom ggrepel geom_text_repel
 enrichPlot <- function( res,
                         enr.field=c("enrichment","normalizedEnrichment","beta",
                                     "coefficient"),

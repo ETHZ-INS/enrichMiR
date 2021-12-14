@@ -461,12 +461,14 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     
     output$cd_plot_dl <- downloadHandler(
       filename={
-        if(is.null(CDplot_obj())) return(NULL)
+        if(is.null(CDplot_obj()) || isFALSE(CDplot_obj())) return(NULL)
         paste0("CDplot_", input$mir_fam, ".pdf")
       },
-      content = function(con) {
-        if(is.null(CDplot_obj())) return(NULL)
-        ggsave(con, plot=CDplot_obj(), device="pdf")
+      content = function(con){
+        if(is.null(CDplot_obj()) || isFALSE(CDplot_obj())) return(NULL)
+        pf <- paste0(tempfile(),".pdf")
+        ggsave(pf, CDplot_obj(), device="pdf", width=7, heigh=5)
+        file.copy(pf, con)
       }
     )
     
@@ -556,11 +558,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     #adapt plot_size
     jqui_resizable(ui="#bubble_plot")
     
-    output$bubble_plot <- renderPlotly({
+    erRes <- reactive({
       if(is.null(ER())) return(NULL)
-      if(isTRUE(getOption("shiny.testmode"))) print("bubble_plot")
-      test <- input$view_test
-      if(is.null(test) || test==""){
+      if(is.null(test <- input$view_test) || test==""){
         er <- getResults(ER(), getFeatures=FALSE, flatten=TRUE)
         er$FDR <- er$FDR.geomean
         er$enrichment <- rowMeans(er[,grep("nrichment|beta|coefficient",
@@ -568,6 +568,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }else{
         er <- getResults(ER(), test=test, getFeatures=FALSE, flatten=TRUE)
       }
+      er      
+    })
+    
+    output$bubble_plot <- renderPlotly({
+      if(is.null(er <- erRes())) return(NULL)
+      if(isTRUE(getOption("shiny.testmode"))) print("bubble_plot")
       col.field <- "expression"
       if(is.null(er$expression)) col.field <- NULL
       er$set <- row.names(er)
@@ -583,6 +589,30 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                                 "pvalue","FDR"), colnames(er))
       ggplotly(p, source="enrichplot", tooltip=forTooltip)
     })
+    
+    output$bubble_plot_dl <- downloadHandler(
+      filename={
+        if(is.null(erRes())) return(NULL)
+        paste0("enrichPlot_", input$view_test, ".pdf")
+      },
+      content = function(con){
+        if(is.null(er <- erRes())) return(NULL)
+        col.field <- "expression"
+        if(is.null(er$expression)) col.field <- NULL
+        er$set <- row.names(er)
+        
+        p <- enrichPlot(er, repel=TRUE, label.sig.thres=input$label.sig.thres,
+                        sig.field=input$sig.field, col.field=col.field, 
+                        label.enr.thres=input$label.enr.thres, 
+                        maxLabels=input$label_n )
+        if(!is.null(input$bubble_theme))
+          p <- tryCatch(p + getFromNamespace(input$bubble_theme, "ggplot2")(), 
+                        error=function(e){ warning(e); p })
+        pf <- paste0(tempfile(),".pdf")
+        ggsave(pf, p, device="pdf", width=8, heigh=5)
+        file.copy(pf, con)
+      }
+    )
     
     output$hoverinfo <- renderUI({
       id <- suppressWarnings(tryCatch(
