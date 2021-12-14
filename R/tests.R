@@ -42,7 +42,7 @@ overlap <- function(signal, sets, alternative=c("greater","less","two.sided")){
   res[order(res$FDR,res$pvalue),]
 }
 
-#' siteoverlap
+#' siteoverlap.old
 #'
 #' Applies Fisher's test to the number of binding sites among a set of features 
 #' (vs all other binding sites in that set of features).
@@ -59,7 +59,7 @@ overlap <- function(signal, sets, alternative=c("greater","less","two.sided")){
 #' @return a data.frame.
 #'
 #' @export
-siteoverlap <- function(signal, sets){
+siteoverlap.old <- function(signal, sets){
   sets <- .aggregateByFamilies(sets)
   tested <- names(signal)
   significant <- names(signal)[signal]
@@ -98,7 +98,7 @@ siteoverlap <- function(signal, sets){
 
 
 
-#' siteoverlap2
+#' siteoverlap
 #'
 #' Applies Fisher's test to the number of binding sites among a set of features 
 #' (vs all other binding sites in that set of features).
@@ -114,14 +114,14 @@ siteoverlap <- function(signal, sets){
 #' @return a data.frame.
 #'
 #' @export
-siteoverlap2 <- function(signal, sets,
+siteoverlap <- function(signal, sets,
                         alternative=c("greater","less","two.sided")){
   alternative <- match.arg(alternative)
   if(!.checkSets(sets, "sites", matrixAlternative="numeric")){
     sets <- .aggregateByFamilies(sets)
     sets <- .setsToScoreMatrix(signal, sets, column="sites", keepSparse=TRUE)
   }else{
-    sets <- sets[row.names(sets) %in% names(signal),]
+    sets <- sets[row.names(sets) %in% names(signal),,drop=FALSE]
   }
   signal <- signal[row.names(sets)]
   BS.in <- colSums(sets[which(signal),,drop=FALSE])
@@ -569,7 +569,7 @@ regmir.cc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
                      x=column, dim=c(length(levels(sets$feature)), 
                                      length(levels(sets$set))),
                      dimnames=list(levels(sets$feature),levels(sets$set)))
-  bm <- bm[names(signal),]
+  bm <- bm[names(signal),,drop=FALSE]
   if(!keepSparse) bm <- as.matrix(bm)
   bm
 }
