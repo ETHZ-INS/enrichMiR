@@ -245,6 +245,7 @@ Note that the background should also include the genes of interest!"),
                                        "modsites" = "modsites",
                                        "modscore" = "modscore",
                                        "KS" = "ks",
+                                       "KS2" = "ks2",
                                        "MW" = "mw",
                                        "regmir (continuous)" = "regmir.cc",
                                        "regmir (binary)" = "regmir.bb"
@@ -368,7 +369,7 @@ Note that the background should also include the genes of interest!"),
                      selected as the default for binary signals, and the areamir
                      test for continuous signals.")
             )
-          )      
+          ), tags$div(style="clear: both;")      
         )
       )
     )

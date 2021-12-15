@@ -300,6 +300,15 @@ TPM4,-1.41,1.83e-10,6.86e-08
         tags$li(tags$b("Kolmogorov-Smirnov (KS)")," (continuous signal, set membership):",
                 tags$br(), "This is the Kolmogorov-Smirnov test comparing the 
                 signal distribution of targets vs non-targets."),
+        tags$li(tags$b("Combined Kolmogorov-Smirnov (KS2)"),
+                " (continuous signal, set membership):",
+                tags$br(), "This is similar to the Kolmogorov-Smirnov test, but
+                compares upregulated and downregulated genes separately, 
+                expecting the direction of the distribution shift to be 
+                consistent between the two, and if so combining the p-values 
+                using Fisher's method. This excludes distributional changes that
+                are inconsistent with changes in miRNA activity, and leads to
+                improved results over the traditional KS test."),
         tags$li(tags$b("modscore")," (continuous signal, repression score):",
                 tags$br(), "This is a linear regression testing the relationship
                 between the input signal and the corresponding repression score
