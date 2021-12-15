@@ -403,25 +403,30 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       options[options %in% c("auto",CN)]
     })
     
+    mirfamChoices <- reactive({
+      if(is.null(EN_Object())) return(c())
+      names(lvl) <- lvl <- levels(as.factor(EN_Object()$set))
+      if(!is.null(m <- metadata(EN_Object())$families) &&
+         !any(grepl("-miR-",EN_Object()$set, ignore.case=TRUE))){
+        if(length(w <- which(lvl %in% as.character(m)))>0)
+          w <- names(lvl)[w]
+        if(isTRUE(getOption("shiny.testmode"))) print("mir_fam1")
+        x <- sapply(split(names(m), m)[w], FUN=function(x){
+          gsub("/(mir|let)", "/", gsub("/(hsa-|rno-|mmu-)", "/", 
+                                       paste(x, collapse="/")), ignore.case=TRUE)
+        })
+        x <- setNames(names(x),as.character(x))
+        lvl <- c(setdiff(lvl, x),x)
+        lvl <- lvl[order(names(lvl))]
+      }
+      lvl
+    })
+    
     observe({
       if(!is.null(EN_Object())){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
-        if(!is.factor(EN_Object()$set)) EN_Object()$set <- as.factor(EN_Object()$set)
-        names(lvl) <- lvl <- levels(EN_Object()$set)
-        if(!is.null(m <- metadata(EN_Object())$families) &&
-           !any(grepl("-miR-",EN_Object()$set, ignore.case=TRUE))){
-          if(length(w <- which(lvl %in% as.character(m)))>0)
-            w <- names(lvl)[w]
-            if(isTRUE(getOption("shiny.testmode"))) print("mir_fam1")
-            x <- sapply(split(names(m), m)[w], FUN=function(x){
-              gsub("/(mir|let)", "/", gsub("/(hsa-|rno-|mmu-)", "/", 
-                   paste(x, collapse="/")), ignore.case=TRUE)
-            })
-            x <- setNames(names(x),as.character(x))
-            lvl <- c(setdiff(lvl, x),x)
-            lvl <- lvl[order(names(lvl))]
-        }
-        updateSelectizeInput(session, "mir_fam", choices=lvl, server=TRUE)
+        updateSelectizeInput(session, "mir_fam", choices=mirfamChoices(),
+                             server=TRUE)
       }
     })
     
@@ -508,14 +513,6 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       updateSelectInput(session, "view_test", choices=testsAvailable())
     })
     
-# 
-#     output$test_info <- renderPrint({ # print the test
-#       if(is.null(ViewTest()) || ViewTest()=="") return("")
-#       out <- capture.output(ViewTest())
-#       cat(out)
-#     })
-#       
-    
     ER <- eventReactive(input$enrich, {
       hideElement("resultsbox")
       if(is.null(input$input_type) || is.null(EN_Object())) return(NULL)
@@ -588,7 +585,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       col.field <- "expression"
       if(is.null(er$expression)) col.field <- NULL
       er$set <- row.names(er)
-      
+      plotlyObs$resume()
       p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
                       sig.field=input$sig.field, col.field=col.field, 
                       label.enr.thres=input$label.enr.thres, 
@@ -599,6 +596,22 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       forTooltip <- intersect(c("set","label","overlap","enrichment","set_size",
                                 "pvalue","FDR"), colnames(er))
       ggplotly(p, source="enrichplot", tooltip=forTooltip)
+    })
+    
+    plotlyObs <- observeEvent(event_data("plotly_click", "enrichplot",
+                                          priority="event"), suspended=TRUE, {
+      if(input$input_type != "dea" || is.null(DEA()) || 
+         is.null(er <- erRes())) return(NULL)
+      event <- event_data("plotly_click", "enrichplot")
+      if(!is.list(event) || is.null(event$pointNumber)) return(NULL)
+      rid <- as.integer(event$pointNumber+1)
+      if(is.null(rid) || !(rid>0)) return(NULL)
+      fam <- row.names(er)[rid]
+      if(!(fam %in% mirfamChoices()))
+        fam <- strsplit(er[rid,"members"],";")[[1]][[1]]
+      updateSelectizeInput(session, "mir_fam", choices=mirfamChoices(), 
+                           server=TRUE, selected=fam)
+      updateTabItems(session, "main_tabs", "tab_cdplot")
     })
     
     output$bubble_plot_dl <- downloadHandler(

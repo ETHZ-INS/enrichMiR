@@ -37,7 +37,7 @@ ENSG00000106462, ENSG00000100811, ...")
     ),
     ## Sidebar content
     dashboardSidebar(width = "300px",
-       sidebarMenu(
+       sidebarMenu(id="main_tabs",
          menuItem("Introduction", tabName = "tab_intro", icon=icon("info")),
          tags$hr(width="80%"),
          menuItemOutput("menu_species"),
