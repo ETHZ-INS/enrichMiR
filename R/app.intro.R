@@ -70,7 +70,9 @@
       the foldchange distributions of different types of targets and 
       non-targets. In the presence of a real miRNA effect, we expect to see a 
       gradual dose-response pattern (targets with stronger binding sites also 
-      have stronger log-foldchanges), as is the case in this example.",
+      have stronger log-foldchanges), as is the case in this example.<br/><br/>
+      Note that we could also have gotten to this CD plot by clicking on the
+      corresponding point in the enrichment plot of the previous tab!",
       "This concludes our tutorial. While there are additionnal options here 
       and there, these are the app's main functionalities."
     )
