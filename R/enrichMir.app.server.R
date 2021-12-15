@@ -89,11 +89,22 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$helpBtn, startIntro(session))
 
    observeEvent(input$help_collections, showModal(.getHelpModal("collections")))
+   observeEvent(input$help_collections2, showModal(.getHelpModal("collections")))
    observeEvent(input$help_enrichplot, showModal(.getHelpModal("enrichplot")))
    observeEvent(input$help_cdplot, showModal(.getHelpModal("cdplot")))
+   observeEvent(input$help_cdplot2, showModal(.getHelpModal("cdplot")))
    observeEvent(input$help_tests, showModal(.getHelpModal("tests")))
+   observeEvent(input$help_tests2, showModal(.getHelpModal("tests2")))
    observeEvent(input$help_testsadvanced, showModal(.getHelpModal("testsadvanced")))
    observeEvent(input$help_deaformat, showModal(.getHelpModal("deaformat")))
+   
+   runjs("
+   $('.box').on('click', '.box-header h3', function() {
+     $(this).closest('.box')
+     .find('[data-widget=collapse]')
+     .click();
+   });
+   ")
    
    ##############################
    ## Menu items

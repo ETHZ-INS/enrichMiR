@@ -194,28 +194,14 @@ TPM4,-1.41,1.83e-10,6.86e-08
             miRTarBase sites), in which case you can try using all predicted 
             sites instead.")
          ),
-         tests=modalDialog(title="Enrichment tests", easyClose=TRUE, tags$p(
-            "enrichMiR implements different statistical tests for target 
-            enrichment. Some tests depend on continous inputs (and hence require
-            a DEA analysis to be provided), while others are binary, based on 
-            the membership in a gene set. When the input is a DEA, each binary
-            tests will be performed on both significantly upregulated and 
-            downregulated genes."
-           ), tags$p(
-             "Some tests gave poor performances in the benchmark, and should 
-             therefore not be used. By default, the 'siteoverlap' and 'areamir' 
-             tests are enabled -- these are those that gave the best performance."
-           ), tags$p(
-             "For more information on the tests, please see the documentation."
-           ), tags$p(
-             "Finally, note that the tests were developed and benchmarked for
-             application with predicted miRNA targets, not RNA binding proteins
-             (RBPs), which have more degenerate binding patterns. Although we 
-             offer the possibility to perform RBP target enrichment analyses, 
-             the tests were not benchmarked for that purpose, and the results 
-             should therefore be interpreted with care."
-           )
+         tests=modalDialog(title="Enrichment tests", easyClose=TRUE, 
+              .testIntro(), tags$p(
+              "For more information on the tests, please see the documentation."
+            )
          ),
+        tests2=modalDialog(title="Enrichment tests", easyClose=TRUE, 
+                           .testIntro(), .testDescription()
+        ),
         testsadvanced=modalDialog(title="Enrichment tests (advanced)", easyClose=TRUE,
                                   .testDescription()),
          modalDialog(title=topic,
@@ -223,9 +209,35 @@ TPM4,-1.41,1.83e-10,6.86e-08
   )
 }
 
+.testIntro <- function(){
+  tagList(
+    tags$p(
+      "enrichMiR implements different statistical tests for target 
+      enrichment. Some tests depend on continous inputs (e.g. fold-changes), 
+      and hence require the results of a differential expression analysis (DEA)
+      to be provided), while others are binary, i.e. based on the membership 
+      in a gene set. When the input is a DEA, each binary tests will be 
+      performed on both significantly upregulated and downregulated genes."
+    ), tags$p(
+      "Note that the tests were developed and benchmarked for
+       application with predicted miRNA targets, not RNA binding proteins
+       (RBPs), which have more degenerate binding patterns. Although we 
+       offer the possibility to perform RBP target enrichment analyses, 
+       the tests were not benchmarked for that purpose, and the results 
+       should therefore be interpreted with care."
+    ), tags$p(
+      "Some tests gave poor performances in the benchmark, and should 
+       therefore not be used. By default, the 'siteoverlap' and 'areamir' 
+       tests are enabled -- these are those that gave the best performance.
+      In addition, the binary version of the 'regmir' test provided excellent
+      error control, albeit with a lower sensitivity."
+    ) 
+  )
+}
+
 .testDescription <- function(){
   tagList(
-    tags$h3("Enrichment tests"),
+    tags$h3("Description of the enrichment tests"),
     tags$p("Several target enrichment tests were benchmarked (results in the 
     benchmark tab), and are described below. The best overall tests were 
     selected as default for the app, and although other implemented tests are
@@ -304,11 +316,12 @@ TPM4,-1.41,1.83e-10,6.86e-08
           analysis. In the context of our benchmark, however, it performed very 
           poorly."),
         tags$li(tags$b("regmir"), tags$br(), 
-          "The regmir test uses constrained lasso-regularized linear regression,
-          which has a high specificity but low sensitivity. The test will use 
-          binary or continuous inputs, as well as binary set membership or
-          predicted repression score, depending on the availability of the 
-          input. The binary version of the test has shown the best performances.")
+          "The regmir test uses constrained lasso-regularized regression,
+          which has a high specificity but lower sensitivity. The test will use 
+          binary or continuous inputs (using then either linear or binomial 
+          regression), as well as binary set membership or predicted repression 
+          score, depending on the availability of the input. The binary version
+          of the test has shown the best performances.")
         ))
       )
   )

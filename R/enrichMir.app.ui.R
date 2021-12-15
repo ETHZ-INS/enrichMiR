@@ -27,10 +27,14 @@ ENSG00000106462, ENSG00000100811, ...")
                                              "get","replace","void")))
     
   ui <- dashboardPage(
-    dashboardHeader(title = "enrichMiR", titleWidth = "300px",
-                    tags$li(class="dropdown",
-                            actionLink("helpBtn", label="Help",
-                                       icon=icon("question")))),
+    dashboardHeader(title="enrichMiR", titleWidth="300px",
+      dropdownMenu(icon=tagList(icon("question"),tags$span(" Help")), 
+        headerText="Documentation topics:", type="notifications", badgeStatus=NULL,
+        tags$li(tags$a("Interactive tour", id="helpBtn", href="#", class="action-button shiny-bound-input")),
+        tags$li(tags$a("Target collections", id="help_collections2", href="#", class="action-button shiny-bound-input")),
+        tags$li(tags$a("Enrichment tests", id="help_tests2", href="#", class="action-button shiny-bound-input")),
+        tags$li(tags$a("CD plots", id="help_cdplot2", href="#", class="action-button shiny-bound-input")))
+    ),
     ## Sidebar content
     dashboardSidebar(width = "300px",
        sidebarMenu(
@@ -59,6 +63,7 @@ ENSG00000106462, ENSG00000100811, ...")
 # }
 # "))),
       useShinyjs(), introjsUI(), use_waiter(),
+      
       waiter_show_on_load(html=tagList(
         #tags$h1("enrichMiR"),
         tags$img(src="enrichMiR_sticker.png"),
@@ -67,17 +72,28 @@ ENSG00000106462, ENSG00000100811, ...")
       )),
       tabItems(
         tabItem(tabName = "tab_intro",
-          box(title="enrichMiR: miRNA target enrichment analysis", 
-              width=12, tags$p(
+          box(title="enrichMiR: miRNA target enrichment analysis", width=12,
+              tags$img(src="enrichMiR_sticker.png", style="float: right;"),
+              tags$p(
                 "This app will allow you to identify miRNAs whose targets are ",
                 "enriched among genesets of interest or a differential ",
                 "expression signature, and produce related visualizations.",
                 "Although the app was chiefly developed (and benchmarked) for ",
                 "miRNAs, some support is also offered to run the same analyses",
-                " using RNA-binding proteins."), tags$br(),
+                " using RNA-binding proteins."), 
+              tags$ol("The app has two main functionalities:", 
+                tags$li("performing ", tags$b("target enrichment analysis"),
+                        ", either comparing your gene set of interest to a 
+                        background set, or using the results of a differential
+                        expression analysis (DEA)."),
+                tags$li("generating foldchange cumulative distribution (CD) 
+                        plots comparing targets and non-targets (requires the
+                        results of a differential expression analysis as input).")
+              ), tags$br(),
               tags$p("To get started, take a ", 
                      actionLink("helpLink", "quick tour"),
-                     " of the app."), tags$br(),
+                     " of the app, or browse the help on the upper-right corner."), 
+              tags$br(),
               tags$p( style="text-align: right;",
                       paste("enrichMiR version",packageVersion("enrichMiR")),
                       "; ", tags$a( href="http://schrattlab.ethz.ch",
