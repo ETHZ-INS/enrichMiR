@@ -313,19 +313,18 @@ mw <- function(signal, sets){
 #'
 #' @export
 # @importFrom fgsea fgseaMultilevel
-gsea <- function(signal, sets, maxSize=300, nperm=2000, ...){
+gsea <- function(signal, sets, maxSize=3000, nperm=2000, ...){
   library(fgsea)
   sets <- lapply(split(sets$feature,sets$set), tested=names(signal), 
                  FUN=function(x,tested){ intersect(unique(x),tested) })
   res <- fgseaMultilevel(sets, signal, nPermSimple=nperm, minSize=4, 
-                         maxSize=maxSize, ...)
-  res <- res[order(res$padj,res$pval),]
+                         maxSize=maxSize)
+  res <- as.data.frame(res[order(res$padj,res$pval),])
   colnames(res)[1:5] <- c("family","pvalue","FDR","ES","normalizedEnrichment")
   colnames(res)[8] <- "features"
   row.names(res) <- res[,1]
   return(res[,-1])
 }
-
 
 .censorScore <- function(x){
   x <- 0.1-x

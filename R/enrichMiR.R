@@ -55,8 +55,8 @@
 #' @export
 testEnrichment <- function( x, sets, background=NULL, tests=NULL, 
                             sets.properties=NULL, th.abs.logFC=0, th.FDR=0.05,
-                            minSize=5, maxSize=Inf, gsea.maxSize=1000, 
-                            gsea.permutations=2000, testOnlyAnnotated=FALSE, 
+                            minSize=5, maxSize=Inf, gsea.maxSize=3000, 
+                            gsea.permutations=4000, testOnlyAnnotated=FALSE, 
                             keepAnnotation=FALSE, field=NULL, BPPARAM=NULL, 
                             familyRound=NULL, checkSynonyms=TRUE, ...){
   if(is.character(x)){
@@ -136,21 +136,24 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
 
   message("Running the following tests: ", paste( tests, collapse=", "))
   names(tests2) <- tests2 <- setdiff(tests, "gsea")
-  if(is.null(BPPARAM)){
-    o@res <- unlist( lapply(tests2, sig=signature, sets=sets, 
+  if(length(tests2)>0){
+    if(is.null(BPPARAM)){
+      o@res <- unlist( lapply(tests2, sig=signature, sets=sets, 
+                                binary.signatures=binary.signatures, 
+                                FUN=.dispatchTest),
+                       recursive=FALSE)
+    }else{
+      o@res <- unlist( bplapply(tests2, sig=signature, sets=sets, 
                               binary.signatures=binary.signatures, 
-                              FUN=.dispatchTest),
+                              BPPARAM=BPPARAM, FUN=.dispatchTest),
                      recursive=FALSE)
-  }else{
-    o@res <- unlist( bplapply(tests2, sig=signature, sets=sets, 
-                            binary.signatures=binary.signatures, 
-                            BPPARAM=BPPARAM, FUN=.dispatchTest),
-                   recursive=FALSE)
+    }
   }
-  if("gsea" %in% tests)
+  if("gsea" %in% tests){
+    if(is.null(BPPARAM)) BPPARAM <- SerialParam()
     o@res$gsea <- gsea(signature, sets, maxSize=gsea.maxSize, 
-                       nperm=gsea.permutations, 
-                       BPPARAM=ifelse(is.null(BPPARAM), SerialParam(), BPPARAM))
+                       nperm=gsea.permutations,  BPPARAM=BPPARAM)
+  }
   
   return(o)
 }

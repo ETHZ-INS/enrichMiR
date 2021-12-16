@@ -79,7 +79,11 @@ recapitalizeMiRs <- function(x){
 .dea2sig <- function( dea, field=NULL ){
   if(is.null(field)){
     dea <- .homogenizeDEA(dea)
-    x <- sign(dea$logFC)*-log10(dea$FDR)
+    if("PValue" %in% colnames(dea)){
+      x <- sign(dea$logFC)*-log10(dea$PValue)
+    }else{
+      x <- sign(dea$logFC)*-log10(dea$FDR)
+    }
   }else{
     dea <- dea[!is.na(dea[[field]]),]
     x <- dea[[field]]
