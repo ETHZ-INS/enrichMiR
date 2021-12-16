@@ -367,7 +367,12 @@ Note that the background should also include the genes of interest!"),
                      lower sensitivity (and much greater computing time)."),
               tags$p("In light of these results, the siteoverlap test was 
                      selected as the default for binary signals, and the areamir
-                     test for continuous signals.")
+                     test for continuous signals."),
+              tags$p("Note that restricting the enrichment analysis to the 
+                     miRNAs expressed in your system systematically decreases
+                     FDR. You can do so in the 'Species and miRNAs' tab, either
+                     using a custom list of miRNAs or selecting from available
+                     tissues.")
             )
           ), tags$div(style="clear: both;")      
         )

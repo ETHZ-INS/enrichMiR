@@ -83,7 +83,7 @@
   switch(topic,
          collections=modalDialog(title="Binding sites collections", easyClose=TRUE,
                                  tags$p(
-"Each collection represents a set of binding site (validated or predicted) for
+"Each collection represents a set of binding sites (validated or predicted) for
 (a set of) miRNAs or families. Not all collections are available in all species.
 Here is a brief description of each type of collection:"),
            tags$ul(
@@ -133,9 +133,9 @@ FTL,-1.69,1.68e-15,2.05e-12
 TPM4,-1.41,1.83e-10,6.86e-08
 ..."),
            tags$p("The character delimiter needs not be commas, and should be
-           automatically recognized. With most target annotations, Ensembl IDs 
-           will also be recognized, and the scanMiR annotation supports 
-           transcript-level DEAs with Ensembl transcript IDs.")
+           automatically recognized. With most target annotations, both Ensembl 
+           IDs and gene symbols will be recognized, and the scanMiR annotation 
+           additionally supports transcript-level DEAs with Ensembl transcript IDs.")
          ),
          enrichplot=modalDialog(title="Enrichment plot", easyClose=TRUE, tags$p(
            "The enrichment plot shows the significance of the enrichment on the
@@ -260,6 +260,10 @@ TPM4,-1.41,1.83e-10,6.86e-08
     values, such as the number of binding sites harbored by a given feature, 
     or a repression score (i.e. the extent to which a given feature is 
     predicted to be repressed by a miRNA)."),
+    tags$p("As is the case for over-representation analysis in general, for 
+           tests based on binary inputs the choice of a good background is 
+           critical. In many contexts, the background set of genes will be the 
+           set of genes expressed in the system of interest."),
     tags$ul(tags$li(tags$h4("Default tests"),
       tags$ul(
         tags$li(tags$b("siteoverlap")," (binary signal, set membership):",
