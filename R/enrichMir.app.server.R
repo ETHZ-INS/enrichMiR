@@ -379,14 +379,25 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    
     ##############################
     ## CD plot
+
+    flags <- reactiveValues(CDplotOn=FALSE, enrichPlotOn=FALSE)
     
     observe({
       if( input$input_type!="dea" || is.null(DEA()) ){
         hideElement("cdplot_outer")
         showElement("cdplot_na")
+        flags$CDplotOn <- FALSE
       }else{
         hideElement("cdplot_na")
         showElement("cdplot_outer")
+        flags$CDplotOn <- TRUE
+      }
+    })
+    observe({
+      if(flags$CDplotOn && flags$enrichPlotOn){
+        plotlyObs$resume()
+      }else{
+        plotlyObs$suspend()
       }
     })
 
@@ -585,7 +596,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       col.field <- "expression"
       if(is.null(er$expression)) col.field <- NULL
       er$set <- row.names(er)
-      plotlyObs$resume()
+      flags$enrichPlotOn <- TRUE
       p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
                       sig.field=input$sig.field, col.field=col.field, 
                       label.enr.thres=input$label.enr.thres, 
@@ -600,8 +611,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     
     plotlyObs <- observeEvent(event_data("plotly_click", "enrichplot",
                                           priority="event"), suspended=TRUE, {
-      if(input$input_type != "dea" || is.null(DEA()) || 
-         is.null(er <- erRes())) return(NULL)
+      if(is.null(er <- erRes()) || !flags$CDplotOn || is.null(input$mir_fam))
+        return(NULL)
       event <- event_data("plotly_click", "enrichplot")
       if(!is.list(event) || is.null(event$pointNumber)) return(NULL)
       rid <- as.integer(event$pointNumber+1)
@@ -609,9 +620,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       fam <- row.names(er)[rid]
       if(!(fam %in% mirfamChoices()))
         fam <- strsplit(er[rid,"members"],";")[[1]][[1]]
+      if(!(fam %in% mirfamChoices())) return(NULL)
+      updateTabItems(session, "main_tabs", "tab_cdplot")
       updateSelectizeInput(session, "mir_fam", choices=mirfamChoices(), 
                            server=TRUE, selected=fam)
-      updateTabItems(session, "main_tabs", "tab_cdplot")
     })
     
     output$bubble_plot_dl <- downloadHandler(
