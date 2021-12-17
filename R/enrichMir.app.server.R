@@ -88,6 +88,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$helpLink, startIntro(session))
    observeEvent(input$helpBtn, startIntro(session))
 
+   observeEvent(input$overview, showModal(.getHelpModal("overview")))
    observeEvent(input$help_collections, showModal(.getHelpModal("collections")))
    observeEvent(input$help_collections2, showModal(.getHelpModal("collections")))
    observeEvent(input$help_enrichplot, showModal(.getHelpModal("enrichplot")))

@@ -81,6 +81,13 @@
 
 .getHelpModal <- function(topic){
   switch(topic,
+         overview=modalDialog(title="enrichMiR workflow overview", easyClose=TRUE, size = "l",
+                              tags$img(src="EnrichMiR_Graph_abstract.png",height = 525, width = 750,
+                                       style="display: block; margin-left: auto; margin-right: auto;"),
+                              tags$head(tags$style("#shiny-modal img { max-width: 100%; }")),
+                              tags$p("For further information regarding the individual steps consult the 
+                                     specifi help pages or conduct the interactive tour.")
+         ),
          collections=modalDialog(title="Binding sites collections", easyClose=TRUE,
                                  tags$p(
 "Each collection represents a set of binding sites (validated or predicted) for
