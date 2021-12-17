@@ -18,7 +18,7 @@ enrichMiR.ui <- function(){
   library(shinyjqui)
 
   genes_placeholder <- paste("Enter your genes as symbols or ensembl IDs,",
-                             "separated by spaces, commas, or linebreaks. E.g.:
+                             "separated by spaces, commas, linebreaks or directly paste a spreadsheet column. E.g.:
 EZH2, YY1, SHANK3, ...\nor:
 ENSG00000106462, ENSG00000100811, ...")
   ggplot_themes <- setdiff(grep("^theme_",ls(getNamespace("ggplot2"), 
@@ -34,7 +34,7 @@ ENSG00000106462, ENSG00000100811, ...")
                        class="action-button shiny-bound-input")),
         tags$li(tags$a("Overview", id="overview", href="#", 
                        class="action-button shiny-bound-input")),
-        tags$li(tags$a("Target collections", id="help_collections2", href="#", 
+        tags$li(tags$a("Binding sites collections", id="help_collections2", href="#", 
                        class="action-button shiny-bound-input")),
         tags$li(tags$a("Enrichment tests", id="help_tests2", href="#", 
                        class="action-button shiny-bound-input")),
@@ -352,7 +352,7 @@ Note that the background should also include the genes of interest!"),
               tags$p("The different tests were benchmarked on different datasets
                      each involving the transcriptomic characterization of the 
                      knockdown or over-expression of different miRNAs. For each
-                     experiment, the signal was further scrambled to create 
+                     experiment, the signal was additionally scrambled to create 
                      further, more difficult 'pseudo-experiments', which are 
                      averaged in the results below. The benchmark was performed 
                      using TargetScan-predicted sites, and was then used to 
@@ -361,7 +361,7 @@ Note that the background should also include the genes of interest!"),
               tags$p("Panel A shows the rank of the true miRNA according to 
                      the different tests (lower=better, i.e. a rank of 1 
                      indicates that the true miRNA was correctly identified as
-                     the top enriched). Panel B shows the effective sensitivity 
+                     the top enriched one). Panel B shows the effective sensitivity 
                      and False Discovery Rate (FDR) of the different tests at a 
                      nominal q-value threshold of 0.05. One can observe that
                      while most tests manage to rank the true hypothesis as 

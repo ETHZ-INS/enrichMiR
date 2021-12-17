@@ -56,7 +56,7 @@
       You can also visualize (and download) the results as a table in the 
       'Results Table' tab.",
       "Independently of an enrichment analysis, when your input is a 
-      differential expression analysis (DEA) results you also have the 
+      differential expression analysis (DEA) result you also have the 
       possibility to create cumulative distribution (CD) plots for predicted 
       targets of any miRNA. To try this out, open the 'CD plot' tab.",
       "By default, a CD plot is created for the first miRNA in the alphabetical
@@ -68,7 +68,8 @@
       this DEA.",
       "After a moment, the cumulative distribution plot will appear, showing
       the foldchange distributions of different types of targets and 
-      non-targets. In the presence of a real miRNA effect, we expect to see a 
+      non-targets. In the presence of a real miRNA effect (that is gene expression
+       changes were primarily caused by a microRNA), we expect to see a 
       gradual dose-response pattern (targets with stronger binding sites also 
       have stronger log-foldchanges), as is the case in this example.<br/><br/>
       Note that we could also have gotten to this CD plot by clicking on the
@@ -102,11 +103,11 @@ Here is a brief description of each type of collection:"),
                sites, or only sites conserved across vertebrates. In both cases,
                only one UTR per gene (typically the longest) is considered."),
              tags$li(tags$b("ScanMiR: "),
-               "miRNA binding site predictions using ",
+               "miRNA binding site predictions using the ",
                tags$a(href="https://www.bioconductor.org/packages/devel/bioc/html/scanMiR.html",
                       "scanMiR", target="_blank"),
-               "a transcript-level affinity prediction method. This target 
-               annotation is compatible with both gene and transcript IDs."),
+               "algorithm. ScanMiR employs a transcript-level affinity prediction method and is 
+               compatible with both gene and transcript IDs."),
              tags$li(tags$b("miRTarBase: "),
                      "Experimentally-validated miRNA targets from the ",
                      tags$a(href="https://mirtarbase.cuhk.edu.cn/~miRTarBase/",
@@ -155,11 +156,11 @@ TPM4,-1.41,1.83e-10,6.86e-08
            tags$p("In general, we recommend regarding the statistical significance 
                   of individual posttranscriptional regulators obtained via the 
                   different enrichment tests rather as rank instead of interpreting 
-                  them as finite results. Hence high-ranking miRNAs / RBPs are 
+                  them as finite results. Hence high-ranking miRNAs/families are 
                   suggested to exert a functional role in the gene set at glance, 
                   though certainly need to be further validated."),
            tags$p("The size of the 
-           points is proportional to the number of targets with binding site for 
+           points is proportional to the number of targets with binding sites for 
            the given miRNA/family. If miRNA expression data was given, the 
            points are colored by this expression."),
            tags$p("Hovering on the points/families will provide extra 
@@ -253,7 +254,7 @@ TPM4,-1.41,1.83e-10,6.86e-08
     ), tags$p(
       "Some tests gave poor performances in the benchmark, and should 
        therefore not be used. By default, the 'siteoverlap' and 'areamir' 
-       tests are enabled -- these are those that gave the best performance.
+       tests are enabled -- these are the tests that gave the best performance.
       In addition, the binary version of the 'regmir' test provided excellent
       error control, albeit with a lower sensitivity."
     ) 
@@ -323,7 +324,7 @@ TPM4,-1.41,1.83e-10,6.86e-08
           the ", tags$a("goseq", target="_blank",
           href="https://www.bioconductor.org/packages/devel/bioc/html/goseq.html"),
           "package."),
-        tags$li(tags$b("Mann-Whitney (KS)")," (continuous signal, set membership):",
+        tags$li(tags$b("Mann-Whitney (MW)")," (continuous signal, set membership):",
                 tags$br(), "This is the Mann-Whitney (also known as Wilcoxon)
                 non-parametric test comparing targets and non-targets."),
         tags$li(tags$b("Kolmogorov-Smirnov (KS)")," (continuous signal, set membership):",
