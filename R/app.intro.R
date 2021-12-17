@@ -158,9 +158,9 @@ TPM4,-1.41,1.83e-10,6.86e-08
            tags$p("Hovering on the points/families will provide extra 
                   information about the family members and the test statistics."),
            tags$p("In case a DEA has been provided as input, double-clicking on a 
-                  miRNA/family will automatically open the corresponding CD-plot"),
+                  miRNA/family will automatically open the corresponding CD-plot."),
            tags$p("The plot size can be manually adapted by dragging the lower right part 
-                  with the mouse")
+                  with the mouse.")
          ),
          browsercompatibility=modalDialog(title="Browser compatibility", easyClose=TRUE,
                         fluidRow(column(8, align="center", tableOutput("browsercomp")))
@@ -210,7 +210,7 @@ TPM4,-1.41,1.83e-10,6.86e-08
             miRTarBase sites), in which case you can try using all predicted 
             sites instead."),
            tags$p("The plot size can be manually adapted by dragging the lower right part 
-                  with the mouse")
+                  with the mouse.")
          ),
          tests=modalDialog(title="Enrichment tests", easyClose=TRUE, 
               .testIntro(), tags$p(

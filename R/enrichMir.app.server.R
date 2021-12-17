@@ -445,6 +445,17 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }
     })
     
+    observe({
+      if(!is.null(CDplot_obj())){
+        if(input$CD_type %in% c("auto","best_stype","type")){
+          hideElement("CD_k")
+        }else{
+          showElement("CD_k")
+        }
+      }
+      })
+
+
     CDplot_obj <- reactive({
       if( input$input_type=="dea" && is.null(DEA()) ) return(NULL)
       if(is.null(input$mir_fam) || input$mir_fam=="") return(NULL)
