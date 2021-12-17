@@ -77,7 +77,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    
    ##############################
    ## Introduction & help
-   ## See app.intro.R for the actualy content
+   ## See app.intro.R for the actual content
    
    startIntro <- function(session){
      introjs(session, options=list(steps=.getAppIntro(), "nextLabel"="Next",
@@ -95,10 +95,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$help_cdplot2, showModal(.getHelpModal("cdplot")))
    observeEvent(input$help_tests, showModal(.getHelpModal("tests")))
    observeEvent(input$help_tests2, showModal(.getHelpModal("tests2")))
+   observeEvent(input$brow_comp, showModal(.getHelpModal("browsercompatibility")))
    observeEvent(input$help_testsadvanced, showModal(.getHelpModal("testsadvanced")))
    observeEvent(input$help_deaformat, showModal(.getHelpModal("deaformat")))
    
    output$testsummary <- renderTable(.getTestsTable())
+   output$browsercomp <- renderTable(.getBrowserCompTable())
    
    runjs("
    $('.box').on('click', '.box-header h3', function() {

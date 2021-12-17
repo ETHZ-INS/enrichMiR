@@ -151,6 +151,9 @@ TPM4,-1.41,1.83e-10,6.86e-08
            tags$p("Hovering on the points/families will provide extra 
                   information about the family members and the test statistics.")
          ),
+         browsercompatibility=modalDialog(title="Browser compatibility", easyClose=TRUE,
+                        fluidRow(column(8, align="center", tableOutput("browsercomp")))
+         ),
          cdplot=modalDialog(title="Cumulative distribution (CD) plots", easyClose=TRUE,
                             tags$p(
            "Cumulative distribution plots are used to visualize differences in
@@ -363,3 +366,16 @@ TPM4,-1.41,1.83e-10,6.86e-08
       "Mann-Whitney / Wilcoxon test on logFCs",
       "Gene set enrichment analysis (GSEA)"))
 }
+
+
+.getBrowserCompTable <- function(){
+  data.frame(
+    "OS"=c("Linux","MacOS","Windows"), 
+    "Version" = c("Ubuntu","Big Sur","10"),
+    "Chrome" = c("96.0","96.0","89.0"),
+    "Firefox" = c("95.0","95.0","86.0"),
+    "Microsoft Edge" = c("n/a","n/a","89.0"),
+    "Safari" = c("n/a","15.0","n/a")
+     )
+}
+

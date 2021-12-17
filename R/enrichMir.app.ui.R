@@ -32,12 +32,17 @@ ENSG00000106462, ENSG00000100811, ...")
         headerText="Documentation topics:", type="notifications", badgeStatus=NULL,
         tags$li(tags$a("Interactive tour", id="helpBtn", href="#", 
                        class="action-button shiny-bound-input")),
+        tags$li(tags$a("Overview", id="overview", href="#", 
+                       class="action-button shiny-bound-input")),
         tags$li(tags$a("Target collections", id="help_collections2", href="#", 
                        class="action-button shiny-bound-input")),
         tags$li(tags$a("Enrichment tests", id="help_tests2", href="#", 
                        class="action-button shiny-bound-input")),
         tags$li(tags$a("CD plots", id="help_cdplot2", href="#", 
-                       class="action-button shiny-bound-input")))
+                       class="action-button shiny-bound-input")),
+        tags$li(tags$a("Browser compatibility", id="brow_comp", href="#", 
+                       class="action-button shiny-bound-input"))
+        )
     ),
     ## Sidebar content
     dashboardSidebar(width = "300px",
