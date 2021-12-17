@@ -23,17 +23,21 @@ EZH2, YY1, SHANK3, ...\nor:
 ENSG00000106462, ENSG00000100811, ...")
   ggplot_themes <- setdiff(grep("^theme_",ls(getNamespace("ggplot2"), 
                                              all.names=TRUE),value=TRUE), 
-                           paste0("theme_",c("all_null","set","update",
+                           paste0("theme_",c("all_null","set","update","gray",
                                              "get","replace","void")))
     
   ui <- dashboardPage(
     dashboardHeader(title="enrichMiR", titleWidth="300px",
       dropdownMenu(icon=tagList(icon("question"),tags$span(" Help")), 
         headerText="Documentation topics:", type="notifications", badgeStatus=NULL,
-        tags$li(tags$a("Interactive tour", id="helpBtn", href="#", class="action-button shiny-bound-input")),
-        tags$li(tags$a("Target collections", id="help_collections2", href="#", class="action-button shiny-bound-input")),
-        tags$li(tags$a("Enrichment tests", id="help_tests2", href="#", class="action-button shiny-bound-input")),
-        tags$li(tags$a("CD plots", id="help_cdplot2", href="#", class="action-button shiny-bound-input")))
+        tags$li(tags$a("Interactive tour", id="helpBtn", href="#", 
+                       class="action-button shiny-bound-input")),
+        tags$li(tags$a("Target collections", id="help_collections2", href="#", 
+                       class="action-button shiny-bound-input")),
+        tags$li(tags$a("Enrichment tests", id="help_tests2", href="#", 
+                       class="action-button shiny-bound-input")),
+        tags$li(tags$a("CD plots", id="help_cdplot2", href="#", 
+                       class="action-button shiny-bound-input")))
     ),
     ## Sidebar content
     dashboardSidebar(width = "300px",
@@ -299,7 +303,7 @@ Note that the background should also include the genes of interest!"),
                  withSpinner(DTOutput("hits_table")), tags$br()
               )
             )
-          ))
+          ) )
         ),
         
         
@@ -335,7 +339,9 @@ Note that the background should also include the genes of interest!"),
         ),
         tabItem(tabName="tab_benchmark",
           tabBox(width=12,
-            tabPanel("Tests description", .testDescription()),
+            tabPanel("Tests description", .testDescription(), 
+                     tags$h3("Summary"), 
+                     fluidRow(column(12, align="center", tableOutput("testsummary") ))),
             tabPanel("Tests benchmark",
               tags$h3("Benchmark of the different target enrichment tests"),
               tags$p("The different tests were benchmarked on different datasets

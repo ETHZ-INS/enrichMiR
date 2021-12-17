@@ -144,10 +144,10 @@ TPM4,-1.41,1.83e-10,6.86e-08
            increase over the overlap expected by chance. For continuous tests
            (based on the results of a differential expression analysis), the 
            enrichment represents a magnitude of association with the 
-           log-foldchanges of the putative targets.<br/>The size of the points 
-           is proportional to the number of targets with binding site for the 
-           given miRNA/family. If miRNA expression data was given, the points 
-           are colored by this expression."),
+           log-foldchanges of the putative targets."), tags$p("The size of the 
+           points is proportional to the number of targets with binding site for 
+           the given miRNA/family. If miRNA expression data was given, the 
+           points are colored by this expression."),
            tags$p("Hovering on the points/families will provide extra 
                   information about the family members and the test statistics.")
          ),
@@ -255,7 +255,7 @@ TPM4,-1.41,1.83e-10,6.86e-08
     differential expression analysis (by default, the tests use the sign of the
     foldchange multiplied by the -log10(FDR), which is well correlated to logFC
     for genes with low intra-group variability, and more robust than the latter).
-    On the annotation side, tests can alsoeither use set membership (i.e. 
+    On the annotation side, tests can also either use set membership (i.e. 
     whether or not a given feature is a predicted miRNA target) or numeric 
     values, such as the number of binding sites harbored by a given feature, 
     or a repression score (i.e. the extent to which a given feature is 
@@ -293,7 +293,7 @@ TPM4,-1.41,1.83e-10,6.86e-08
           tags$br(), "This test is based on Fisher's exact test, using the 
           number of features (i.e. transcripts/genes) among predicted targets 
           vs in the background (and therefore ignoring any site-based 
-          information."),
+          information)."),
         tags$li(tags$b("woverlap")," (binary signal, set membership):",
                 tags$br(), "This test is like the above 'overlap' test, but
           corrects for UTR length using the Wallenius method, as implemented in
@@ -340,4 +340,26 @@ TPM4,-1.41,1.83e-10,6.86e-08
         ))
       )
   )
+}
+
+
+.getTestsTable <- function(){
+  data.frame(
+    test=c("overlap","woverlap","siteoverlap","regmirb","areamir","modScores",
+           "modSites","KS","KS","MW","GSEA"),
+    "input signal type"=rep(c("binary (set)", "continuous (DEA)"), c(4,7)),
+    "annotation type"=c("genesets","nb sites","nb sites","genesets","scores",
+                        "scores","scores",rep("genesets",4)),
+    "description"=c(
+      "Over-representation (ORA) of target genes among set",
+      "ORA of binding sites, correcting for UTR length",
+      "ORA of binding sites",
+      "Regularized constrained logistic regression",
+      "Score-weighted analytic rank enrichment analysis",
+      "Linear regression of logFCs on predicted repression scores",
+      "Linear regression of logFCs on nb of binding sites",
+      "Kolmogorov-Smirnov (KS) test on logFCs",
+      "Modified KS test on logFCs",
+      "Mann-Whitney / Wilcoxon test on logFCs",
+      "Gene set enrichment analysis (GSEA)"))
 }

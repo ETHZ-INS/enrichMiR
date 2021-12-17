@@ -59,7 +59,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                             columnDefs=list(
                               list(visible=FALSE, 
                                    targets=na.omit(match(hide_cols, colnames(d))))),
-                            buttons=c('copy', 'csv', 'excel', 'csvHtml5') ) )
+                            buttons=c('copy', 'csv', 'excel') ) )
   }
   
   trimInputList <- function(x){
@@ -97,6 +97,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$help_tests2, showModal(.getHelpModal("tests2")))
    observeEvent(input$help_testsadvanced, showModal(.getHelpModal("testsadvanced")))
    observeEvent(input$help_deaformat, showModal(.getHelpModal("deaformat")))
+   
+   output$testsummary <- renderTable(.getTestsTable())
    
    runjs("
    $('.box').on('click', '.box-header h3', function() {

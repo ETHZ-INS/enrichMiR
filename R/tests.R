@@ -326,6 +326,7 @@ gsea <- function(signal, sets, maxSize=3000, nperm=2000, ...){
   return(res[,-1])
 }
 
+
 .censorScore <- function(x){
   x <- 0.1-x
   if(length(w <- which(x>0.9))>0)
