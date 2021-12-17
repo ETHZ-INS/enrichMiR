@@ -144,12 +144,23 @@ TPM4,-1.41,1.83e-10,6.86e-08
            increase over the overlap expected by chance. For continuous tests
            (based on the results of a differential expression analysis), the 
            enrichment represents a magnitude of association with the 
-           log-foldchanges of the putative targets."), tags$p("The size of the 
+           log-foldchanges of the putative targets."), 
+           tags$p("In general, we recommend regarding the statistical significance 
+                  of individual posttranscriptional regulators obtained via the 
+                  different enrichment tests rather as rank instead of interpreting 
+                  them as finite results. Hence high-ranking miRNAs / RBPs are 
+                  suggested to exert a functional role in the gene set at glance, 
+                  though certainly need to be further validated."),
+           tags$p("The size of the 
            points is proportional to the number of targets with binding site for 
            the given miRNA/family. If miRNA expression data was given, the 
            points are colored by this expression."),
            tags$p("Hovering on the points/families will provide extra 
-                  information about the family members and the test statistics.")
+                  information about the family members and the test statistics."),
+           tags$p("In case a DEA has been provided as input, double-clicking on a 
+                  miRNA/family will automatically open the corresponding CD-plot"),
+           tags$p("The plot size can be manually adapted by dragging the lower right part 
+                  with the mouse")
          ),
          browsercompatibility=modalDialog(title="Browser compatibility", easyClose=TRUE,
                         fluidRow(column(8, align="center", tableOutput("browsercomp")))
@@ -197,7 +208,9 @@ TPM4,-1.41,1.83e-10,6.86e-08
             enough sites of this type in your dataset. This can especially 
             happen when using TargetScan ", tags$em("conserved"), "sites (or
             miRTarBase sites), in which case you can try using all predicted 
-            sites instead.")
+            sites instead."),
+           tags$p("The plot size can be manually adapted by dragging the lower right part 
+                  with the mouse")
          ),
          tests=modalDialog(title="Enrichment tests", easyClose=TRUE, 
               .testIntro(), tags$p(
