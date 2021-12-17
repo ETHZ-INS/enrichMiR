@@ -184,6 +184,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
       ll <- split(dea, by2!=0)
       names(ll) <- c("non-targets","targets")
       p <- CDplot(ll, size=line.size, pvals = pvals, ...)
+      p <- p + scale_colour_manual(values=c("#000004FF","#E65D2FFF"))
     }else{
       p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size, 
                   pvals=pvals, ...)
@@ -193,8 +194,6 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
   p + xlab("logFC") + ggtitle(setName)
   
 }
-
-
 
 
 
