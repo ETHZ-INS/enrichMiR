@@ -69,6 +69,18 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     if(length(x)==0) return(NULL)
     x
   }
+  
+  setTheme <- function(p, theme=NULL){
+    if(is.null(theme)) return(p)
+    tryCatch({
+      if(theme %in% c("classic2", "pubr", "pubclean")){
+        theme <- getFromNamespace(theme, "ggpubr")
+      }else{
+        theme <- getFromNamespace(theme, "ggplot2")
+      }
+      p + theme()
+    }, error=function(e){ warning(e); p })
+  }
 
  function(input, output, session){
 
@@ -483,11 +495,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }else{
         p <- p + xlim(-input$CDplot_xaxis, input$CDplot_xaxis)
       }
-        
-      if(!is.null(input$CDplot_theme))
-        p <- tryCatch(p + getFromNamespace(input$CDplot_theme, "ggplot2")(), 
-                      error=function(e){ warning(e); p })
-      p
+      setTheme(p, input$CDplot_theme)
     })
               
     output$cd_plot <- renderPlot({
@@ -617,9 +625,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                       sig.field=input$sig.field, col.field=col.field, 
                       label.enr.thres=input$label.enr.thres, 
                       maxLabels=input$label_n )
-      if(!is.null(input$bubble_theme))
-        p <- tryCatch(p + getFromNamespace(input$bubble_theme, "ggplot2")(), 
-                      error=function(e){ warning(e); p })
+      p <- setTheme(p, input$bubble_theme)
       forTooltip <- intersect(c("set","label","overlap","enrichment","set_size",
                                 "pvalue","FDR"), colnames(er))
       ggplotly(p, source="enrichplot", tooltip=forTooltip)
@@ -657,9 +663,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                         sig.field=input$sig.field, col.field=col.field, 
                         label.enr.thres=input$label.enr.thres, 
                         maxLabels=input$label_n )
-        if(!is.null(input$bubble_theme))
-          p <- tryCatch(p + getFromNamespace(input$bubble_theme, "ggplot2")(), 
-                        error=function(e){ warning(e); p })
+        p <- setTheme(p, input$bubble_theme)
         pf <- paste0(tempfile(),".pdf")
         ggsave(pf, p, device="pdf", width=8, heigh=5)
         file.copy(pf, con)

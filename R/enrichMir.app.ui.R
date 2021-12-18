@@ -21,10 +21,11 @@ enrichMiR.ui <- function(){
                              "separated by spaces, commas, linebreaks or directly paste a spreadsheet column. E.g.:
 EZH2, YY1, SHANK3, ...\nor:
 ENSG00000106462, ENSG00000100811, ...")
-  ggplot_themes <- setdiff(grep("^theme_",ls(getNamespace("ggplot2"), 
+  ggplot_themes <- c(setdiff(grep("^theme_",ls(getNamespace("ggplot2"), 
                                              all.names=TRUE),value=TRUE), 
                            paste0("theme_",c("all_null","set","update","gray",
-                                             "get","replace","void")))
+                                             "get","replace","void"))),
+                     "classic2", "pubr", "pubclean")
     
   ui <- dashboardPage(
     dashboardHeader(title="enrichMiR", titleWidth="300px",
