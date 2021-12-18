@@ -212,10 +212,10 @@ Note that the background should also include the genes of interest!"),
                            "text/comma-separated-values,text/plain")),
                        "Or: ", actionButton("example_dea", "Use example DEA"),
                   tags$hr(), tags$br(),
-                  tags$p("Upload Differential Expression Analyses (DEAs) as table
-                with at least following information: Provide ENSEMBL_ID or Gene 
-                Symbol as identifier in the first column (same format as for 
-                the background), as well as logFC-values and FDR-values")),
+                  tags$p("Upload a Differential Expression Analysis (DEA) as 
+                a table with at least following information: Ensembl ID or Gene 
+                Symbol as identifier in the first column, as well as 
+                logFC-values and FDR-values.")),
                 column(2, actionButton(inputId="help_deaformat",
                           icon=icon("question-circle"), label="View format")),
                 column(3, withSpinner(htmlOutput("dea_res")), tags$br(), 
