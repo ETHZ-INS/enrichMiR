@@ -74,9 +74,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     if(is.null(theme)) return(p)
     tryCatch({
       if(theme %in% c("classic2", "pubr", "pubclean")){
-        theme <- getFromNamespace(theme, "ggpubr")
+        theme <- getFromNamespace(paste0("theme_",theme), "ggpubr")
       }else{
-        theme <- getFromNamespace(theme, "ggplot2")
+        theme <- getFromNamespace(paste0("theme_",theme), "ggplot2")
       }
       p + theme()
     }, error=function(e){ warning(e); p })
