@@ -87,7 +87,8 @@
                                        style="display: block; margin-left: auto; margin-right: auto;"),
                               tags$head(tags$style("#shiny-modal img { max-width: 100%; }")),
                               tags$p("For further information regarding the individual steps consult the 
-                                     specifi help pages or conduct the interactive tour.")
+                                     specifi help pages or conduct the interactive tour."),
+                              tags$p("This website is free and open to all users and there is no login requirement.")
          ),
          collections=modalDialog(title="Binding sites collections", easyClose=TRUE,
                                  tags$p(
