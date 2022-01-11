@@ -192,7 +192,7 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
     row.names(df) <- new.rn
     df <- merge(df,tt,by = 0, all.x = TRUE)
     row.names(df) <- df$Row.names
-    df[,-c(1),drop=FALSE]
+    return(df[,-c(1),drop=FALSE])
   }
   df <- aggregate(df, by=list(RN=new.rn), FUN=function(x){
     if(is.factor(x)) x <- as.character(x)
