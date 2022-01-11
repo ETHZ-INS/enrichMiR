@@ -554,7 +554,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(isTRUE(getOption("shiny.testmode"))) print("ER")
       mirexp <- miRNA_exp()
       if(!is.null(mirexp) && is.null(dim(mirexp))){
-        mirexp <- data.frame(row.names=mirexp, members=mirexp)
+        mirexp <- data.frame(row.names=mirexp, miRNA=mirexp)
       }
       if(input$input_type == "dea"){
         if(is.null(DEA())) return(NULL)
