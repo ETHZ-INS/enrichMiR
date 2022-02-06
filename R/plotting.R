@@ -188,6 +188,9 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
     }else{
       p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size, 
                   pvals=pvals, ...)
+      if(k==3){
+       p <- p + scale_color_manual(values = c("#F5DB4BFF","#A92E5EFF","#000004FF"))
+      }
     }
   }
   if(point.size>0) p <- p + geom_point(size=point.size)
@@ -251,7 +254,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
 #' to `ggplotly`. 
 #'
 #' @export
-#' @import ggplot2
+#' @import ggplot2 
 #' @importFrom ggrepel geom_text_repel
 enrichPlot <- function( res,
                         enr.field=c("enrichment","normalizedEnrichment","beta",
@@ -305,6 +308,7 @@ enrichPlot <- function( res,
   if(!is.null(col.field)) ll$colour <- col.field
   for(f in setdiff(colnames(res), unlist(ll))) ll[[f]] <- f
   p <- ggplot(res, do.call(aes_string, ll)) + geom_point(alpha=opacity)
+  if(!is.null(col.field)) p <- p + scale_colour_viridis_c(direction = -1)
   if(repel){
     p <- p + geom_text_repel(data=res[w,])
   }else{
