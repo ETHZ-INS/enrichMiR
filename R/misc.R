@@ -444,3 +444,51 @@ getMouseMirExp <- function(x=NULL){
   metadata(ts) <- md
   ts
 }
+
+
+
+#' matchMirExpr
+#' 
+#' Tries to match input miRNA expression with given names, eventually adding the
+#' -3p/-5p.
+#'
+#' @param me A named vector of miRNA expression, or data.frame with an 
+#' 'expression' column
+#' @param setsNames An optional vector of known sets names, or an actual target
+#' annotation.
+#' @param restrict Logical indicating whether to restrict `me` to elements 
+#' included in `setNames` (after re-formating)
+#'
+#' @return A data.frame of miRNA expressions.
+matchMirExpr <- function(me, setsNames=NULL, restrict=TRUE){
+  if(is.vector(me)) me <- data.frame(row.names=names(me), expression=me)
+  row.names(me) <- gsub("mir","miR", row.names(me))
+  if(!any(grepl("miR-",row.names(me)))) return(me)
+  w <- grep("-5p$|-3p$", row.names(me), invert=TRUE)
+  if(length(w)==0) return(me)
+  me2 <- data.frame(row.names=paste0(rep(row.names(me)[w],each=2),
+                                     c("-5p","-3p")),
+                    expression=rep(me$expression[w],each=2))
+  me <- rbind(me,me2[setdiff(row.names(me2),row.names(me)),,drop=FALSE])
+  if(!is.null(setsNames)){
+    if(!is.vector(setsNames)){
+      if(is(setsNames, "DFrame")){
+        fams <- metadata(setsNames)$families
+        setsNames <- as.character(unique(setsNames$set))
+        if(!is.null(fams)) setsNames <- c(setsNames, unlist(fams), names(fams))
+      }else if(is.list(setsNames)){
+        setsNames <- names(setsNames)
+      }else if(is.matrix(setsNames)){
+        setsNames <- colnames(setsNames)
+      }
+    }
+    nn <- setNames(gsub("-[1-9]-","-",row.names(me)), row.names(me))
+    nn <- nn[nn %in% setsNames & !(nn %in% row.names(me)) & !duplicated(nn)]
+    if(length(nn)>0){
+      me2 <- data.frame(row.names=nn, expression=me[names(nn),"expression"])
+      me <- rbind(me,me2)
+    }
+    if(restrict) me <- me[row.names(me) %in% setsNames,,drop=FALSE]
+  }
+  me
+}

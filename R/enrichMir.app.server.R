@@ -300,16 +300,15 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         if(tolower(input$species) == "human"){
           if(is.null(input$mirexp_human) || 
              is.null(x <- getHumanMirExp(input$mirexp_human))) return(NULL)
-          x <- head(sort(x,decreasing=TRUE),round((input$mir_cut_off2/100)*length(x)))
-          return(data.frame(row.names=names(x), expression=as.numeric(x)))     
+          x <- matchMirExpr(x, EN_Object())
+          return(x[head(order(-x$expression), 
+                        round((input$mir_cut_off2/100)*length(x))),,drop=FALSE])
         }else if(tolower(input$species) == "mouse"){
           if(is.null(input$mirexp_mouse) || 
              is.null(x <- getMouseMirExp(input$mirexp_mouse))) return(NULL)
-          x <- head(x,round((input$mir_cut_off2/100)*length(x)))
-          x <- setNames(rep(x,each=3),
-                        paste0(rep(names(x),each=3), c("","-5p","-3p")))
-          names(x) <- gsub("mir","miR",names(x))
-          return(data.frame(row.names=names(x), expression=as.numeric(x)))
+          x <- matchMirExpr(x, EN_Object())
+          return(x[head(order(-x$expression), 
+                        round((input$mir_cut_off2/100)*length(x))),,drop=FALSE])
         }
         return(NULL)
       }
@@ -319,10 +318,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       #   showModal("The miRNA data you entered is not valid")
       # }
       mirup <- mirup[order(mirup[[2]], decreasing=TRUE),]
-      colnames(mirup)[1] <- "name"
-      colnames(mirup)[2] <- "expression"
-      mirup <- mirup[1:((input$mir_cut_off/100)*nrow(mirup)),]
-      return(data.frame(row.names=mirup[,1], expression=mirup[,2]))
+      mirup <- data.frame(row.names=mirup[[1]], expression=mirup[[2]])
+      x <- matchMirExpr(mirup, EN_Object())
+      return(x[head(order(-x$expression), 
+                    round((input$mir_cut_off2/100)*length(x))),,drop=FALSE])
     })
     
     

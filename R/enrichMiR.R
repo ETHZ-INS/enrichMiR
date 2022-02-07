@@ -422,7 +422,7 @@ availableTests <- function(x=NULL, sets=NULL){
       if(!is.character(props)) stop("Unrecognized set properties")
       props <- data.frame(row.names=props)
     }else{
-      props <- as.data.frame(props,row.names = names(props))
+      props <- as.data.frame(props, row.names=names(props))
     }
   }
   usets <- unique(sets$set)
