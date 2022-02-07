@@ -4,7 +4,7 @@
 \alias{gsea}
 \title{gsea}
 \usage{
-gsea(signal, sets, maxSize = 300, nperm = 2000, ...)
+gsea(signal, sets, maxSize = 3000, nperm = 2000, ...)
 }
 \arguments{
 \item{signal}{A named numeric vector indicating the features' response (e.g. 
