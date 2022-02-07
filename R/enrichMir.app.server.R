@@ -290,28 +290,26 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         if(tolower(input$species) == "human"){
           if(is.null(input$mirexp_human) || 
              is.null(x <- getHumanMirExp(input$mirexp_human))) return(NULL)
-          x <- matchMirExpr(x, EN_Object())
-          return(x[head(order(-x$expression), 
-                        round((input$mir_cut_off2/100)*length(x))),,drop=FALSE])
         }else if(tolower(input$species) == "mouse"){
           if(is.null(input$mirexp_mouse) || 
              is.null(x <- getMouseMirExp(input$mirexp_mouse))) return(NULL)
-          x <- matchMirExpr(x, EN_Object())
-          return(x[head(order(-x$expression), 
-                        round((input$mir_cut_off2/100)*length(x))),,drop=FALSE])
+        }else{
+          return(NULL)
         }
+      }else if(!is.null(input$exp_mirna_file)){
+        mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
+        # if(ncol(mirup)!=2 || !is.numeric(mirup[,2])){
+        #   showModal("The miRNA data you entered is not valid")
+        # }
+        x <- mirup[order(mirup[[2]], decreasing=TRUE),]
+        x <- data.frame(row.names=x[[1]], expression=x[[2]])
+      }else{
         return(NULL)
       }
-      if(is.null(input$exp_mirna_file)) return(NULL)
-      mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
-      # if(ncol(mirup)!=2 || !is.numeric(mirup[,2])){
-      #   showModal("The miRNA data you entered is not valid")
-      # }
-      mirup <- mirup[order(mirup[[2]], decreasing=TRUE),]
-      mirup <- data.frame(row.names=mirup[[1]], expression=mirup[[2]])
       x <- matchMirExpr(mirup, EN_Object())
+      x <- x[x$expression>0,,drop=FALSE]
       return(x[head(order(-x$expression), 
-                    round((input$mir_cut_off2/100)*length(x))),,drop=FALSE])
+                    round((input$mir_cut_off2/100)*nrow(x))),,drop=FALSE])
     })
     
     
