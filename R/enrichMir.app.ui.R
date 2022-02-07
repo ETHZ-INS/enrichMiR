@@ -114,7 +114,7 @@ ENSG00000106462, ENSG00000100811, ...")
         tabItem(tabName = "tab_species", ############ SPECIES / COLLECTION
           box(title="Select Species and Collection", width=12,
             column(7, selectInput(inputId = "species", "Species", width='98%',
-                        choices = c("Human", "Mouse", "Rat")), tags$br(),
+                        choices = c("Human", "Mouse", "Rat", "Fish","Fly","Worm")), tags$br(),
                tags$div(id="collection_input",
                   actionButton(inputId="help_collections", style="float:right;",
                            icon=icon("question-circle"), label=""),
