@@ -56,7 +56,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
               "Targetscan/20220207_Targetscan8_Fly_ConPred.rds",
             "Targetscan all miRNA BS" =
               "Targetscan/20220207_Targetscan8_Fly_AllPred.rds"),
-    Worm = ("Targetscan conserved miRNA BS"=
+    Worm = c("Targetscan conserved miRNA BS"=
               "Targetscan/20220207_Targetscan8_Worm_ConPred.rds",
             "Targetscan all miRNA BS" =
               "Targetscan/20220207_Targetscan8_Worm_AllPred.rds")
