@@ -50,16 +50,16 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       "miRTarBase"=
         "miRTarBase/miRTarBase8.rat.rds",
       "scanMiR (Rnor6)"="scanMiR/scanMiR_rnor6_merged.rds"),
-    Fish =c("TargetScan miRNA BS" = 
-              "Targetscan/20220207_Targetscan8_Fish_Pred.rds"),
-    Fly = c("Targetscan conserved miRNA BS"=
-              "Targetscan/20220207_Targetscan8_Fly_ConPred.rds",
-            "Targetscan all miRNA BS" =
-              "Targetscan/20220207_Targetscan8_Fly_AllPred.rds"),
-    Worm = ("Targetscan conserved miRNA BS"=
-              "Targetscan/20220207_Targetscan8_Worm_ConPred.rds",
-            "Targetscan all miRNA BS" =
-              "Targetscan/20220207_Targetscan8_Worm_AllPred.rds")
+    Fish=c("TargetScan miRNA BS" = 
+      "Targetscan/20220207_Targetscan8_Fish_Pred.rds"),
+    Fly=c("Targetscan conserved miRNA BS"=
+        "Targetscan/20220207_Targetscan8_Fly_ConPred.rds",
+      "Targetscan all miRNA BS" =
+        "Targetscan/20220207_Targetscan8_Fly_AllPred.rds"),
+    Worm=c("Targetscan conserved miRNA BS"=
+             "Targetscan/20220207_Targetscan8_Worm_ConPred.rds",
+           "Targetscan all miRNA BS" =
+             "Targetscan/20220207_Targetscan8_Worm_AllPred.rds")
     ), function(x) setNames(paste0(baseDataPath,x), names(x)))
   
   dtwrapper <- function(d, pageLength=25, hide_cols){
@@ -366,7 +366,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           g <- trimInputList(input$genes_of_interest)
           g <- gsub("\\..*","",g)
         }else{
-          Sp <- switch(input$species, Human="Hs", Mouse="Mm", Rat="Rn")
+          Sp <- switch(input$species, Human="Hs", Mouse="Mm", Rat="Rn",
+                       Fish="Dr", Worm="Ce", Fly="Dm")
           ens <- switch(input$genes_format, "Ens"=TRUE, "GS"=FALSE)
           return(as.character(unlist(getGOgenes(go_ids=input$go_term, 
                                                 species=Sp,ensembl_ids=ens))))
