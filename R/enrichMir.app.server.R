@@ -216,6 +216,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(!is.null(updf) && nrow(updf)>1) DEA(updf)
     })
     observeEvent(input$example_dea, {
+      if(!(tolower(input$species) %in% c("human","rat","mouse")))
+        return(showModal(.getHelpModal("noExample")))
       data(exampleDEA, package="enrichMiR")
       if(input$species != "Human"){
         row.names(exampleDEA) <-
@@ -340,6 +342,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     })
     
     observeEvent(input$example_GOI, {
+      if(!(tolower(input$species) %in% c("human","rat","mouse")))
+        return(showModal(.getHelpModal("noExample")))
       goi <- paste(.exampleGeneset(), collapse=", ")
       bg <- paste(.exampleBackground(), collapse=", ")
       if(tolower(input$species) != "human"){

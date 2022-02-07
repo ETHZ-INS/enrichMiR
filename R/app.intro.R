@@ -234,8 +234,12 @@ TPM4,-1.41,1.83e-10,6.86e-08
         ),
         testsadvanced=modalDialog(title="Enrichment tests (advanced)", easyClose=TRUE,
                                   .testDescription()),
-         modalDialog(title=topic,
-                     "No help currently available for this topic.")
+        noExample=modalDialog(easyClose=TRUE,
+          title="Example not available for this species", tags$p(
+          "There is unfortunately no example data available for this species.
+          You may however view an example by first switching to another species.")
+        ),
+        modalDialog(title=topic, "No help currently available for this topic.")
   )
 }
 
