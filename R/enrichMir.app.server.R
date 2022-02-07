@@ -49,7 +49,17 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         "Targetscan/20211124_Targetscan8_Mouse_AllPred_rat.rds",
       "miRTarBase"=
         "miRTarBase/miRTarBase8.rat.rds",
-      "scanMiR (Rnor6)"="scanMiR/scanMiR_rnor6_merged.rds")
+      "scanMiR (Rnor6)"="scanMiR/scanMiR_rnor6_merged.rds"),
+    Fish =c("TargetScan miRNA BS" = 
+              "Targetscan/20220207_Targetscan8_Fish_Pred.rds"),
+    Fly = c("Targetscan conserved miRNA BS"=
+              "Targetscan/20220207_Targetscan8_Fly_ConPred.rds",
+            "Targetscan all miRNA BS" =
+              "Targetscan/20220207_Targetscan8_Fly_AllPred.rds"),
+    Worm = ("Targetscan conserved miRNA BS"=
+              "Targetscan/20220207_Targetscan8_Worm_ConPred.rds",
+            "Targetscan all miRNA BS" =
+              "Targetscan/20220207_Targetscan8_Worm_AllPred.rds")
     ), function(x) setNames(paste0(baseDataPath,x), names(x)))
   
   dtwrapper <- function(d, pageLength=25, hide_cols){

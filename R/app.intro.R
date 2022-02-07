@@ -188,7 +188,7 @@ TPM4,-1.41,1.83e-10,6.86e-08
            splitting by best binding type if this information is available in 
            the collection you are using, or otherwise splitting by predicted
            repression score (if available). This is the default (Automatic) 
-           procedure."),
+           procedure."), 
            tags$p(renderPlot({
              CDplot(list("no site"=rnorm(600,mean=0,sd=0.8), 
                          "7mer"=c(rnorm(200,0),rnorm(200, mean=-0.5)), 
@@ -218,6 +218,9 @@ TPM4,-1.41,1.83e-10,6.86e-08
             happen when using TargetScan ", tags$em("conserved"), "sites (or
             miRTarBase sites), in which case you can try using all predicted 
             sites instead."),
+            tags$p("We recommend using only highly expressed genes to plot cummulative
+                   distributions of predicted miRNA bindings, e.g. the top 5'000 - 
+                   10'000 expressed genes of a dataset."),
            tags$p("The plot size can be manually adapted by dragging the lower right part 
                   with the mouse.")
          ),
