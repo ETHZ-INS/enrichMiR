@@ -244,7 +244,7 @@ dround <- function(x, digits=3, roundGreaterThan1=FALSE){
   is.matrix(x) || is(x,"sparseMatrix") || is(x,"DelayedArray")
 }
 
-#' @import S4Vectors
+#' @importFrom S4Vectors DataFrame metadata metadata<- 
 .list2DF <- function(sets){
   if(!is.null(dim(sets)) && !all(c("feature","set") %in% colnames(sets)))
     stop("Malformed `sets`.")

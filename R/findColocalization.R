@@ -82,7 +82,6 @@
 #'   
 #' @return an enrich.results object.
 #'
-#' @import S4Vectors
 #' @importFrom BiocParallel bplapply SerialParam
 #' @export
 testColocalization <- function(x, background=NULL, mir_pos, sets_pos = NULL,

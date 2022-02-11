@@ -395,7 +395,7 @@ areamir <- function(signal, sets, ...){
 #' @param keepAll Logical, whether to return all families.
 #'
 #' @return A DataFrame.
-#' @import S4Vectors sparseMatrixStats
+#' @import sparseMatrixStats
 #' @export
 # @importFrom zetadiv glm.cons
 regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE, 
@@ -557,7 +557,7 @@ regmir.cc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
   cbind(bm[,setdiff(colnames(bm), old.names)],bm2)
 }
 
-#' @importFrom Matrix sparseMatrix
+#' @import Matrix
 .setsToScoreMatrix <- function(signal, sets, column="score", keepSparse=FALSE){
   if(!is.factor(sets$feature)) sets$feature <- as.factor(sets$feature)
   signal <- signal[names(signal) %in% levels(sets$feature)]
