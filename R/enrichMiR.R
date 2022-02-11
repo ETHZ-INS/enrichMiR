@@ -77,7 +77,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   
   atests <- availableTests(x, sets)
   if(is.null(tests)){
-    tests <- setdiff(atests, c("gsea", "ks", "ks2", "mw"))
+    tests <- intersect(c("siteoverlap","areamir"), atests)
   }else{
     tests <- tolower(tests)
     if("regmir" %in% tests)
@@ -358,8 +358,8 @@ availableTests <- function(x=NULL, sets=NULL){
   }
   if(!setsScore && !setsSites) return(c("overlap"))
   tests <- c("regmir.bb")
-  if(sigBinary) tests <- c(tests, c("overlap","siteoverlap","woverlap","regmir.bb"))
-  if(sigContinuous) tests <- c(tests, c("mw","ks","ks2","gsea","areamir"))
+  if(sigBinary) tests <- c(tests, c("overlap","siteoverlap","woverlap"))
+  if(sigContinuous) tests <- c(tests, c("mw","ks","gsea","areamir"))
   if(sigContinuous && setsScore) tests <- c(tests, c("modscore","regmir.cc","ebayes","lmadd"))
   if(sigContinuous && setsSites) tests <- c(tests, c("modsites"))
   if(setsScore && sigBinary) tests <- c(tests, c("regmir.bc"))

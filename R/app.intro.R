@@ -269,14 +269,8 @@ TPM4,-1.41,1.83e-10,6.86e-08
   )
 }
 
-.testDescription <- function(){
-  tagList(
-    tags$h3("Description of the enrichment tests"),
-    tags$p("Several target enrichment tests were benchmarked (results in the 
-    benchmark tab), and are described below. The best overall tests were 
-    selected as default for the app, and although other implemented tests are
-    made available in the app's advanced options, their usage is not 
-    recommended."),
+.testDescription <- function(onlyDesc=FALSE){
+  desc <- tagList(
     tags$p("The tests differ in the inputs they use, both in terms of the
     target annotation as well as of the type of signal in which enrichment is
     looked for. On the signal side, tests denoted as 'binary' compare features 
@@ -297,9 +291,9 @@ TPM4,-1.41,1.83e-10,6.86e-08
            critical. In many contexts, the background set of genes will be the 
            set of genes expressed in the system of interest."),
     tags$ul(tags$li(tags$h4("Default tests"),
-      tags$ul(
-        tags$li(tags$b("siteoverlap")," (binary signal, set membership):",
-          tags$br(), "The siteoverlap test is based on Fisher's 
+                  tags$ul(
+                    tags$li(tags$b("siteoverlap")," (binary signal, set membership):",
+                            tags$br(), "The siteoverlap test is based on Fisher's 
           exact test, but using the number of sites on predicted 
           targets and in the background instead of counting each
           feature as one. While in theory this violates the 
@@ -308,69 +302,82 @@ TPM4,-1.41,1.83e-10,6.86e-08
           of the set), leading to slightly anti-conservative 
           p-values, in practice this test is excellent at 
           identifying the most enriched miRNA."),
-        tags$li(tags$b("areamir")," (continuous signal, score or set 
+                    tags$li(tags$b("areamir")," (continuous signal, score or set 
           membership):", tags$br(), 
-          "The areamir test is based on the analytic Rank-based 
+                            "The areamir test is based on the analytic Rank-based 
           Enrichment Analysis (aREA) test implemented in the 
           'msviper' function of the ", tags$a("viper", target="_blank",
-          href="https://www.bioconductor.org/packages/devel/bioc/html/viper.html"),
-          " package. The test is akin to an analytical version of 
+                                              href="https://www.bioconductor.org/packages/devel/bioc/html/viper.html"),
+                            " package. The test is akin to an analytical version of 
           GSEA (see below), but it can additionally use degrees or 
           likelihood of set membership. If repression scores are 
           available in the annotation, areamir will therefore use a
               (trimmed) version of it as set membership likelihood.")
-      )),
-      tags$li(tags$h5("Other tests implemented and evaluated"), tags$ul(
-        tags$li(tags$b("overlap")," (binary signal, set membership):",
-          tags$br(), "This test is based on Fisher's exact test, using the 
+                  )),
+          tags$li(tags$h5("Other tests implemented and evaluated"), tags$ul(
+            tags$li(tags$b("overlap")," (binary signal, set membership):",
+                    tags$br(), "This test is based on Fisher's exact test, using the 
           number of features (i.e. transcripts/genes) among predicted targets 
           vs in the background (and therefore ignoring any site-based 
           information)."),
-        tags$li(tags$b("woverlap")," (binary signal, set membership):",
-                tags$br(), "This test is like the above 'overlap' test, but
+            tags$li(tags$b("woverlap")," (binary signal, set membership):",
+                    tags$br(), "This test is like the above 'overlap' test, but
           corrects for UTR length using the Wallenius method, as implemented in
           the ", tags$a("goseq", target="_blank",
-          href="https://www.bioconductor.org/packages/devel/bioc/html/goseq.html"),
-          "package."),
-        tags$li(tags$b("Mann-Whitney (MW)")," (continuous signal, set membership):",
-                tags$br(), "This is the Mann-Whitney (also known as Wilcoxon)
+                        href="https://www.bioconductor.org/packages/devel/bioc/html/goseq.html"),
+                    "package."),
+            tags$li(tags$b("Mann-Whitney (MW)")," (continuous signal, set membership):",
+                    tags$br(), "This is the Mann-Whitney (also known as Wilcoxon)
                 non-parametric test comparing targets and non-targets."),
-        tags$li(tags$b("Kolmogorov-Smirnov (KS)")," (continuous signal, set membership):",
-                tags$br(), "This is the Kolmogorov-Smirnov test comparing the 
+            tags$li(tags$b("Kolmogorov-Smirnov (KS)")," (continuous signal, set membership):",
+                    tags$br(), "This is the Kolmogorov-Smirnov test comparing the 
                 signal distribution of targets vs non-targets."),
-        tags$li(tags$b("Combined Kolmogorov-Smirnov (KS2)"),
-                " (continuous signal, set membership):",
-                tags$br(), "This is similar to the Kolmogorov-Smirnov test, but
+            tags$li(tags$b("Combined Kolmogorov-Smirnov (KS2)"),
+                    " (continuous signal, set membership):",
+                    tags$br(), "This is similar to the Kolmogorov-Smirnov test, but
                 compares upregulated and downregulated genes separately, 
                 expecting the direction of the distribution shift to be 
                 consistent between the two, and if so combining the p-values 
                 using Fisher's method. This excludes distributional changes that
                 are inconsistent with changes in miRNA activity, and leads to
                 improved results over the traditional KS test."),
-        tags$li(tags$b("modscore")," (continuous signal, repression score):",
-                tags$br(), "This is a linear regression testing the relationship
+            tags$li(tags$b("modscore")," (continuous signal, repression score):",
+                    tags$br(), "This is a linear regression testing the relationship
                 between the input signal and the corresponding repression score
                 predicted for a given miRNA."),
-        tags$li(tags$b("modsites")," (continuous signal, number of sites):",
-                tags$br(), "This is a linear regression testing the relationship
+            tags$li(tags$b("ebayes")," (continuous signal, repression score):",
+                    tags$br(), "This is akin to the `modscore` tests, but performed
+                using limma's moderated t-statistics."),
+            tags$li(tags$b("modsites")," (continuous signal, number of sites):",
+                    tags$br(), "This is a linear regression testing the relationship
                 between the input signal and the number of predicted binding 
                 sites for a given miRNA, correcting for UTR length."),
-        tags$li(tags$b("GSEA"), " (continuous signal, set membership)",
-          tags$br(), "This test uses the multi-level fast GeneSet Enrichment 
+            tags$li(tags$b("GSEA"), " (continuous signal, set membership)",
+                tags$br(), "This test uses the multi-level fast GeneSet Enrichment 
           Analysis (GSEA) implemented in the ",tags$a("fgsea", target="_blank",
           href="https://www.bioconductor.org/packages/devel/bioc/html/fgsea.html"),
           "package, which is highly successful for Gene Ontology enrichment 
           analysis. In the context of our benchmark, however, it performed very 
           poorly."),
-        tags$li(tags$b("regmir"), tags$br(), 
-          "The regmir test uses constrained lasso-regularized regression,
+            tags$li(tags$b("regmir"), tags$br(), 
+                    "The regmir test uses constrained lasso-regularized regression,
           which has a high specificity but lower sensitivity. The test will use 
           binary or continuous inputs (using then either linear or binomial 
           regression), as well as binary set membership or predicted repression 
           score, depending on the availability of the input. The binary version
           of the test has shown the best performances.")
-        ))
-      )
+          ))
+    )
+  )
+  if(onlyDesc) return(desc)
+  tagList(
+    tags$h3("Description of the enrichment tests"),
+    tags$p("Several target enrichment tests were benchmarked (results in the 
+    benchmark tab), and are described below. The best overall tests were 
+    selected as default for the app, and although other implemented tests are
+    made available in the app's advanced options, their usage is not 
+    recommended."),
+    desc
   )
 }
 

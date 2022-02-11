@@ -261,6 +261,7 @@ woverlap <- function(signal, sets, method="Wallenius"){
 #' @param sets A data.frame with at least the following columns: 'set', 'feature'.
 #'
 #' @return a data.frame.
+#' @export
 #' @importFrom stats ks.test
 ks <- function(signal, sets){
   res <- vapply(split(sets$feature,sets$set), FUN.VALUE=numeric(1), FUN=function(x){
@@ -286,6 +287,7 @@ ks <- function(signal, sets){
 #' 'set', 'feature'.
 #'
 #' @return a data.frame.
+#' @export
 #' @importFrom stats wilcox.test
 mw <- function(signal, sets){
   res <- vapply(split(sets$feature,sets$set), FUN.VALUE=numeric(1), FUN=function(x){
@@ -503,11 +505,19 @@ regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE,
 }
 
 
+#' @export
+#' @rdname regmir
 regmirb <- regmir.bb <- function(signal, sets, ...){
   regmir(signal, sets, binary=TRUE, ...)
 }
+#' @export
+#' @rdname regmir
 regmir.bb <- function(signal, sets, ...) regmir(signal, sets, binary=TRUE, ...)
+#' @export
+#' @rdname regmir
 regmir.bc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
+#' @export
+#' @rdname regmir
 regmir.cc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
 
 .decideLambda <- function(fits){
@@ -593,6 +603,7 @@ regmir.cc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
 #' @importFrom limma lmFit topTable eBayes
 #' @importFrom stats model.matrix
 #' @import sparseMatrixStats
+#' @export
 ebayes <- function(signal, sets, use.intercept=FALSE){
   if(!.checkSets(sets, "score", matrixAlternative="numeric"))
     sets <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
@@ -630,34 +641,46 @@ ebayes <- function(signal, sets, use.intercept=FALSE){
 #' @importFrom limma lmFit topTable eBayes
 #' @import sparseMatrixStats
 #' @importFrom stats coef lm.fit
+#' @export
 lmadd <- function(signal, sets, use.intercept=FALSE, calc.threshold=0.2, 
                   comb.threshold=0.05){
   if(!.checkSets(sets, "score", matrixAlternative="numeric"))
     sets <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
   signal <- signal[names(signal) %in% row.names(sets)]
   sets <- sets[names(signal),]
-  if(use.intercept){
-    mm <- model.matrix(~meds+signal)
+  meds <- sparseMatrixStats::rowMedians(sets)
+  if( skipMeds <- (sum(meds==0)/length(meds))>0.9){
+    if(use.intercept){
+      mm <- model.matrix(~signal)
+    }else{
+      mm <- model.matrix(~0+signal)
+    }
   }else{
-    mm <- model.matrix(~0+meds+signal)
+    if(use.intercept){
+      mm <- model.matrix(~meds+signal)
+    }else{
+      mm <- model.matrix(~0+meds+signal)
+    }
   }
   fit <- eBayes(lmFit(as.matrix(t(sets)), mm))
-  res1 <- as.data.frame(topTable(fit, coef=2+use.intercept, number=Inf)[,c(1,1,4,4)])
+  res1 <- as.data.frame(topTable(fit, coef=1+!skipMeds+use.intercept, 
+                                 number=Inf)[,c(1,1,4,4)])
   colnames(res1) <- c("independent.coef", "combined.coef", 
                       "independent.pvalue", "combined.pvalue")
   res1$combined.coef <- res1$independent.coef <- 0
   res1$combined.pvalue[-1] <- 1
   i <- 1
   p <- res1$independent.pvalue[1]
-  sets <- data.frame(signal=signal, intercept=1, median=meds, sets, 
+  sets <- data.frame(signal=signal, intercept=1, median=meds, as.matrix(sets), 
                      check.names=FALSE)
+  if(skipMeds) sets$median <- NULL
   while(i<=nrow(res1) && p<=calc.threshold){
     feats <- row.names(res1)[i]
     if(use.intercept) feats <- c("intercept", feats)
     fit <- lm.fit(as.matrix(sets[,feats,drop=FALSE]), signal)
     res1$independent.coef[i] <- rev(fit$coefficients)[1]
     feats <- c("signal",row.names(res1)[seq_len(i)])
-    if(i==1) feats <- c("median",feats)
+    if(i==1 && !skipMeds) feats <- c("median",feats)
     if(use.intercept) feats <- c("intercept",feats)
     fit <- lm(signal~.,data=sets[,feats])
     co <- coef(summary(fit))
@@ -690,8 +713,8 @@ fisher.test.p <- function (a, b, c, d,
      less = function(x,m,n,k) phyper(x, m, n, k), 
      greater = function(x,m,n,k) phyper(x - 1, m, n, k, lower.tail=FALSE), 
      two.sided = function(x,m,n,k){
-       lo = max(0, k - n)
-       support = lo:min(k, m)
+       lo <- max(0, k - n)
+       support <- seq(from=lo, to=min(k, m))
        d <- dhyper(support, m, n, k, log = TRUE)
        d <- exp(d - max(d))
        d <- d/sum(d)
