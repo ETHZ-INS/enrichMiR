@@ -21,8 +21,9 @@
 #' @param ... Passed to `geom_line` (can for instance be used for `size`, etc.)
 #'
 #' @return A ggplot.
-#' @import ggplot2 stats
+#' @import ggplot2
 #' @importFrom dplyr bind_rows
+#' @importFrom stats quantile ks.test
 #' 
 #' @export
 CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE, 

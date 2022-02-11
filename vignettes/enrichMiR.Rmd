@@ -13,30 +13,45 @@ vignette: >
 
 You can install the package using:
 ```{r, eval=FALSE}
-install.packages("path/to/enrichMiR.tar.gz",type="source")
-```
-
-Alternatively, once decompressed you can load or install with devtools:
-```{r, eval=FALSE}
-devtools::load_all("path/to/packageFolder")
-# or
-devtools::install("path/to/packageFolder")
-```
-
-Once (if) installed, load the package using:
-```{r}
-library("enrichMiR")
+BiocManager::install("ETHZ-INS/enrichMiR")
 ```
 
 <br/><br/>
 
 ## Preparing the data
 
-(You can look at the different files - the data here is what you've given me, except that I exported as csv format)
+EnrichMiR requires two main inputs: a target annotation object, and the signal in
+which you want to look for target enrichment, such as a geneset (versus a 
+background set) or the results of a differential-expression analysis (DEA). A 
+DEA would be a table that looks like this:
+
+```{r}
+library("enrichMiR")
+data("exampleDEA",package="enrichMiR")
+head(exampleDEA)
+```
+
+The row names should be gene identifiers (or also transcript identifiers,
+depending on the target annotation), and it should minimally have the 'logFC', 
+'PValue' and 'FDR' columns (similar column names from established RNAseq DEA 
+packages can be automatically recognized).
+
+A target annotation 
+
+
+
+
+
+
+
+
+
 
 ### Preparing the differential expression data
 
 ```{r, eval=FALSE}
+library("enrichMiR")
+data("exampleDEA",package="enrichMiR")
 dea <- read.delim("GSE81437_polyA_differential_gene_expression.txt",header=T)
 # since this is a weird cuffdiff results table, we need to filter out genes and clean up the foldchanges
 dea <- dea[which(dea$status=="OK"),]

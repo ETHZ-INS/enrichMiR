@@ -1,4 +1,13 @@
-#' @export
+#' EnrichMiR enrichment results
+#'
+#' @name enrich.results
+#' @rdname enrich.results
+#' @seealso \link{testEnrichment}, which is the normal way to create an 
+#'   `enrich.results` object
+#' @aliases enrich.results-methods enrich.results-class
+#' @param object,x An object of class \code{\link{enrich.results}}
+#' @return Depends on the method.
+#' @exportClass enrich.results
 setClass(
 	"enrich.results",
 	slots=representation(
@@ -14,18 +23,24 @@ setClass(
                          created=Sys.Date() )
 )
 
+#' @import methods
+#' @rdname enrich.results
 setMethod("initialize", "enrich.results", function(.Object, ...) {
     o <- callNextMethod(.Object, ...)
     validObject(o)
     return(o)
 })
 
-setMethod("as.data.frame", "enrich.results", function (x, row.names = NULL, optional = FALSE, ...){
+#' @rdname enrich.results
+#' @export
+setMethod("as.data.frame", "enrich.results", function (x, row.names=NULL, 
+                                                       optional=FALSE, ...){
   x <- getResults(x)
   if(!is.null(row.names)) row.names(x) <- row.names
   x
 })
 
+#' @rdname enrich.results
 #' @export
 setMethod("show", "enrich.results", function(object){
     message("An `enrich.results` object with the following analyses:")
@@ -34,6 +49,7 @@ setMethod("show", "enrich.results", function(object){
     }))
 })
 
+#' @rdname enrich.results
 #' @export
 setMethod("summary", "enrich.results", function(object){
   message(paste("An `enrich.results` object with",length(object@res),"tests.\nAggregated top results:"))
@@ -48,11 +64,13 @@ setMethod("summary", "enrich.results", function(object){
   head(res[order(res$medianP),fields])
 })
 
+#' @rdname enrich.results
 #' @export
 setMethod("$", "enrich.results", definition = function(x, name) {
   getResults(x,name)
 })
 
+#' @rdname enrich.results
 #' @export
 setMethod("names", "enrich.results", definition = function(x) {
   names(x@res)

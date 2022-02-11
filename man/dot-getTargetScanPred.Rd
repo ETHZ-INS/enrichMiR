@@ -5,7 +5,7 @@
 \title{Downlaod Targetscan8 Transcript / Gene Predictions}
 \usage{
 .getTargetScanPred(
-  species = c("human", "mouse", "rat"),
+  species = c("human", "mouse", "rat", "fly"),
   type = c("conserved", "all"),
   keepMers = FALSE
 )

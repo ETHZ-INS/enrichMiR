@@ -7,61 +7,13 @@
 #'
 #' @return A shiny server function
 #' @export
-#' @import ggplot2 DT GO.db
+#' @import ggplot2 GO.db
 #' @importFrom rintrojs introjs
 #' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs hideElement showElement
 #' @importFrom plotly renderPlotly ggplotly event_data
+#' @importFrom DT renderDT datatable
 enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
-  library(DT)
-  library(ggplot2)
-  library(enrichMiR)
-  library(GO.db)
-  library(rintrojs)
-  library(shinyjs)
-  library(shinyjqui)
-  
-  baseDataPath="/mnt/schratt/enrichMiR_data/"
-  if(is.null(bData)) bData <- lapply(list(
-    Human=c(
-      "Targetscan conserved miRNA BS"=
-        "Targetscan/20211124_Targetscan8_Human_ConPred_human.rds",
-      "Targetscan all miRNA BS"=
-        "Targetscan/20211124_Targetscan8_Human_AllPred_human.rds",
-      "miRTarBase"=
-        "miRTarBase/miRTarBase8.human.rds",
-      "scanMiR (GRCh38)"="scanMiR/scanMiR_GRCh38_merged.rds",
-      "oRNAment"=
-        "oRNAment/human_coding_MSS05_gene_3UTR_pred.rds"),
-    Mouse=c(
-      "Targetscan conserved miRNA BS"=
-        "Targetscan/20211124_Targetscan8_Mouse_ConPred_mouse.rds",
-      "Targetscan all miRNA BS"=
-        "Targetscan/20211124_Targetscan8_Mouse_AllPred_mouse.rds",
-      "miRTarBase"=
-        "miRTarBase/miRTarBase8.mouse.rds",
-      "scanMiR (GRCm38)"="scanMiR/scanMiR_GRCm38_merged.rds",
-      "oRNAment"="oRNAment/mouse_coding_MSS05_gene_3UTR_pred.rds"),
-    Rat=c(
-      "Targetscan conserved miRNA BS (from mouse)"=
-        "Targetscan/20211124_Targetscan8_Mouse_ConPred_rat.rds",
-      "Targetscan all miRNA BS (from mouse)"=
-        "Targetscan/20211124_Targetscan8_Mouse_AllPred_rat.rds",
-      "miRTarBase"=
-        "miRTarBase/miRTarBase8.rat.rds",
-      "scanMiR (Rnor6)"="scanMiR/scanMiR_rnor6_merged.rds"),
-    Fish=c("TargetScan miRNA BS" = 
-      "Targetscan/20220207_Targetscan8_Fish_Pred.rds"),
-    Fly=c("Targetscan conserved miRNA BS"=
-        "Targetscan/20220207_Targetscan8_Fly_ConPred.rds",
-      "Targetscan all miRNA BS" =
-        "Targetscan/20220207_Targetscan8_Fly_AllPred.rds"),
-    Worm=c("Targetscan conserved miRNA BS"=
-             "Targetscan/20220207_Targetscan8_Worm_ConPred.rds",
-           "Targetscan all miRNA BS" =
-             "Targetscan/20220207_Targetscan8_Worm_AllPred.rds")
-    ), function(x) setNames(paste0(baseDataPath,x), names(x)))
-  
   dtwrapper <- function(d, pageLength=25, hide_cols){
     datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
                options=list(pageLength=pageLength, dom = "fltBip", rownames=FALSE,

@@ -7,11 +7,13 @@
 recapitalizeMiRs(x)
 }
 \arguments{
-\item{x}{A character vector or an array (in which case the function will be applied to row.names)}
+\item{x}{A character vector or an array (in which case the function will be 
+applied to row.names)}
 }
 \value{
 An object of the same type and dimensions as `x`.
 }
 \description{
-A utility function to reformat miRNA names so that there are no capital letters except the 'miR-'.
+A utility function to reformat miRNA names so that there are no capital 
+letters except the 'miR-'.
 }

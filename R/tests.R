@@ -159,7 +159,7 @@ siteoverlap <- function(signal, sets,
 #'  sites). Defaults to TRUE if `var='sites'`, FALSE otherwise.
 #'
 #' @return a data.frame
-#' @import stats
+#' @importFrom stats .lm.fit p.adjust
 #' @export
 plMod <- function(signature, sets, var="sites", correctForLength=NULL){
   if(is.null(correctForLength)) 
@@ -261,6 +261,7 @@ woverlap <- function(signal, sets, method="Wallenius"){
 #' @param sets A data.frame with at least the following columns: 'set', 'feature'.
 #'
 #' @return a data.frame.
+#' @importFrom stats ks.test
 ks <- function(signal, sets){
   res <- vapply(split(sets$feature,sets$set), FUN.VALUE=numeric(1), FUN=function(x){
     x <- intersect(x, names(signal))
@@ -285,6 +286,7 @@ ks <- function(signal, sets){
 #' 'set', 'feature'.
 #'
 #' @return a data.frame.
+#' @importFrom stats wilcox.test
 mw <- function(signal, sets){
   res <- vapply(split(sets$feature,sets$set), FUN.VALUE=numeric(1), FUN=function(x){
     x <- intersect(x, names(signal))
@@ -393,7 +395,7 @@ areamir <- function(signal, sets, ...){
 #' @param keepAll Logical, whether to return all families.
 #'
 #' @return A DataFrame.
-#' @import S4Vectors Matrix sparseMatrixStats
+#' @import S4Vectors sparseMatrixStats
 #' @export
 # @importFrom zetadiv glm.cons
 regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE, 
@@ -555,7 +557,7 @@ regmir.cc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
   cbind(bm[,setdiff(colnames(bm), old.names)],bm2)
 }
 
-#' @import Matrix
+#' @importFrom Matrix sparseMatrix
 .setsToScoreMatrix <- function(signal, sets, column="score", keepSparse=FALSE){
   if(!is.factor(sets$feature)) sets$feature <- as.factor(sets$feature)
   signal <- signal[names(signal) %in% levels(sets$feature)]
@@ -589,7 +591,8 @@ regmir.cc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
 #' @return A data.frame.
 #'
 #' @importFrom limma lmFit topTable eBayes
-#' @import stats sparseMatrixStats
+#' @importFrom stats model.matrix
+#' @import sparseMatrixStats
 ebayes <- function(signal, sets, use.intercept=FALSE){
   if(!.checkSets(sets, "score", matrixAlternative="numeric"))
     sets <- .setsToScoreMatrix(signal, sets, keepSparse=TRUE)
@@ -625,7 +628,8 @@ ebayes <- function(signal, sets, use.intercept=FALSE){
 #' @return A data.frame.
 #'
 #' @importFrom limma lmFit topTable eBayes
-#' @import stats sparseMatrixStats
+#' @import sparseMatrixStats
+#' @importFrom stats coef lm.fit
 lmadd <- function(signal, sets, use.intercept=FALSE, calc.threshold=0.2, 
                   comb.threshold=0.05){
   if(!.checkSets(sets, "score", matrixAlternative="numeric"))
@@ -678,6 +682,7 @@ lmadd <- function(signal, sets, use.intercept=FALSE, calc.threshold=0.2,
 #' @param alternative greater, less, or 'two.sided' (default)
 #'
 #' @return A vector of p-values
+#' @importFrom stats dhyper
 #' @export
 fisher.test.p <- function (a, b, c, d, 
                            alternative=c("two.sided", "greater", "less")){
