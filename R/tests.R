@@ -174,10 +174,10 @@ plMod <- function(signature, sets, var="sites", correctForLength=NULL){
   }else{
     cfl <- NULL
   }
-  sets$family <- as.character(sets$set)
-  res <- as.data.frame(t(vapply(split(sets,sets$set), fcs=signature, 
+  sets$sets <- as.character(sets$set)
+  res <- vapply(split(as.data.frame(sets),sets$set), fcs=signature, 
                   FUN.VALUE=numeric(2), FUN=function(x,fcs, minSize){
-    x <- x[!duplicated(x),]
+    x <- x[!duplicated(x$feature),]
     row.names(x) <- x$feature
     x2 <- x[names(fcs),var]
     x2[which(is.na(x2))] <- 0
@@ -189,16 +189,21 @@ plMod <- function(signature, sets, var="sites", correctForLength=NULL){
     mod <- try(.lm.fit(x2, fcs), silent=TRUE)
     if(is(mod,"try-error")) return(rep(NA_real_,2))
     c(mod$coefficients[1], tryCatch(.lm.pval(mod)[1], error=function(e) NA))
-  })))
+  })
+  res <- as.data.frame(t(res))
   colnames(res) <- c("coefficient","pvalue")
   res$FDR <- p.adjust(res$pvalue)
   res[order(res$FDR,res$pvalue),]
 }
 
+#' @export
+#' @rdname plMod
 modsites <- function(x, sets, correctForLength=TRUE, ...){
   plMod(x, sets, correctForLength=correctForLength, ...)
 }
 
+#' @export
+#' @rdname plMod
 modscore <- function(x, sets, ...) plMod(x, sets, var="score", ...)
 
 
