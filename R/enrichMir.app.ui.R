@@ -1,21 +1,13 @@
-#' @import shiny DT shinydashboard shinycssloaders
+#' @import shiny shinydashboard shinycssloaders
+#' @importFrom plotly plotlyOutput
 #' @importFrom shinycssloaders withSpinner
 #' @importFrom shinyjs useShinyjs
 #' @importFrom shinyjqui jqui_resizable
 #' @importFrom rintrojs introjsUI
 #' @importFrom waiter use_waiter waiter_show_on_load waiter_hide
+#' @importFrom DT DTOutput
 #' @export
 enrichMiR.ui <- function(){
-  library(shiny)
-  library(DT)
-  library(shinydashboard)
-  library(shinycssloaders)
-  library(plotly)
-  library(ggplot2)
-  library(rintrojs)
-  library(waiter)
-  library(shinyjs)
-  library(shinyjqui)
 
   genes_placeholder <- paste("Enter your genes as symbols or ensembl IDs,",
                              "separated by spaces, commas, linebreaks or directly paste a spreadsheet column. E.g.:

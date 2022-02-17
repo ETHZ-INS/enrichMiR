@@ -21,13 +21,13 @@
 #' @param ... Passed to `geom_line` (can for instance be used for `size`, etc.)
 #'
 #' @return A ggplot.
-#' @import ggplot2 stats
+#' @import ggplot2
 #' @importFrom dplyr bind_rows
+#' @importFrom stats quantile ks.test
 #' 
 #' @export
 CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE, 
                    dig.lab=NULL, minN=10, pvals=FALSE, ...){
-  library(ggplot2)
   factorLevels <- NULL
   if(!is.list(ll)){
     if(is.null(by)) stop("If `ll` is not already a list, `by` should be given.")
@@ -307,6 +307,7 @@ enrichPlot <- function( res,
   if(!is.null(size.field)) ll$size <- size.field
   if(!is.null(col.field)) ll$colour <- col.field
   for(f in setdiff(colnames(res), unlist(ll))) ll[[f]] <- f
+  res <- as.data.frame(res)
   p <- ggplot(res, do.call(aes_string, ll)) + geom_point(alpha=opacity)
   if(!is.null(col.field)) p <- p + scale_colour_viridis_c(direction = -1)
   if(repel){

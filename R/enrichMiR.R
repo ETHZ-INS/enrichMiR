@@ -49,9 +49,9 @@
 #'
 #' @return an enrich.results object.
 #'
-#' @import S4Vectors
 #' @importFrom BiocParallel bplapply SerialParam
-#' @importFrom IRanges FactorList
+#' @importFrom IRanges FactorList CharacterList
+#' @importFrom S4Vectors metadata metadata<- DataFrame
 #' @export
 testEnrichment <- function( x, sets, background=NULL, tests=NULL, 
                             sets.properties=NULL, th.abs.logFC=0, th.FDR=0.05,
@@ -77,7 +77,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   
   atests <- availableTests(x, sets)
   if(is.null(tests)){
-    tests <- setdiff(atests, c("gsea", "ks", "ks2", "mw"))
+    tests <- intersect(c("siteoverlap","areamir"), atests)
   }else{
     tests <- tolower(tests)
     if("regmir" %in% tests)
@@ -124,7 +124,9 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   o <- new("enrich.results", input=list(x=x, sets.properties=sets.properties), 
            binary.signatures=binary.signatures, info=list(call=match.call(),
                                                           type = "enrichment"))
-  if(any(grep("-miR-|-mir-|-let-",head(row.names(sets.properties)))) && any(tests %in% c("siteoverlap","overlap","siteoverlap2")) && !is.null(fams <- metadata(sets)$families)){
+  if(any(grep("-miR-|-mir-|-let-",head(row.names(sets.properties)))) && 
+     any(tests %in% c("siteoverlap","overlap","siteoverlap2")) && 
+     !is.null(fams <- metadata(sets)$families)){
     o@input <- c(o@input,list(families = fams))
   }
   if(is.null(names(binary.signatures))) names(binary.signatures) <- "features"
@@ -162,10 +164,12 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
 #' enrichMiR
 #' 
 #' A miRNA wrapper around `testEnrichment`, for continuity with previous 
-#' enrichMiR versions.
+#' enrichMiR versions. It is recommended to use \code{\link{testEnrichment}} 
+#' instead.
 #'
-#' @param DEA A data.frame of the results of a differential expression analysis, with features
-#'  (e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`
+#' @param DEA A data.frame of the results of a differential expression analysis,
+#' with features (e.g. genes) as row names and with at least the following 
+#' columns: `logFC`, `FDR`
 #' @param TS A data.frame of miRNA targets, with at least the following columns: 
 #' `family`, `rep.miRNA`, `feature`, `sites`. Alternatiely, the output of an 
 #' aggregated scan of miRNA kdModels, with columns `transcript`, `seed`, 
@@ -180,16 +184,15 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
 #' @return an enrich.results object.
 #'
 #' @export
-enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, cleanNames=FALSE, ...){
-  if(is.null(families)){
-    data("miR_families")
-    families <- miR_families
-  }
+enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, 
+                       cleanNames=FALSE, ...){
+  if(is.null(families)) families <- metadata(TS)$families
   if(cleanNames) names(families) <- sapply(names(families),FUN=.cleanMiRname)
   if(!is.null(miRNA.expression)){
     if(is.matrix(miRNA.expression) | is.data.frame(miRNA.expression))
       miRNA.expression <- rowMeans(miRNA.expression,na.rm=T)
-    if(cleanNames) names(miRNA.expression) <- sapply(names(miRNA.expression),FUN=.cleanMiRname)
+    if(cleanNames) names(miRNA.expression) <- sapply(names(miRNA.expression),
+                                                     FUN=.cleanMiRname)
     miRNA.expression <- miRNA.expression[which(miRNA.expression>0)]
   }
   if(all(c("family", "feature") %in% colnames(TS))){
@@ -250,8 +253,9 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
     }
   }else{
     if(any(grepl("-miR-|-mir-|-let-",head(row.names(object@input$sets.properties)))) && 
-       any(test %in% c("siteoverlap.down","overlap.down","siteoverlap2.down","siteoverlap.up","overlap.up","siteoverlap2.up",
-                       "siteoverlap.features","overlap.features","siteoverlap2.features")) && 
+       any(test %in% c("siteoverlap.down","overlap.down","siteoverlap2.down",
+                       "siteoverlap.up","siteoverlap2.up","siteoverlap.features",
+                       "overlap.up","overlap.features","siteoverlap2.features")) && 
        !is.null(object@input$families)){
       fams <- object@input$families
       sets.properties <- object@input$sets.properties
@@ -351,8 +355,8 @@ availableTests <- function(x=NULL, sets=NULL){
   }
   if(!setsScore && !setsSites) return(c("overlap"))
   tests <- c("regmir.bb")
-  if(sigBinary) tests <- c(tests, c("overlap","siteoverlap","woverlap","regmir.bb"))
-  if(sigContinuous) tests <- c(tests, c("mw","ks","ks2","gsea","areamir"))
+  if(sigBinary) tests <- c(tests, c("overlap","siteoverlap","woverlap"))
+  if(sigContinuous) tests <- c(tests, c("mw","ks","gsea","areamir"))
   if(sigContinuous && setsScore) tests <- c(tests, c("modscore","regmir.cc","ebayes","lmadd"))
   if(sigContinuous && setsSites) tests <- c(tests, c("modsites"))
   if(setsScore && sigBinary) tests <- c(tests, c("regmir.bc"))

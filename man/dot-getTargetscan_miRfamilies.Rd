@@ -4,7 +4,9 @@
 \alias{.getTargetscan_miRfamilies}
 \title{Download Targetscan8 miRNA families}
 \usage{
-.getTargetscan_miRfamilies(species = c("human", "mouse", "rat"))
+.getTargetscan_miRfamilies(
+  species = c("human", "mouse", "rat", "fish", "worm", "fly")
+)
 }
 \description{
 Download Targetscan8 miRNA families

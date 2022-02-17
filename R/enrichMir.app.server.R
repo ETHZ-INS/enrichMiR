@@ -7,61 +7,13 @@
 #'
 #' @return A shiny server function
 #' @export
-#' @import ggplot2 DT GO.db
+#' @import ggplot2 GO.db
 #' @importFrom rintrojs introjs
 #' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs hideElement showElement
 #' @importFrom plotly renderPlotly ggplotly event_data
+#' @importFrom DT renderDT datatable
 enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
-  library(DT)
-  library(ggplot2)
-  library(enrichMiR)
-  library(GO.db)
-  library(rintrojs)
-  library(shinyjs)
-  library(shinyjqui)
-  
-  baseDataPath="/mnt/schratt/enrichMiR_data/"
-  if(is.null(bData)) bData <- lapply(list(
-    Human=c(
-      "Targetscan conserved miRNA BS"=
-        "Targetscan/20211124_Targetscan8_Human_ConPred_human.rds",
-      "Targetscan all miRNA BS"=
-        "Targetscan/20211124_Targetscan8_Human_AllPred_human.rds",
-      "miRTarBase"=
-        "miRTarBase/miRTarBase8.human.rds",
-      "scanMiR (GRCh38)"="scanMiR/scanMiR_GRCh38_merged.rds",
-      "oRNAment"=
-        "oRNAment/human_coding_MSS05_gene_3UTR_pred.rds"),
-    Mouse=c(
-      "Targetscan conserved miRNA BS"=
-        "Targetscan/20211124_Targetscan8_Mouse_ConPred_mouse.rds",
-      "Targetscan all miRNA BS"=
-        "Targetscan/20211124_Targetscan8_Mouse_AllPred_mouse.rds",
-      "miRTarBase"=
-        "miRTarBase/miRTarBase8.mouse.rds",
-      "scanMiR (GRCm38)"="scanMiR/scanMiR_GRCm38_merged.rds",
-      "oRNAment"="oRNAment/mouse_coding_MSS05_gene_3UTR_pred.rds"),
-    Rat=c(
-      "Targetscan conserved miRNA BS (from mouse)"=
-        "Targetscan/20211124_Targetscan8_Mouse_ConPred_rat.rds",
-      "Targetscan all miRNA BS (from mouse)"=
-        "Targetscan/20211124_Targetscan8_Mouse_AllPred_rat.rds",
-      "miRTarBase"=
-        "miRTarBase/miRTarBase8.rat.rds",
-      "scanMiR (Rnor6)"="scanMiR/scanMiR_rnor6_merged.rds"),
-    Fish =c("TargetScan miRNA BS" = 
-              "Targetscan/20220207_Targetscan8_Fish_Pred.rds"),
-    Fly = c("Targetscan conserved miRNA BS"=
-              "Targetscan/20220207_Targetscan8_Fly_ConPred.rds",
-            "Targetscan all miRNA BS" =
-              "Targetscan/20220207_Targetscan8_Fly_AllPred.rds"),
-    Worm = c("Targetscan conserved miRNA BS"=
-              "Targetscan/20220207_Targetscan8_Worm_ConPred.rds",
-            "Targetscan all miRNA BS" =
-              "Targetscan/20220207_Targetscan8_Worm_AllPred.rds")
-    ), function(x) setNames(paste0(baseDataPath,x), names(x)))
-  
   dtwrapper <- function(d, pageLength=25, hide_cols){
     datatable( d, filter="top", class="compact", extensions=c("Buttons","ColReorder"),
                options=list(pageLength=pageLength, dom = "fltBip", rownames=FALSE,
@@ -216,6 +168,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(!is.null(updf) && nrow(updf)>1) DEA(updf)
     })
     observeEvent(input$example_dea, {
+      if(!(tolower(input$species) %in% c("human","rat","mouse")))
+        return(showModal(.getHelpModal("noExample")))
       data(exampleDEA, package="enrichMiR")
       if(input$species != "Human"){
         row.names(exampleDEA) <-
@@ -300,28 +254,26 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         if(tolower(input$species) == "human"){
           if(is.null(input$mirexp_human) || 
              is.null(x <- getHumanMirExp(input$mirexp_human))) return(NULL)
-          x <- matchMirExpr(x, EN_Object())
-          return(x[head(order(-x$expression), 
-                        round((input$mir_cut_off2/100)*nrow(x))),,drop=FALSE])
         }else if(tolower(input$species) == "mouse"){
           if(is.null(input$mirexp_mouse) || 
              is.null(x <- getMouseMirExp(input$mirexp_mouse))) return(NULL)
-          x <- matchMirExpr(x, EN_Object())
-          return(x[head(order(-x$expression), 
-                        round((input$mir_cut_off2/100)*nrow(x))),,drop=FALSE])
+        }else{
+          return(NULL)
         }
+      }else if(!is.null(input$exp_mirna_file)){
+        mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
+        # if(ncol(mirup)!=2 || !is.numeric(mirup[,2])){
+        #   showModal("The miRNA data you entered is not valid")
+        # }
+        x <- mirup[order(mirup[[2]], decreasing=TRUE),]
+        x <- data.frame(row.names=x[[1]], expression=x[[2]])
+      }else{
         return(NULL)
       }
-      if(is.null(input$exp_mirna_file)) return(NULL)
-      mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
-      # if(ncol(mirup)!=2 || !is.numeric(mirup[,2])){
-      #   showModal("The miRNA data you entered is not valid")
-      # }
-      mirup <- mirup[order(mirup[[2]], decreasing=TRUE),]
-      mirup <- data.frame(row.names=mirup[[1]], expression=mirup[[2]])
       x <- matchMirExpr(mirup, EN_Object())
+      x <- x[x$expression>0,,drop=FALSE]
       return(x[head(order(-x$expression), 
-                    round((input$mir_cut_off2/100)*length(x))),,drop=FALSE])
+                    round((input$mir_cut_off2/100)*nrow(x))),,drop=FALSE])
     })
     
     
@@ -342,6 +294,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     })
     
     observeEvent(input$example_GOI, {
+      if(!(tolower(input$species) %in% c("human","rat","mouse")))
+        return(showModal(.getHelpModal("noExample")))
       goi <- paste(.exampleGeneset(), collapse=", ")
       bg <- paste(.exampleBackground(), collapse=", ")
       if(tolower(input$species) != "human"){
@@ -368,7 +322,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           g <- trimInputList(input$genes_of_interest)
           g <- gsub("\\..*","",g)
         }else{
-          Sp <- switch(input$species, Human="Hs", Mouse="Mm", Rat="Rn")
+          Sp <- switch(input$species, Human="Hs", Mouse="Mm", Rat="Rn",
+                       Fish="Dr", Worm="Ce", Fly="Dm")
           ens <- switch(input$genes_format, "Ens"=TRUE, "GS"=FALSE)
           return(as.character(unlist(getGOgenes(go_ids=input$go_term, 
                                                 species=Sp,ensembl_ids=ens))))

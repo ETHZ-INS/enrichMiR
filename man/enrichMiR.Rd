@@ -14,8 +14,9 @@ enrichMiR(
 )
 }
 \arguments{
-\item{DEA}{A data.frame of the results of a differential expression analysis, with features
-(e.g. genes) as row names and with at least the following columns: `logFC`, `FDR`}
+\item{DEA}{A data.frame of the results of a differential expression analysis,
+with features (e.g. genes) as row names and with at least the following 
+columns: `logFC`, `FDR`}
 
 \item{TS}{A data.frame of miRNA targets, with at least the following columns: 
 `family`, `rep.miRNA`, `feature`, `sites`. Alternatiely, the output of an 
@@ -37,5 +38,6 @@ an enrich.results object.
 }
 \description{
 A miRNA wrapper around `testEnrichment`, for continuity with previous 
-enrichMiR versions.
+enrichMiR versions. It is recommended to use \code{\link{testEnrichment}} 
+instead.
 }

@@ -7,10 +7,9 @@
 #'
 #' @return
 #' @export
-#' @import AnnotationDbi GO.db
-# @importFrom AnnotationDbi mget Term
-getGOgenes <- function(go_ids, species="Mm", translate.ids=TRUE,ensembl_ids = FALSE){
-  library(AnnotationDbi)
+#' @import GO.db
+#' @importFrom AnnotationDbi mget Term
+getGOgenes <- function(go_ids, species="Mm", translate.ids=TRUE, ensembl_ids=FALSE){
   if(!all(grepl("^GO:",go_ids)) && !is.null(names(go_ids))) go_ids <- names(go_ids)
   db <- paste0('org.',species,'.eg')
   library(package=paste0(db,'.db'), character.only = T)
@@ -41,9 +40,8 @@ getGOgenes <- function(go_ids, species="Mm", translate.ids=TRUE,ensembl_ids = FA
 #'
 #' @return A named vector of GO IDs, with Terms as names.
 #' @export
-# @import GO.db
+#' @import GO.db
 findGO <- function(expr, fixed=FALSE, ontology="BP|MF|CC"){
-  library("GO.db")
   a <- as.data.frame(GO.db::GOTERM)
   w <- intersect(grep(expr, a$Term, fixed=fixed, ignore.case=T), 
                  grep(ontology,a$Ontology))

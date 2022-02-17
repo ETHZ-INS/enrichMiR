@@ -7,9 +7,11 @@
 recapitalizeGenes(x, gformat = "mouse")
 }
 \arguments{
-\item{x}{A character vector or an array (in which case the function will be applied to row.names)}
+\item{x}{A character vector or an array (in which case the function will be 
+applied to row.names)}
 
-\item{gformat}{The gene format, either 'human' (all caps) or 'mouse' (first letter capitalized)}
+\item{gformat}{The gene format, either 'human' (all caps) or 'mouse' (first 
+letter capitalized)}
 }
 \value{
 An object of the same type and dimensions as `x`.

@@ -1,152 +1,163 @@
 ---
-title: "enrichMiR"
-author: "Pierre-Luc Germain"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
+title: "miRNA target enrichment analysis with enrichMiR"
+author: 
+- name: Pierre-Luc Germain
+  affiliation:
+    - D-HEST Institute for Neuroscience, ETH
+    - Lab of Statistical Bioinformatics, UZH
+- name: Michael Soutschek
+  affiliation: Lab of Systems Neuroscience, D-HEST Institute for Neuroscience, ETH
+package: enrichMiR
+output:
+  BiocStyle::html_document
+abstract: |
+  This vignettes explores the main functionalities of the enrichMiR package.
+vignette: |
   %\VignetteIndexEntry{enrichMiR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-## Installing and loading the package
+```{r, include=FALSE}
+library(BiocStyle)
+```
+
+```{r echo = FALSE, out.width="30%", fig.align = 'right'}
+knitr::include_graphics(system.file('docs', 'enrichMiR_sticker.png', package='enrichMiR'))
+```
+
+## Installing
 
 You can install the package using:
 ```{r, eval=FALSE}
-install.packages("path/to/enrichMiR.tar.gz",type="source")
-```
-
-Alternatively, once decompressed you can load or install with devtools:
-```{r, eval=FALSE}
-devtools::load_all("path/to/packageFolder")
-# or
-devtools::install("path/to/packageFolder")
-```
-
-Once (if) installed, load the package using:
-```{r}
-library("enrichMiR")
+BiocManager::install("ETHZ-INS/enrichMiR")
 ```
 
 <br/><br/>
 
 ## Preparing the data
 
-(You can look at the different files - the data here is what you've given me, except that I exported as csv format)
+EnrichMiR requires two main inputs: a target annotation object, and the signal in
+which you want to look for target enrichment, such as a geneset (versus a 
+background set) or the results of a differential-expression analysis (DEA). 
+Genesets would simply be vectors of gene identifiers, while a DEA would be a 
+table that looks like this:
 
-### Preparing the differential expression data
-
-```{r, eval=FALSE}
-dea <- read.delim("GSE81437_polyA_differential_gene_expression.txt",header=T)
-# since this is a weird cuffdiff results table, we need to filter out genes and clean up the foldchanges
-dea <- dea[which(dea$status=="OK"),]
-dea$log2.fold_change. <- as.numeric(as.character(dea$log2.fold_change.))
-dea <- aggregate(dea[,c("log2.fold_change.","p_value","q_value")],by=list(gene=dea$gene),FUN=mean)
-row.names(dea) <- dea[,1]
-dea <- dea[-1,-1]
-colnames(dea) <- c("logFC","PValue","FDR")
-# we set infinite logFC to the maximum non-infinite logFCs:
-w <- which(is.infinite(dea$logFC)); dea$logFC[w] <- max(abs(dea$logFC[setdiff(which(dea$FDR<0.5),w)]))*sign(dea$logFC[w])
+```{r, message=FALSE}
+library("enrichMiR")
+data("exampleDEA",package="enrichMiR")
+head(exampleDEA)
 ```
 
-<br/><br/>
+The row names should be gene identifiers (or also transcript identifiers,
+depending on the target annotation), and it should minimally have the 'logFC', 
+'PValue' and 'FDR' columns (similar column names from established RNAseq DEA 
+packages can be automatically recognized).
 
-### Preparing miRNA expression levels
-
-```{r, eval=FALSE}
-m <- read.csv("DIV20 enrich Neuron HC miRNA.csv",header=T,stringsAsFactors=F)
-# we transform it into a named vector of logCPM values:
-mirexpr <- m$logCPM
-names(mirexpr) <- m$Gene.name
-# optionally, we can eventually restrict to take, say, only the 50% most expressed miRNAs:
-mirexpr <- mirexpr[which(mirexpr>=median(mirexpr))]
-```
-
-<br/><br/>
-
-### Preparing the targetScan data
-
-```{r, eval=FALSE}
-TS <- loadTargetScan("miRNA conserved sites rat all Transc.csv")
-```
-
-```{r, include=FALSE}
-data("enrichmir_sampleData")
-```
-
-<br/><br/>
-
-## Running the enrichment analysis
+The other important input is a target annotation, which looks like this:
 
 ```{r}
-e <- enrichMiR(DEA=dea, TS=TS, miRNA.expression = mirexpr, cleanNames=T)
+# we load the TargetScan conserved target annotation for human:
+data("consTShs", package="enrichMiR")
+consTShs[,1:4]
 ```
+A target annotation minimally has the columns "set" (indicating the sets to be 
+tested, in this case the miRNA families, denoted by their seed region) and  
+"feature" (the features for which enrichment is tested, such as genes), together
+denoting a miRNA-target pair, and optionally the columns "sites" (indicating how
+many binding sites the feature has for the miRNA) and "score" indicating for 
+instance a repression score. (The objects can also include metadata regarding 
+synonymous feature names and miRNA family members).
 
-The `mirexpr` is not mandatory. Here, since we're dealing with mouse annotation and rat data, we use `cleanNames=T` to remove the prefix (e.g. `mmu-`) of miRNA names. By default, all the different tests will be performed, but the `tests` parameter can be used to specify which tests to run.
+# Running an enrichment analysis
 
-<br/><br/>
-
-### Exploring the results
+An enrichment analysis can be launched as follows:
 
 ```{r}
-e
+devtools::load_all("../")
+er <- testEnrichment(exampleDEA, consTShs)
 ```
-
-This gives an overview (top rows, not many details) of the different analyses performed. The main analyses are:
-
-* EN.up: classical enrichment analysis (Fisher's test) on upregulated genes
-* EN.down: classical enrichment analysis (Fisher's test) on downregulated genes
-* wEN.up / wEN.down: weighted enrichment analysis on, respectively, upregulated or downregulated genes (accounts for UTR length bias)
-* michael.up / michael.down : Michael's binding sites method on, respectively, upregulated or downregulated genes
-* MW: A Mann-Whitney test comparing the foldchanges of targets vs non-target
-* KS: A Kolmogorov-Smirnov test comparing the foldchanges of targets vs non-target
-* KS2: An application of one-sided Kolmogorov-Smirnov test for respectively upregulated and downregulated genes
-* GSEA: An application of GSEA using foldchange as ranking
-
-The detailed results of each analysis can be accessed using, for example:
-```{r, eval=FALSE}
-enrichMiR.results(e,test="EN.down")
-```
-
-or simply:
+Unless the tests are specified, this will run the default tests, namely the 
+siteoverlap test respectively on significantly upregulated and downregulated 
+genes, as well as the areamir test on the continous differential expression 
+signal. Printing the object will give an overview of the top results of each test:
 
 ```{r}
-res <- e$EN.down
-head(res)
+er
 ```
-
-
-A merged table of multiple tests can be obtained with:
-
-```{r, eval=FALSE}
-enrichMiR.results(e,test=c("EN.down","michael.down"))
-```
-
-If `test` is ommitted, all tests will be merged (might not be an easy table to read if all tests were used).
-
-<br/><br/>
-
-## Plots
-
-### Enrichment plot
-
-For the purpose of trying the enrichment plot, we will use the results of the classical enrichment test for downregulated genes:
-```{r, fig.width=8, fig.height=8}
-res <- e$EN.down
-enrichPlot(res)
-```
-
-Many graphical parameters can be adjusted -- see `?enrichPlot`.
-
-<br/><br/>
-
-### Foldchange cumulative distribution plots
-
-We can plot the cumulate foldchange distribution for any miRNA family using:
+We see that both the siteoverlap test on downregulated genes and the areamir 
+test give the same top enrichments, while the siteoverlap test on upregulated 
+genes gives no enrichment. An aggregated table for all tests can also be 
+obtained using `getResults(er)`, and more detailed results of a test can be 
+viewed with:
 
 ```{r}
-CDplot(e,"ACAUUCA")
+er$siteoverlap.down
+```
+The results can alternatively be visualized with the `enrichPlot` function:
+
+```{r}
+enrichPlot(er$siteoverlap.down)
+```
+
+# CD plots
+
+A good way to visualize an enrichment is to plot the cumulative foldchange 
+distributions of different target groups. This can be done with the 
+`CDplotWrapper` function:
+
+```{r}
+CDplotWrapper(dea=exampleDEA, sets=consTShs, setName="UGGUCCC")
+```
+The genes in each sets are ranked according to their foldchange (the x-axis), 
+while the y-axis shows the proportion of genes in the set that have a foldchange 
+below or equal to that given on x. In this way, small shifts in foldchanges can 
+easily be visualized.
+
+In the presence of a real miRNA effect, we expect to see a gradual dose-response
+pattern, as shown above, meaning that targets with stronger binding sites also 
+have stronger log-foldchanges (i.e. lower logFC, in the case of an increased 
+miRNA activity, as in this example).
+
+There are different ways of splitting the genes into groups, which can be 
+specified using the `by` argument:
+
+```{r}
+CDplotWrapper(dea=exampleDEA, sets=consTShs, setName="UGGUCCC", by="sites")
+```           
+Because UTR length is correlated with more binding sites for any miRNA, the 
+number of sites tends to give spurious signals. We therefore recommend 
+splitting by best binding type if this information is available in 
+the target annotation you are using, or otherwise splitting by predicted 
+repression score (if available).
+
+# Overview of the different enrichment tests
+
+enrichMiR implements different statistical tests for target enrichment. You 
+can view what tests are possible for a given input using:
+
+```{r}
+availableTests(exampleDEA, consTShs)
+```
+
+Some tests depend on continous inputs (e.g. fold-changes), and hence require 
+the results of a differential expression analysis (DEA) to be provided), 
+while others are binary, i.e. based on the membership in a gene set.
+When the input is a DEA, each binary tests will be performed on both 
+significantly upregulated and downregulated genes.
+
+Below is a description of the various enrichment tests. We recommend using the 
+siteoverlap (most sensitive) or areamir tests. For a more detailed benchmark, 
+please consult the publication.
+
+```{r, echo=FALSE, results='asis'}
+enrichMiR:::.testDescription()
 ```
 
 <br/><br/>
+
+# Session info
+```{r}
+sessionInfo()
+```
 

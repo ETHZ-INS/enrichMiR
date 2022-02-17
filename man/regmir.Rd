@@ -2,6 +2,10 @@
 % Please edit documentation in R/tests.R
 \name{regmir}
 \alias{regmir}
+\alias{regmirb}
+\alias{regmir.bb}
+\alias{regmir.bc}
+\alias{regmir.cc}
 \title{regmir}
 \usage{
 regmir(
@@ -13,6 +17,14 @@ regmir(
   use.intercept = FALSE,
   keepAll = TRUE
 )
+
+regmirb(signal, sets, ...)
+
+regmir.bb(signal, sets, ...)
+
+regmir.bc(signal, sets, ...)
+
+regmir.cc(signal, sets, ...)
 }
 \arguments{
 \item{signal}{A vector of logical or numeric values, with gene symbols as names.}
