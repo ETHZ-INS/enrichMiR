@@ -137,12 +137,13 @@ ENSG00000106462, ENSG00000100811, ...")
   ...", 
                             resize="vertical")),
               tabPanel(title = "Upload miRNA expression table",
-                "Upload miRNA Expression Table in the following format: miRBase name in the first
-                            column, expression-values in the second column", br(),
                 fileInput(inputId="exp_mirna_file", 
-                          label="Upload miRNA expression object as '*.csv' file (see help)",
+                          label="Upload miRNA expression object as '*.csv' file (see below for format)",
                           accept=c("text/csv", ".csv",".tab",".txt",
                                    "text/comma-separated-values,text/plain")),
+                div(style = "margin-top: -30px"),
+                tags$p("miRNA expression tables should have the following format: miRBase name in the first
+                            column, expression-values in the second column"),br(), br(),
                 sliderInput(inputId="mir_cut_off", 
                             label="Select miRNA expression cut-off:",
                             min=10, max=100, post=" %", value=50),
