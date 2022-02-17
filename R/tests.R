@@ -544,7 +544,7 @@ regmir.cc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
   2*pt(abs(m$coef/se),rdf,lower.tail=FALSE)
 }
 
-#' checks for duplicated bm columns for regmir
+# checks for duplicated bm columns for regmir
 .reduceBm <- function(bm){
   # split columns into groups having the same colSums
   si <- split(seq_len(ncol(bm)), colSums(bm))

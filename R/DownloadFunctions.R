@@ -1,5 +1,4 @@
-
-#' Download Targetscan8 miRNA families
+# Download Targetscan8 miRNA families
 .getTargetscan_miRfamilies <- function(species = c("human","mouse","rat","fish","worm","fly")) {
   species <- match.arg(species)
   
@@ -36,7 +35,7 @@
 
 
 
-#' Downlaod Targetscan8 Site Position Files
+# Downlaod Targetscan8 Site Position Files
 .getTargetScanSites <- function(species = c("human","mouse","rat"), incl_nonconsites = TRUE) {
   species <- match.arg(species)
   # assign species ID
@@ -117,7 +116,7 @@
 
 
 
-#' Downlaod Targetscan8 Transcript / Gene Predictions
+# Downlaod Targetscan8 Transcript / Gene Predictions
 .getTargetScanPred <- function(species = c("human","mouse","rat","fly"), type=c("conserved","all"), keepMers=FALSE){
   type <- match.arg(type)
   species <- match.arg(species)
@@ -212,7 +211,7 @@
 }
 
 
-#' Downlaod Targetscan8 Transcript / Gene Predictions for fish and worm
+# Downlaod Targetscan8 Transcript / Gene Predictions for fish and worm
 .getTargetScanPred2 <- function(species = c("fish","worm"), type=c("conserved","all"), keepMers=FALSE){
   type <- match.arg(type)
   species <- match.arg(species)
@@ -289,7 +288,7 @@
 }
 
 
-#' importFrom Matrix sparseMatrix miRTarBase
+# importFrom Matrix sparseMatrix miRTarBase
 .fetch_mirtarbase <- function(species, returnType=c("DataFrame","matrix")){
   options(timeout=500)
   returnType <- match.arg(returnType)
