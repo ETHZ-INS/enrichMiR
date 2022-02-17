@@ -302,13 +302,13 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
              is.null(x <- getHumanMirExp(input$mirexp_human))) return(NULL)
           x <- matchMirExpr(x, EN_Object())
           return(x[head(order(-x$expression), 
-                        round((input$mir_cut_off2/100)*length(x))),,drop=FALSE])
+                        round((input$mir_cut_off2/100)*nrow(x))),,drop=FALSE])
         }else if(tolower(input$species) == "mouse"){
           if(is.null(input$mirexp_mouse) || 
              is.null(x <- getMouseMirExp(input$mirexp_mouse))) return(NULL)
           x <- matchMirExpr(x, EN_Object())
           return(x[head(order(-x$expression), 
-                        round((input$mir_cut_off2/100)*length(x))),,drop=FALSE])
+                        round((input$mir_cut_off2/100)*nrow(x))),,drop=FALSE])
         }
         return(NULL)
       }
