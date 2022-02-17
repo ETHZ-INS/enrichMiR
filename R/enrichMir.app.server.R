@@ -270,7 +270,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }else{
         return(NULL)
       }
-      x <- matchMirExpr(mirup, EN_Object())
+      x <- matchMirExpr(x, EN_Object())
       x <- x[x$expression>0,,drop=FALSE]
       return(x[head(order(-x$expression), 
                     round((input$mir_cut_off2/100)*nrow(x))),,drop=FALSE])
