@@ -701,7 +701,6 @@ lmadd <- function(signal, sets, use.intercept=FALSE, calc.threshold=0.2,
   res1
 }
 
-
 #' fisher.test.p
 #' 
 #' Fast p-values from multiple Fisher's exact tests
