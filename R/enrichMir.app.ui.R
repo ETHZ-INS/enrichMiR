@@ -1,10 +1,10 @@
 #' @import shiny shinydashboard shinycssloaders
 #' @importFrom plotly plotlyOutput
 #' @importFrom shinycssloaders withSpinner
-#' @importFrom shinyjs useShinyjs
+#' @importFrom shinyjs useShinyjs runjs
 #' @importFrom shinyjqui jqui_resizable
 #' @importFrom rintrojs introjsUI
-#' @importFrom waiter use_waiter waiter_show_on_load waiter_hide
+#' @importFrom waiter use_waiter waiter_show_on_load waiter_hide spin_1
 #' @importFrom DT DTOutput
 #' @export
 enrichMiR.ui <- function(){
