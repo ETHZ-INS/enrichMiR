@@ -10,6 +10,8 @@ To use the package internally, view the
 [vignette](vignettes/enrichMiR.Rmd). You may also use the 
 [interactive app](https://ethz-ins.org/enrichMiR/).
 
+<br/><br/>
+
 ## Enrichment tests
 
 enrichMiR implements a variety of statistical tests which are
@@ -21,4 +23,4 @@ In short, we recommend the siteoverlap, woverlap, lmadd and
 areamir tests; when using large annotations (e.g. scanMiR), we 
 recommend the lmadd test (see publication).
 
-<img src="inst/docs/benchmark1.png", alt="Benchmark results"/>
+<img src="inst/docs/benchmark1.png" alt="Benchmark results"/>
