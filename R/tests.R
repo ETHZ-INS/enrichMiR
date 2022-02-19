@@ -507,11 +507,6 @@ regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE,
 
 #' @export
 #' @rdname regmir
-regmirb <- regmir.bb <- function(signal, sets, ...){
-  regmir(signal, sets, binary=TRUE, ...)
-}
-#' @export
-#' @rdname regmir
 regmir.bb <- function(signal, sets, ...) regmir(signal, sets, binary=TRUE, ...)
 #' @export
 #' @rdname regmir
