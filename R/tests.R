@@ -458,7 +458,10 @@ regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE,
   beta <- co[,1]
   names(beta) <- row.names(co)
   signald <- data.frame( y=signal, as.matrix(sets[,names(beta),drop=FALSE]) )
-  if(!binary) signald$median <- sparseMatrixStats::rowMedians(sets)
+  if(!binary){
+    signald$median <- sparseMatrixStats::rowMedians(sets)
+    if(all(signald$median==0)) signald$median <- rowMeans(sets)
+  } 
   
   # new fit to get significance estimates
   if(use.intercept){
@@ -615,6 +618,7 @@ ebayes <- function(signal, sets, use.intercept=FALSE){
   signal <- signal[names(signal) %in% row.names(sets)]
   sets <- sets[names(signal),]
   meds <- sparseMatrixStats::rowMedians(sets)
+  if(all(meds==0)) meds <- rowMeans(sets)
   if(use.intercept){
     mm <- model.matrix(~meds+signal)
   }else{
