@@ -325,22 +325,15 @@ TPM4,-1.41,1.83e-10,6.86e-08
           corrects for UTR length using the Wallenius method, as implemented in
           the ", tags$a("goseq", target="_blank",
                         href="https://www.bioconductor.org/packages/devel/bioc/html/goseq.html"),
-                    "package."),
+                    "package. The test performs similarly to the siteoverlap test."),
             tags$li(tags$b("Mann-Whitney (MW)")," (continuous signal, set membership):",
                     tags$br(), "This is the Mann-Whitney (also known as Wilcoxon)
-                non-parametric test comparing targets and non-targets."),
+                non-parametric test comparing targets and non-targets. This
+                test performs badly in benchmarks and should not be used."),
             tags$li(tags$b("Kolmogorov-Smirnov (KS)")," (continuous signal, set membership):",
                     tags$br(), "This is the Kolmogorov-Smirnov test comparing the 
-                signal distribution of targets vs non-targets."),
-            tags$li(tags$b("Combined Kolmogorov-Smirnov (KS2)"),
-                    " (continuous signal, set membership):",
-                    tags$br(), "This is similar to the Kolmogorov-Smirnov test, but
-                compares upregulated and downregulated genes separately, 
-                expecting the direction of the distribution shift to be 
-                consistent between the two, and if so combining the p-values 
-                using Fisher's method. This excludes distributional changes that
-                are inconsistent with changes in miRNA activity, and leads to
-                improved results over the traditional KS test."),
+                signal distribution of targets vs non-targets.  This
+                test performs badly in benchmarks and should not be used."),
             tags$li(tags$b("modscore")," (continuous signal, repression score):",
                     tags$br(), "This is a linear regression testing the relationship
                 between the input signal and the corresponding repression score
@@ -348,6 +341,11 @@ TPM4,-1.41,1.83e-10,6.86e-08
             tags$li(tags$b("ebayes")," (continuous signal, repression score):",
                     tags$br(), "This is akin to the `modscore` tests, but performed
                 using limma's moderated t-statistics."),
+            tags$li(tags$b("lmadd")," (continuous signal, repression score):",
+                  tags$br(), "This is the `ebayes` tests, followed by consecutive
+                  fits adding each top miRNAs to the previous ones in a single 
+                  model. This is especially useful to identify candidates which 
+                  are not redundant with the top hit."),
             tags$li(tags$b("modsites")," (continuous signal, number of sites):",
                     tags$br(), "This is a linear regression testing the relationship
                 between the input signal and the number of predicted binding 

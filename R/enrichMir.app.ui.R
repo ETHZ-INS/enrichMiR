@@ -244,11 +244,12 @@ Note that the background should also include the genes of interest!"),
                                      label="Select additional tests to run",
                                      choices=list(
                                        "overlap" = "overlap",
-                                       "weighted overlap" ="woverlap",
+                                       "weighted overlap (woverlap)" ="woverlap",
                                        "modsites" = "modsites",
                                        "modscore" = "modscore",
+                                       "ebayes" = "ebayes",
+                                       "lmadd" = "lmadd",
                                        "KS" = "ks",
-                                       "KS2" = "ks2",
                                        "MW" = "mw",
                                        "regmir (continuous)" = "regmir.cc",
                                        "regmir (binary)" = "regmir.bb"
@@ -360,19 +361,11 @@ Note that the background should also include the genes of interest!"),
                      nominal q-value threshold of 0.05. One can observe that
                      while most tests manage to rank the true hypothesis as 
                      first, most fail to accurately control error."),
-              tags$p("Gene-Set Enrichment Analysis (GSEA) and
-                     Kolmogorov-Smirnov tests give very poor performances. The
-                     site-overlap test provided an excellent ranking of the 
-                     hypotheses (i.e. true miRNA always coming out top), but 
-                     uncalibrated p-values, leading to many false positives when
-                     using a threshold of 0.05. The areamir also performed well,
-                     and although it did not always give the true result first,
-                     it had a better error control. Finally, the regmir test 
-                     provided excellent error control, but at the cost of a 
-                     lower sensitivity (and much greater computing time)."),
               tags$p("In light of these results, the siteoverlap test was 
                      selected as the default for binary signals, and the areamir
-                     test for continuous signals."),
+                     test for continuous signals. For use with larger annotations
+                     (e.g. scanMiR), we however recommend the more conservative
+                     lmadd test (see publication for details)."),
               tags$p("Note that restricting the enrichment analysis to the 
                      miRNAs expressed in your system systematically decreases
                      FDR. You can do so in the 'Species and miRNAs' tab, either
