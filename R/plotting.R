@@ -258,7 +258,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
 #' @importFrom ggrepel geom_text_repel
 enrichPlot <- function( res,
                         enr.field=c("enrichment","normalizedEnrichment","beta",
-                                    "coefficient"),
+                                    "coefficient","combined.coef"),
                         size.field=c("overlap", "set_size"),
                         col.field=NULL,
                         sig.field="FDR", 
@@ -270,6 +270,14 @@ enrichPlot <- function( res,
                         maxLabels=10, 
                         opacity=0.5,  
                         repel=TRUE ){
+  if(is(res,"enrich.results")){
+    if(length(names(res))==1){
+      res <- getResults(res)
+    }else{
+      stop("Use `getResults` to select one of the multiple enrichment analyses 
+           contained in the object.")
+    }
+  }
   if(length(enr.field <- head(intersect(enr.field,colnames(res)),n=1))==0)
     stop("`enr.field` not found.")
   if(length(sig.field <- head(intersect(sig.field,colnames(res)),n=1))==0)

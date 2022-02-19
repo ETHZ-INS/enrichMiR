@@ -662,7 +662,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       test <- input$view_test
       if(is.null(test) || test=="") test <- NULL
       rr <- getResults(ER(), test=test, flatten=TRUE)
-      show_standard <- c("enrichment","pvalue","FDR","expression")
+      show_standard <- c("enrichment","coefficient","combined.coef",
+                         "combined.pvalue","pvalue","FDR","expression")
       if(is.null(input$columns2show)){
         columns2hide <- setdiff(colnames(rr),show_standard)
       }else{
@@ -676,7 +677,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           }
         columns2hide <- setdiff(colnames(rr),show)
       }
-      return(dtwrapper(rr,hide_cols = columns2hide))
+      return(dtwrapper(rr, hide_cols=columns2hide))
     })
     
     output$dl_hits <- downloadHandler(
