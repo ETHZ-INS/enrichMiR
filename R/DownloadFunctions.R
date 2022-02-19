@@ -1,5 +1,4 @@
-
-#' Download Targetscan8 miRNA families
+# Download Targetscan8 miRNA families
 .getTargetscan_miRfamilies <- function(species = c("human","mouse","rat","fish","worm","fly")) {
   species <- match.arg(species)
   
@@ -36,7 +35,7 @@
 
 
 
-#' Downlaod Targetscan8 Site Position Files
+# Downlaod Targetscan8 Site Position Files
 .getTargetScanSites <- function(species = c("human","mouse","rat"), incl_nonconsites = TRUE) {
   species <- match.arg(species)
   # assign species ID
@@ -117,7 +116,7 @@
 
 
 
-#' Downlaod Targetscan8 Transcript / Gene Predictions
+# Downlaod Targetscan8 Transcript / Gene Predictions
 .getTargetScanPred <- function(species = c("human","mouse","rat","fly"), type=c("conserved","all"), keepMers=FALSE){
   type <- match.arg(type)
   species <- match.arg(species)
@@ -212,7 +211,7 @@
 }
 
 
-#' Downlaod Targetscan8 Transcript / Gene Predictions for fish and worm
+# Downlaod Targetscan8 Transcript / Gene Predictions for fish and worm
 .getTargetScanPred2 <- function(species = c("fish","worm"), type=c("conserved","all"), keepMers=FALSE){
   type <- match.arg(type)
   species <- match.arg(species)
@@ -289,14 +288,14 @@
 }
 
 
-#' importFrom Matrix sparseMatrix miRTarBase
+# importFrom Matrix sparseMatrix miRTarBase
 .fetch_mirtarbase <- function(species, returnType=c("DataFrame","matrix")){
   options(timeout=500)
   returnType <- match.arg(returnType)
-  species <- switch(species, human="hsa", mouse="mmu", rat="rno", species)
+  spec <- switch(species, human="hsa", mouse="mmu", rat="rno", species)
   tmp <- tempfile()
   download.file(paste0("https://mirtarbase.cuhk.edu.cn/~miRTarBase/miRTarBase_2022/cache/download/8.0/", 
-                       species, "_MTI.xls", ifelse(species=="hsa", "x","")),
+                       spec, "_MTI.xls", ifelse(spec=="hsa", "x","")),
                 destfile=tmp, extra=c(timeout=999))
   e <- readxl::read_excel(tmp)
   e <- e[,c(2,4)]
@@ -307,6 +306,8 @@
   if(returnType=="DataFrame"){
     e <- DataFrame(e)
     colnames(e) <- c("set","feature")
+    syn <- .ens2symbol(species,level = "gene",report.element = "sym")
+    metadata(e)$feature.synonyms <- syn
     return(e)
   }
   sparseMatrix( as.numeric(e[,2]), as.numeric(e[,1]), 

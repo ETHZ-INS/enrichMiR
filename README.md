@@ -7,7 +7,7 @@ miRNAs whose targets are enriched among genesets of interest
 or a differential expression signature.
 
 To use the package internally, view the 
-[vignette](vignette/enrichMiR.Rmd). You may also use the 
+[vignette](vignettes/enrichMiR.Rmd). You may also use the 
 [interactive app](https://ethz-ins.org/enrichMiR/).
 
 ## Enrichment tests

@@ -186,10 +186,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
 #' @export
 enrichMiR <- function( DEA, TS, miRNA.expression=NULL, families=NULL, 
                        cleanNames=FALSE, ...){
-  if(is.null(families)){
-    data("miR_families")
-    families <- miR_families
-  }
+  if(is.null(families)) families <- metadata(TS)$families
   if(cleanNames) names(families) <- sapply(names(families),FUN=.cleanMiRname)
   if(!is.null(miRNA.expression)){
     if(is.matrix(miRNA.expression) | is.data.frame(miRNA.expression))

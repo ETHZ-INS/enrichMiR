@@ -2,9 +2,15 @@
 % Please edit documentation in R/tests.R
 \name{plMod}
 \alias{plMod}
+\alias{modsites}
+\alias{modscore}
 \title{plMod}
 \usage{
 plMod(signature, sets, var = "sites", correctForLength = NULL)
+
+modsites(x, sets, correctForLength = TRUE, ...)
+
+modscore(x, sets, ...)
 }
 \arguments{
 \item{signature}{A named numeric vector}

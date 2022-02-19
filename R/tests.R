@@ -174,10 +174,10 @@ plMod <- function(signature, sets, var="sites", correctForLength=NULL){
   }else{
     cfl <- NULL
   }
-  sets$family <- as.character(sets$set)
-  res <- as.data.frame(t(vapply(split(sets,sets$set), fcs=signature, 
+  sets$sets <- as.character(sets$set)
+  res <- vapply(split(as.data.frame(sets),sets$set), fcs=signature, 
                   FUN.VALUE=numeric(2), FUN=function(x,fcs, minSize){
-    x <- x[!duplicated(x),]
+    x <- x[!duplicated(x$feature),]
     row.names(x) <- x$feature
     x2 <- x[names(fcs),var]
     x2[which(is.na(x2))] <- 0
@@ -189,16 +189,21 @@ plMod <- function(signature, sets, var="sites", correctForLength=NULL){
     mod <- try(.lm.fit(x2, fcs), silent=TRUE)
     if(is(mod,"try-error")) return(rep(NA_real_,2))
     c(mod$coefficients[1], tryCatch(.lm.pval(mod)[1], error=function(e) NA))
-  })))
+  })
+  res <- as.data.frame(t(res))
   colnames(res) <- c("coefficient","pvalue")
   res$FDR <- p.adjust(res$pvalue)
   res[order(res$FDR,res$pvalue),]
 }
 
+#' @export
+#' @rdname plMod
 modsites <- function(x, sets, correctForLength=TRUE, ...){
   plMod(x, sets, correctForLength=correctForLength, ...)
 }
 
+#' @export
+#' @rdname plMod
 modscore <- function(x, sets, ...) plMod(x, sets, var="score", ...)
 
 
@@ -453,7 +458,10 @@ regmir <- function(signal, sets, binary=NULL, alpha=1, do.plot=FALSE,
   beta <- co[,1]
   names(beta) <- row.names(co)
   signald <- data.frame( y=signal, as.matrix(sets[,names(beta),drop=FALSE]) )
-  if(!binary) signald$median <- sparseMatrixStats::rowMedians(sets)
+  if(!binary){
+    signald$median <- sparseMatrixStats::rowMedians(sets)
+    if(all(signald$median==0)) signald$median <- rowMeans(sets)
+  } 
   
   # new fit to get significance estimates
   if(use.intercept){
@@ -534,7 +542,7 @@ regmir.cc <- function(signal, sets, ...) regmir(signal, sets, binary=FALSE, ...)
   2*pt(abs(m$coef/se),rdf,lower.tail=FALSE)
 }
 
-#' checks for duplicated bm columns for regmir
+# checks for duplicated bm columns for regmir
 .reduceBm <- function(bm){
   # split columns into groups having the same colSums
   si <- split(seq_len(ncol(bm)), colSums(bm))
@@ -605,6 +613,7 @@ ebayes <- function(signal, sets, use.intercept=FALSE){
   signal <- signal[names(signal) %in% row.names(sets)]
   sets <- sets[names(signal),]
   meds <- sparseMatrixStats::rowMedians(sets)
+  if(all(meds==0)) meds <- rowMeans(sets)
   if(use.intercept){
     mm <- model.matrix(~meds+signal)
   }else{
@@ -690,7 +699,6 @@ lmadd <- function(signal, sets, use.intercept=FALSE, calc.threshold=0.2,
   res1$FDR <- p.adjust(res1$combined.pvalue)
   res1
 }
-
 
 #' fisher.test.p
 #' 

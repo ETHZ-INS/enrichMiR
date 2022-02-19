@@ -270,7 +270,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }else{
         return(NULL)
       }
-      x <- matchMirExpr(mirup, EN_Object())
+      x <- matchMirExpr(x, EN_Object())
       x <- x[x$expression>0,,drop=FALSE]
       return(x[head(order(-x$expression), 
                     round((input$mir_cut_off2/100)*nrow(x))),,drop=FALSE])
@@ -531,14 +531,14 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         bg <- Back()
         standard_tests <- c("siteoverlap")
       }
+      if(length(sig)==0) return(NULL)
       tests <- c(standard_tests, input$tests2run)
       if(!any(c("sites","score") %in% colnames(EN_Object())))
         tests <- "overlap"
-      tests <- intersect(tests, availableTests(EN_Object()))
+      tests <- intersect(tests, availableTests(sig,EN_Object()))
       msg <- paste0("Performing enrichment analyses with the following tests: ",
                     paste(tests,collapse=", "))
       message(msg)
-      if(length(sig)==0) return(NULL)
       detail <- NULL
       if(input$collection == "Targetscan all miRNA BS")
         detail <- "This will take a while..."
@@ -553,8 +553,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                   showModal(modalDialog(
                     title = "There was an error with your request:",
                     tags$pre(as.character(e)),
-                    "This typically happens when there is a mismatch 
-                    between your different input data (e.g. wrong species or the first column of a DEA does not contain genes)"
+                    "This typically happens when there is a mismatch between 
+                    your different input data (e.g. wrong species or the first 
+                    column of a DEA does not contain recognized genes IDs)."
                   ))
                 })
       })
@@ -585,14 +586,22 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(is.null(er$expression)) col.field <- NULL
       er$set <- row.names(er)
       flags$enrichPlotOn <- TRUE
-      p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
+      p <- tryCatch({
+        p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
                       sig.field=input$sig.field, col.field=col.field, 
                       label.enr.thres=input$label.enr.thres, 
                       maxLabels=input$label_n )
-      p <- setTheme(p, input$bubble_theme)
-      forTooltip <- intersect(c("set","label","overlap","enrichment","set_size",
-                                "pvalue","FDR"), colnames(er))
-      ggplotly(p, source="enrichplot", tooltip=forTooltip)
+        p <- setTheme(p, input$bubble_theme)
+        forTooltip <- intersect(c("set","label","overlap","enrichment",
+                                  "set_size","pvalue","FDR"), colnames(er))
+        ggplotly(p, source="enrichplot", tooltip=forTooltip)
+      }, error=function(e){
+        FALSE
+      })
+      validate( need(!isFALSE(p),
+        "Could not plot the enrichment results. The most likely explanation is
+        that there is too little to plot. See the results table.") )
+      p
     })
     
     plotlyObs <- observeEvent(event_data("plotly_click", "enrichplot",
