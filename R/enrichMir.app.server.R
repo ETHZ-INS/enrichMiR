@@ -524,6 +524,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         sig <- DEA()
         bg <- NULL
         standard_tests <- c("siteoverlap","areamir")
+        if(isTRUE(grepl("scanmir",input$collection,ignore.case=TRUE)))
+          standard_tests <- c("woverlap","lmadd")
       }else{
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
         sig <- Gene_Subset()

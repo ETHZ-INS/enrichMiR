@@ -255,8 +255,8 @@ Note that the background should also include the genes of interest!"),
                                        "lmadd" = "lmadd",
                                        "KS" = "ks",
                                        "MW" = "mw",
-                                       "regmir (continuous)" = "regmir.cc",
-                                       "regmir (binary)" = "regmir.bb"
+                                       "regmir (continuous)" = "regmir.cc"
+                                       #,"regmir (binary)" = "regmir.bb"
                                        ),
                                      selected=NULL, inline=FALSE, width=NULL)
               )
