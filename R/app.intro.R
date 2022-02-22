@@ -321,8 +321,8 @@ TPM4,-1.41,1.83e-10,6.86e-08
           vs in the background (and therefore ignoring any site-based 
           information)."),
             tags$li(tags$b("woverlap")," (binary signal, set membership):",
-                    tags$br(), "This test is like the above 'overlap' test, but
-          corrects for UTR length using the Wallenius method, as implemented in
+                    tags$br(), "This test is like the above 'siteoverlap' test, 
+          but corrects for UTR length using the Wallenius method, as implemented in
           the ", tags$a("goseq", target="_blank",
                         href="https://www.bioconductor.org/packages/devel/bioc/html/goseq.html"),
                     "package. The test performs similarly to the siteoverlap test."),
