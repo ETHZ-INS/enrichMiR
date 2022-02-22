@@ -382,11 +382,11 @@ TPM4,-1.41,1.83e-10,6.86e-08
 
 .getTestsTable <- function(){
   data.frame(
-    test=c("overlap","woverlap","siteoverlap","regmirb","areamir","modSites",
-           "ebayes","lmadd","KS","MW","GSEA"),
-    "input signal type"=rep(c("binary (set)", "continuous (DEA)"), c(4,7)),
+    test=c("overlap","woverlap","siteoverlap","regmir (binary)","areamir","modSites",
+           "ebayes","lmadd","regmir (continuous)","KS","MW","GSEA"),
+    "input signal type"=rep(c("binary (set)", "continuous (DEA)"), c(4,8)),
     "annotation type"=c("genesets","nb sites","nb sites","genesets","scores",
-                        "nb sites","scores","scores",rep("genesets",3)),
+                        "nb sites","scores","scores","scores",rep("genesets",3)),
     "description"=c(
       "Over-representation (ORA) of target genes among set",
       "ORA of binding sites, correcting for UTR length",
@@ -396,8 +396,8 @@ TPM4,-1.41,1.83e-10,6.86e-08
       "Linear regression of logFCs on nb of binding sites",
       "Linear regression of logFCs on predicted repression scores",
       "Consecutive additive linear regression of logFCs on predicted repression scores",
+      "Regularized constrained lienar regression of logFCs on predicted repression scores",
       "Kolmogorov-Smirnov (KS) test on logFCs",
-      "Modified KS test on logFCs",
       "Mann-Whitney / Wilcoxon test on logFCs",
       "Gene set enrichment analysis (GSEA)"))
 }
