@@ -241,24 +241,11 @@ Note that the background should also include the genes of interest!"),
                                icon=icon("question-circle"), label=""),
                   tags$h5(em(
                     "We recommend to only change test settings after reading the",
-                    " enrichMir documentation and the benchmark.")),
-                  tags$h5(em("By default, we always perform the 'siteoverlap'",
-                             "and (with DEA inputs) the 'areamir' tests")),
-                  checkboxGroupInput(inputId="tests2run",
-                                     label="Select additional tests to run",
-                                     choices=list(
-                                       "overlap" = "overlap",
-                                       "weighted overlap (woverlap)" ="woverlap",
-                                       "modsites" = "modsites",
-                                       "modscore" = "modscore",
-                                       "ebayes" = "ebayes",
-                                       "lmadd" = "lmadd",
-                                       "KS" = "ks",
-                                       "MW" = "mw",
-                                       "regmir (continuous)" = "regmir.cc"
-                                       #,"regmir (binary)" = "regmir.bb"
-                                       ),
-                                     selected=NULL, inline=FALSE, width=NULL)
+                    " enrichMiR documentation and the benchmark.")),
+                  tags$h5(em("Some tests are always performed by default, namely
+                    the 'siteoverlap' test and (except for some annotations and
+                    assuming a DEA input) the 'areamir' test.")),
+                  uiOutput("extratestinput")
               )
             ),
           tags$div(id="resultsbox", style="display: none; height: 100%;", 

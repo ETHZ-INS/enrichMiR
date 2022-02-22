@@ -357,6 +357,28 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
             "families on ", length(unique(EN_Object()$feature)), 
             "transcripts/genes")
     })
+    
+    output$extratestinput <- renderUI({
+      options <- c(
+        "overlap" = "overlap",
+        "weighted overlap (woverlap)" ="woverlap",
+        "modsites" = "modsites",
+        "modscore" = "modscore",
+        "ebayes" = "ebayes",
+        "lmadd" = "lmadd",
+        "KS" = "ks",
+        "MW" = "mw",
+        "regmir (continuous)" = "regmir.cc"
+        #,"regmir (binary)" = "regmir.bb"
+      )
+      if(is.null(EN_Object()) || is.null(tests <- metadata(EN_Object())$tests))
+        tests <- c()
+      options <- options[which(tolower(options) %in% tolower(tests))]
+      checkboxGroupInput(inputId="tests2run",
+                         label="Select additional tests to run",
+                         choices=options,
+                         selected=NULL, inline=FALSE, width=NULL)
+    })
    
     ##############################
     ## CD plot
