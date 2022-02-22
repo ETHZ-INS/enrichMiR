@@ -385,11 +385,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     CDtypeOptions <- reactive({
       if(is.null(EN_Object())) return(NULL)
       CN <- colnames(EN_Object())
-      if(!any(c("sites","score","best_stype","type") %in% CN))
+      if(!any(c("sites","score","best_stype") %in% CN))
         return(c(Automatic="auto"))
       options <- c( Automatic="auto", "Best site type"="best_stype", 
-                    Score="score", "Number of sites"="sites",
-                    "Site type"="type" )
+                    Score="score", "Number of sites"="sites")
       if(!("best_stype" %in% CN) && sum(grepl("[6-8]mer",CN))>1)
         CN <- unique(c(CN,"best_stype", "type"))
       options[options %in% c("auto",CN)]

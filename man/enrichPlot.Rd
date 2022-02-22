@@ -6,7 +6,8 @@
 \usage{
 enrichPlot(
   res,
-  enr.field = c("enrichment", "normalizedEnrichment", "beta", "coefficient"),
+  enr.field = c("enrichment", "normalizedEnrichment", "beta", "coefficient",
+    "combined.coef"),
   size.field = c("overlap", "set_size"),
   col.field = NULL,
   sig.field = "FDR",

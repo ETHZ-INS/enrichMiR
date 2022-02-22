@@ -335,6 +335,7 @@ getResults <- function(object, test=NULL, getFeatures=TRUE, flatten=FALSE){
 #' availableTests()
 availableTests <- function(x=NULL, sets=NULL){
   sigBinary <- sigContinuous <- setsScore <- setsSites <- TRUE
+  atests <- NULL
   if(!is.null(x)){
     sigBinary <- !is.null(dim(x)) || is.logical(x) || is.character(x)
     sigContinuous <- !is.null(dim(x)) || is.numeric(x)
@@ -351,6 +352,7 @@ availableTests <- function(x=NULL, sets=NULL){
     }else{
       setsScore <- !is.null(dim(sets)) && "score" %in% colnames(sets)
       setsSites <- !is.null(dim(sets)) && "sites" %in% colnames(sets)
+      if(is(sets, "DFrame")) atest <- metadata(sets)$tests
     }
   }
   if(!setsScore && !setsSites) return(c("overlap"))
@@ -360,6 +362,7 @@ availableTests <- function(x=NULL, sets=NULL){
   if(sigContinuous && setsScore) tests <- c(tests, c("modscore","regmir.cc","ebayes","lmadd"))
   if(sigContinuous && setsSites) tests <- c(tests, c("modsites"))
   if(setsScore && sigBinary) tests <- c(tests, c("regmir.bc"))
+  if(!is.null(atests)) tests <- intersect(tests,atests)
   sort(tests)
 }
 

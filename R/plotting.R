@@ -278,8 +278,10 @@ enrichPlot <- function( res,
            contained in the object.")
     }
   }
-  if(length(enr.field <- head(intersect(enr.field,colnames(res)),n=1))==0)
-    stop("`enr.field` not found.")
+  if(length(enr.field <- head(intersect(enr.field,colnames(res)),n=1))==0){
+    enr.field <- "significance"
+    res$significance <- -log10(res[[sig.field]])
+  }
   if(length(sig.field <- head(intersect(sig.field,colnames(res)),n=1))==0)
     stop("`sig.field` not found.")
   if(!is.null(size.field) && 
@@ -309,14 +311,14 @@ enrichPlot <- function( res,
   w <- which(abs(res[[enr.field]])>=label.enr.thres & 
                res[[sig.field]]<label.sig.thres)
   w <- head(w,n=maxLabels)
-  sig.field2 <- paste0("-log10(",sig.field,")")
-  res[[sig.field2]] <- -log10(res[[sig.field]])
+  sig.field2 <- sig.field
   ll <- list(label=label.field, x=enr.field, y=sig.field2)
   if(!is.null(size.field)) ll$size <- size.field
   if(!is.null(col.field)) ll$colour <- col.field
   for(f in setdiff(colnames(res), unlist(ll))) ll[[f]] <- f
   res <- as.data.frame(res)
-  p <- ggplot(res, do.call(aes_string, ll)) + geom_point(alpha=opacity)
+  p <- ggplot(res, do.call(aes_string, ll)) + geom_point(alpha=opacity) +
+    scale_y_continuous(trans=.reverselog_trans(10))
   if(!is.null(col.field)) p <- p + scale_colour_viridis_c(direction = -1)
   if(repel){
     p <- p + geom_text_repel(data=res[w,])
@@ -326,6 +328,14 @@ enrichPlot <- function( res,
   p
 }
 
+#' @importFrom scales trans_new log_breaks
+.reverselog_trans <- function(base=10){
+  trans <- function(x) -log(x, base)
+  inv <- function(x) base^(-x)
+  scales::trans_new(paste0("reverselog-", format(base)), trans, inv, 
+            log_breaks(base = base), 
+            domain = c(1e-100, Inf))
+}
 
 #' breakStrings
 #'
