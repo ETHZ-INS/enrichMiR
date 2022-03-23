@@ -122,8 +122,9 @@ ENSG00000106462, ENSG00000100811, ...")
                              take a moment to load."),
                    withSpinner(textOutput("collection_details")))
           ),
-          tags$div(id="exprMirs_box", box(title="Specify expressed miRNAs", 
-              collapsible=TRUE, collapsed=TRUE, width=12,
+          tags$div(id="exprMirs_box", 
+                   box(title="Specify expressed miRNAs (optional)", 
+                       collapsible=TRUE, collapsed=TRUE, width=12,
             tags$p("miRNA expression can be used to restrict and annotate the ",
                    "enrichment analysis. This information can either be given ",
                    "manually, provided by uploading a miRNA profile, or ",
@@ -167,7 +168,32 @@ ENSG00000106462, ENSG00000100811, ...")
         
         
         tabItem("tab_input", ############ INPUT
+          tags$h4("Choose one of two ways of providing the input"),
+          tags$p("You may either upload the results of a differential expression
+                 analysis (DEA), or provide a set of genes of interest against
+                 a background set."),
           tabBox(id="input_type", width=12,
+            tabPanel(title = "Upload DEA results", value = "dea",
+              fluidRow(       
+                column(7, fileInput( inputId = "dea_input", 
+                  label="Upload DEA object as '*.csv' file (see help)",
+                  accept=c("text/csv", ".csv", ".tab", ".txt",
+                           "text/comma-separated-values,text/plain")),
+                       "Or: ", actionButton("example_dea", "Use example DEA"),
+                  tags$hr(), tags$br(),
+                  tags$p("Upload a Differential Expression Analysis (DEA) as 
+                a table with at least following information: Ensembl ID or Gene 
+                Symbol as identifier in the first column, as well as 
+                logFC-values and FDR-values.")),
+                column(2, actionButton(inputId="help_deaformat",
+                          icon=icon("question-circle"), label="View format")),
+                column(3, withSpinner(htmlOutput("dea_res")), tags$br(), 
+                       tags$hr(), tags$br(),
+                     sliderInput(inputId = "dea_sig_th", 
+                                 label="Select significance threshold",
+                                 min=0.01, max=0.5, value=0.05, step=0.01))
+              )
+            ),
             tabPanel(title = "Select geneset & background", 
               tags$p("In this mode, your genes of interest are compared against 
                      a background of genes."),
@@ -189,7 +215,9 @@ ENSG00000106462, ENSG00000100811, ...")
                          selectizeInput(inputId="go_term", "Select GO-Term", choices=c()),
                          textOutput("GOI_nb"))
               ),
-              br(), tags$hr(), tags$h3("Background"),
+              br(), tags$hr(), tags$h3("Background (required)"), 
+              actionButton(inputId="help_background", style="float:right;",
+                           icon=icon("question-circle"), label="Help on background"),
               textAreaInput(inputId = "background_genes", 
                             label="Gene List", 
                             rows=5, width="100%",
@@ -201,27 +229,6 @@ Note that the background should also include the genes of interest!"),
               footer=paste("Note: If you want to use the Targetscan miRNA annotations",
                            " together with rat genes, use the 'Gene Symbol' format")
             ),
-            tabPanel(title = "Upload DEA results", value = "dea",
-              fluidRow(       
-                column(7, fileInput( inputId = "dea_input", 
-                  label="Upload DEA object as '*.csv' file (see help)",
-                  accept=c("text/csv", ".csv", ".tab", ".txt",
-                           "text/comma-separated-values,text/plain")),
-                       "Or: ", actionButton("example_dea", "Use example DEA"),
-                  tags$hr(), tags$br(),
-                  tags$p("Upload a Differential Expression Analysis (DEA) as 
-                a table with at least following information: Ensembl ID or Gene 
-                Symbol as identifier in the first column, as well as 
-                logFC-values and FDR-values.")),
-                column(2, actionButton(inputId="help_deaformat",
-                          icon=icon("question-circle"), label="View format")),
-                column(3, withSpinner(htmlOutput("dea_res")), tags$br(), 
-                       tags$hr(), tags$br(),
-                     sliderInput(inputId = "dea_sig_th", 
-                                 label="Select significance threshold",
-                                 min=0.01, max=0.5, value=0.05, step=0.01))
-              )
-            )
           )
         ),
         
@@ -229,11 +236,10 @@ Note that the background should also include the genes of interest!"),
         tabItem(tabName = "tab_enrich", ###### ENRICHMENT ANALYSIS
           column(3, tags$div(id="enrichbtn_outer", 
                              withSpinner(uiOutput("enrichbtn")))), 
-          box(width=9, title="Enrichment options", collapsible=TRUE, collapsed=TRUE,
-              sliderInput(inputId="minsize", 
-                          label=paste(
-                            "Minium number of annotated targets that is required to",
-                            "consider the miRNA-family for testing"),
+          box(width=9, title="Advanced enrichment options", collapsible=TRUE, 
+              collapsed=TRUE, sliderInput(inputId="minsize", 
+                label="Minium number of annotated targets that is required to
+                       consider the miRNA-family for testing",
                           min=1, max=20, value=5, step=1),
               br(),
               box(width="100%", title = "Advanced Options", collapsible=TRUE, collapsed=TRUE, 
@@ -321,6 +327,8 @@ Note that the background should also include the genes of interest!"),
                                        min=0, max=8, value=0, step=0.5)),
                   column(6,sliderInput(inputId="CD_k", "Approximate number of sets",
                                        min=2, max=6, value=3, step=1)),
+                  column(6, textInput("CDplot_xlabel", "x-axis label", 
+                                      value="log(foldchange)")),
                   column(6, selectInput("CDplot_theme", "Theme", 
                                         choices=ggplot_themes)),
                   column(6, downloadLink('cd_plot_dl', label="Download plot"))

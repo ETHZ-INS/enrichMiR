@@ -73,6 +73,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$brow_comp, showModal(.getHelpModal("browsercompatibility")))
    observeEvent(input$help_testsadvanced, showModal(.getHelpModal("testsadvanced")))
    observeEvent(input$help_deaformat, showModal(.getHelpModal("deaformat")))
+   observeEvent(input$help_background, showModal(.getHelpModal("background")))
    
    output$testsummary <- renderTable(.getTestsTable())
    output$browsercomp <- renderTable(.getBrowserCompTable())
@@ -469,9 +470,11 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         legname <- ifelse(length(CDtypeOptions())>1, names(CDtypeOptions())[2],
                           "Target?")
       if(isTRUE(getOption("shiny.testmode"))) print(set_Name)
-      p <- tryCatch(
-        CDplotWrapper(dea, TS, setName=set_Name, 
-                      by=input$CD_type, k=input$CD_k) + labs(colour=legname),
+      p <- tryCatch({
+          CDplotWrapper(dea, TS, setName=set_Name, addN=TRUE,
+                        by=input$CD_type, k=input$CD_k) + 
+            labs(x=input$CDplot_xlabel, colour=legname)
+        },
         error=function(e){ e })
       if(is(p,"error")) return(FALSE)
       if(input$CDplot_xaxis==0){

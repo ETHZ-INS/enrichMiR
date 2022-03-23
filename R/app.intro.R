@@ -218,11 +218,17 @@ TPM4,-1.41,1.83e-10,6.86e-08
             happen when using TargetScan ", tags$em("conserved"), "sites (or
             miRTarBase sites), in which case you can try using all predicted 
             sites instead."),
-            tags$p("We recommend using only highly expressed genes to plot cummulative
-                   distributions of predicted miRNA bindings, e.g. the top 5'000 - 
-                   10'000 expressed genes of a dataset."),
-           tags$p("The plot size can be manually adapted by dragging the lower right part 
-                  with the mouse.")
+           tags$p("Because the accuracy of the foldchanges estimates increase
+             with the genes' read count, we recommend using only highly 
+             expressed genes to plot cummulative distributions of predicted 
+             miRNA bindings, e.g. the top 5'000 - 10'000 expressed genes of a 
+             dataset."),
+           tags$p("Note that 'no site' indicates genes which are not annotated
+             to have a binding site for that miRNA in the collection used. If
+             the collection used is, for instance, the TargetScan conserved
+             sites, there might nevertheless be non-conserved sites."),
+           tags$p("The plot size can be manually adapted by dragging the lower 
+              right part with the mouse.")
          ),
          tests=modalDialog(title="Enrichment tests", easyClose=TRUE, 
               .testIntro(), tags$p(
@@ -238,6 +244,25 @@ TPM4,-1.41,1.83e-10,6.86e-08
           title="Example not available for this species", tags$p(
           "There is unfortunately no example data available for this species.
           You may however view an example by first switching to another species.")
+        ),
+        background=modalDialog(easyClose=TRUE, title="Choice of the background",
+          tags$p("The background or universe defines the null hypothesis against
+            is measured and tested an enrichment in the set of genes of 
+            interest. As such, it applies only to tests that are based on 
+            over-representation (e.g. siteoverlap), and not to tests that are 
+            based on a continuous signal (e.g. areamir). In the context of
+            over-representation analysis, the background is critical to 
+            meaningful results. An inappropriate background, in particular a 
+            background that is too broad (e.g. all genes), will often lead to 
+            spurious results."),
+          tags$p("The choice of the appropriate background depends on the 
+            circumstances, but a key consideration is what genes ",tags$em(
+            "could have made it"), " into your selection. For example, if your
+            selection are genes that are differentially-expressed in a given 
+            setting, then only genes that could have been differentially-
+            expressed should be included in the background. This means that 
+            genes which are too lowly-expressed for any differential pattern to
+            be detected ought to be removed from the background.")
         ),
         modalDialog(title=topic, "No help currently available for this topic.")
   )
