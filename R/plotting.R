@@ -102,6 +102,7 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
 #' @param setName The name of the set to plot in `sets`.
 #' @param k The number of groups to form. Only applicable if by = "sites" or
 #'   "score".
+#' @param addN Logical; whether to add group sizes to their names
 #' @param by The variable by which to form the groups; either "sites", "score",
 #'   "best_stype" or "type". If unspecified, will determine the best depending
 #'   on the available annotation data.
@@ -114,7 +115,7 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
 #'
 #' @return A ggplot.
 #' @export
-CDplotWrapper <- function(dea, sets, setName, k=3, 
+CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
                           by=c("auto","sites","score","best_stype","type"), 
                           sameFreq=NULL, line.size=1.2, point.size=0.8, 
                           checkSynonyms=TRUE, pvals=FALSE, ...){
@@ -172,10 +173,21 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
     if(all(bylvls %in% names(defcols))){
       by2 <- factor(by2, intersect(names(defcols), bylvls))
     }
+    if(addN)
+      bylvls <- levels(by2) <- paste0(levels(by2), 
+                                      " (n=", as.integer(table(by2)),")")
+    
     p <- CDplot(dea, by=by2, k=length(bylvls), 
                 sameFreq=sameFreq, size=line.size, pvals = pvals, ...)
-    if(all(bylvls %in% names(defcols)))
+    if(all(bylvls %in% names(defcols))){
       p <- p + scale_colour_manual(values=defcols[levels(by2)])
+    }else{
+      # for addN=TRUE in ...
+      bylvls2 <- gsub(" \\(n=[0-9]+\\)", "", bylvls)
+      if(all(bylvls2 %in% names(defcols))){
+        p <- p + scale_colour_manual(values=setNames(defcols[bylvls2], bylvls))
+      }
+    }
   }else{
     by <- rowsum(sets[[by]], sets$feature)[,1]
     by2 <- by[names(dea)]
@@ -189,7 +201,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3,
       p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size, 
                   pvals=pvals, ...)
       if(k==3){
-       p <- p + scale_color_manual(values = c("#F5DB4BFF","#A92E5EFF","#000004FF"))
+       p <- p + scale_color_manual(values=c("#F5DB4BFF","#A92E5EFF","#000004FF"))
       }
     }
   }

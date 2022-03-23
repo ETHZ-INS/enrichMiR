@@ -9,6 +9,7 @@ CDplotWrapper(
   sets,
   setName,
   k = 3,
+  addN = FALSE,
   by = c("auto", "sites", "score", "best_stype", "type"),
   sameFreq = NULL,
   line.size = 1.2,
@@ -29,6 +30,8 @@ edgeR, DESeq2 or limma).}
 
 \item{k}{The number of groups to form. Only applicable if by = "sites" or
 "score".}
+
+\item{addN}{Logical; whether to add group sizes to their names}
 
 \item{by}{The variable by which to form the groups; either "sites", "score",
 "best_stype" or "type". If unspecified, will determine the best depending
