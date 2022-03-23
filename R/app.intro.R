@@ -144,7 +144,15 @@ TPM4,-1.41,1.83e-10,6.86e-08
            tags$p("The character delimiter needs not be commas, and should be
            automatically recognized. With most target annotations, both Ensembl 
            IDs and gene symbols will be recognized, and the scanMiR annotation 
-           additionally supports transcript-level DEAs with Ensembl transcript IDs.")
+           additionally supports transcript-level DEAs with Ensembl transcript IDs."),
+           tags$p("The character delimiter needs not be commas, and should be
+           automatically recognized. With most target annotations, both Ensembl 
+           IDs and gene symbols will be recognized, and the scanMiR annotation 
+           additionally supports transcript-level DEAs with Ensembl transcript IDs."),
+           tags$p("Because the accuracy of the fold-change estimates increases
+             with the genes' read count, we recommend filtering the DEA table
+             to include only highly expressed genes (e.g. the top 5000) before
+             upload.")
          ),
          enrichplot=modalDialog(title="Enrichment plot", easyClose=TRUE, tags$p(
            "The enrichment plot shows the significance of the enrichment on the
@@ -218,10 +226,10 @@ TPM4,-1.41,1.83e-10,6.86e-08
             happen when using TargetScan ", tags$em("conserved"), "sites (or
             miRTarBase sites), in which case you can try using all predicted 
             sites instead."),
-           tags$p("Because the accuracy of the foldchanges estimates increase
+           tags$p("Because the accuracy of the fold-change estimates increases
              with the genes' read count, we recommend using only highly 
              expressed genes to plot cummulative distributions of predicted 
-             miRNA bindings, e.g. the top 5'000 - 10'000 expressed genes of a 
+             miRNA bindings, e.g. the top 5'000 - 7'000 expressed genes of a 
              dataset."),
            tags$p("Note that 'no site' indicates genes which are not annotated
              to have a binding site for that miRNA in the collection used. If

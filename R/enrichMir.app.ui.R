@@ -184,7 +184,9 @@ ENSG00000106462, ENSG00000100811, ...")
                   tags$p("Upload a Differential Expression Analysis (DEA) as 
                 a table with at least following information: Ensembl ID or Gene 
                 Symbol as identifier in the first column, as well as 
-                logFC-values and FDR-values.")),
+                logFC-values and FDR-values."),
+                  tags$p("Note that we recommend filtering the DEA to retain
+                only the most highly expressed genes (e.g. top 5000).")),
                 column(2, actionButton(inputId="help_deaformat",
                           icon=icon("question-circle"), label="View format")),
                 column(3, withSpinner(htmlOutput("dea_res")), tags$br(), 
