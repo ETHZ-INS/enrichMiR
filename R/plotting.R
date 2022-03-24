@@ -333,9 +333,9 @@ enrichPlot <- function( res,
     scale_y_continuous(trans=.reverselog_trans(10))
   if(!is.null(col.field)) p <- p + scale_colour_viridis_c(direction = -1)
   if(repel){
-    p <- p + geom_text_repel(data=res[w,])
+    p <- p + geom_text_repel(data=res[w,], , show.legend = FALSE)
   }else{
-    p <- p + geom_text(data=res[w,])
+    p <- p + geom_text(data=res[w,], show.legend = FALSE)
   }
   p
 }
