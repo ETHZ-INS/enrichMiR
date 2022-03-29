@@ -252,6 +252,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         return(trimInputList(input$exp_mirna_list))
       }
       if(input$expressed_mirna_box=="Use preset expression profile"){
+        cutoff <- input$mir_cut_off2
         if(tolower(input$species) == "human"){
           if(is.null(input$mirexp_human) || 
              is.null(x <- getHumanMirExp(input$mirexp_human))) return(NULL)
@@ -262,6 +263,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           return(NULL)
         }
       }else if(!is.null(input$exp_mirna_file)){
+        cutoff <- input$mir_cut_off
         mirup <- as.data.frame(data.table::fread(input$exp_mirna_file$datapath))
         # if(ncol(mirup)!=2 || !is.numeric(mirup[,2])){
         #   showModal("The miRNA data you entered is not valid")
@@ -274,7 +276,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       x <- matchMirExpr(x, EN_Object())
       x <- x[x$expression>0,,drop=FALSE]
       return(x[head(order(-x$expression), 
-                    round((input$mir_cut_off2/100)*nrow(x))),,drop=FALSE])
+                    round((cutoff/100)*nrow(x))),,drop=FALSE])
     })
     
     
