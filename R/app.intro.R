@@ -254,15 +254,15 @@ TPM4,-1.41,1.83e-10,6.86e-08
           You may however view an example by first switching to another species.")
         ),
         background=modalDialog(easyClose=TRUE, title="Choice of the background",
-          tags$p("The background or universe defines the null hypothesis against
-            is measured and tested an enrichment in the set of genes of 
-            interest. As such, it applies only to tests that are based on 
-            over-representation (e.g. siteoverlap), and not to tests that are 
-            based on a continuous signal (e.g. areamir). In the context of
-            over-representation analysis, the background is critical to 
-            meaningful results. An inappropriate background, in particular a 
-            background that is too broad (e.g. all genes), will often lead to 
-            spurious results."),
+          tags$p("The background or universe defines the null hypothesis against 
+                 which the enrichment in the set of genes of interest is measured 
+                 and tested. As such, it applies only to tests that are based on 
+                 over-representation (e.g. siteoverlap), and not to tests that 
+                 are based on a continuous signal (e.g. areamir). In the context 
+                 of over-representation analysis, the background is critical to 
+                 meaningful results. An inappropriate background, in particular 
+                 a background that is too broad (e.g. all genes), will often 
+                 lead to spurious results."),
           tags$p("The choice of the appropriate background depends on the 
             circumstances, but a key consideration is what genes ",tags$em(
             "could have made it"), " into your selection. For example, if your

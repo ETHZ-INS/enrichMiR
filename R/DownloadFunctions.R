@@ -518,7 +518,7 @@
 
 
 #Prepares a DataFrame that is compatible with EnrichMiR from scanMiR "runFullScan" aggregations (sc)
-.prepScanMir_can <- function(sc,species = c("human","mouse","rat"),level = c("gene","transcript"),include6mers = FALSE){
+.prepScanMir <- function(sc,species = c("human","mouse","rat"),level = c("gene","transcript"),include6mers = FALSE, canonicalUTRSites = TRUE){
 
   #get the Targetscan miRNA families
   species <- match.arg(species)
@@ -526,9 +526,13 @@
   fams <- .getTargetscan_miRfamilies(species)
   
   if(class(sc) == "IndexedFst") sc <- as.data.frame(sc)
-  sc[colnames(sc) %in% c("non-canonical","ORF.canonical","ORF.non-canonical")] <- NULL
+  if(canonicalUTRSites) sc[colnames(sc) %in% c("non-canonical","ORF.canonical","ORF.non-canonical")] <- NULL
   if(!include6mers) sc[["6mer"]] <- NULL
-  sc$sites <- rowSums(sc[,grep("mer",colnames(sc))])
+  if(canonicalUTRSites){
+    sc$sites <- rowSums(sc[,grep("mer",colnames(sc))])
+  }else{
+    sc$sites <- rowSums(sc[,grep("mer|canonical",colnames(sc))])
+  }
   sc$repression <- sc$repression / 1000
   colnames(sc)[colnames(sc) == "repression"] <- "score"
   colnames(sc)[colnames(sc) == "miRNA"] <- "set"
@@ -536,6 +540,11 @@
   colnames(sc)[colnames(sc) == "8mer"] <- "Sites_8mer"
   colnames(sc)[colnames(sc) == "7mer"] <- "Sites_7mer"
   if(include6mers) colnames(sc)[colnames(sc) == "6mer"] <- "Sites_6mer"
+  if(!canonicalUTRSites){
+    colnames(sc)[colnames(sc) == "non-canonical"] <- "Non-canonical"
+    colnames(sc)[colnames(sc) == "ORF.canonical"] <- "Sites_ORF.canonical"
+    colnames(sc)[colnames(sc) == "ORF.non-canonical"] <- "Sites_ORF.non-canonical"
+  }
   sc <- sc[sc$sites > 0,]
   
   #filter out non protein-coding biotypes
@@ -554,7 +563,11 @@
     colnames(sc)[colnames(sc) == "ensembl_gene_id"] <- "feature"
   }
   
-  sc <- sc[,c(grep("feature",colnames(sc)),grep("set",colnames(sc)),grep("sites",colnames(sc)),grep("score",colnames(sc)),grep("mer",colnames(sc)))]
+  if(canonicalUTRSites){
+    sc <- sc[,c(grep("feature",colnames(sc)),grep("set",colnames(sc)),grep("sites",colnames(sc)),grep("score",colnames(sc)),grep("mer",colnames(sc)))]
+  }else{
+    sc <- sc[,c(grep("feature",colnames(sc)),grep("set",colnames(sc)),grep("sites",colnames(sc)),grep("score",colnames(sc)),grep("mer",colnames(sc)), grep("canonical",colnames(sc)))]
+  }
   sc[,1] <- as.factor(sc[,1])
   sc[,2] <- as.factor(sc[,2])
   sc[,3] <- as.integer(sc[,3])

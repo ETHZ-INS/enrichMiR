@@ -168,7 +168,7 @@ ENSG00000106462, ENSG00000100811, ...")
         
         
         tabItem("tab_input", ############ INPUT
-          tags$h4("Choose one of two ways of providing the input"),
+          tags$h4("Choose between the two following input options"),
           tags$p("You may either upload the results of a differential expression
                  analysis (DEA), or provide a set of genes of interest against
                  a background set."),
