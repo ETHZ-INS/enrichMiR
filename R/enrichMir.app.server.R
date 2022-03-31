@@ -364,7 +364,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     output$extratestinput <- renderUI({
       options <- c(
         "overlap" = "overlap",
-        "weighted overlap (woverlap)" ="woverlap",
+        #"weighted overlap (woverlap)" ="woverlap",
         "modsites" = "modsites",
         "modscore" = "modscore",
         "ebayes" = "ebayes",
@@ -550,14 +550,14 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         if(is.null(DEA())) return(NULL)
         sig <- DEA()
         bg <- NULL
-        standard_tests <- c("siteoverlap","areamir")
+        standard_tests <- c("siteoverlap","woverlap","areamir")
         if(isTRUE(grepl("scanmir",input$collection,ignore.case=TRUE)))
           standard_tests <- c("woverlap","lmadd")
       }else{
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
         sig <- Gene_Subset()
         bg <- Back()
-        standard_tests <- c("siteoverlap")
+        standard_tests <- c("siteoverlap","woverlap")
       }
       if(length(sig)==0) return(NULL)
       tests <- c(standard_tests, input$tests2run)

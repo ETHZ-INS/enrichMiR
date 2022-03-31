@@ -294,8 +294,9 @@ TPM4,-1.41,1.83e-10,6.86e-08
        should therefore be interpreted with care."
     ), tags$p(
       "Some tests gave poor performances in the benchmark, and should 
-       therefore not be used. By default, the 'siteoverlap' and 'areamir' 
-       tests are enabled -- these are the tests that gave the best performance.
+       therefore not be used. By default, the 'siteoverlap', 'woverlap' and 
+      'areamir' tests are enabled (provided they are compatible with the 
+      collection used), as these are the tests that gave the best performance.
       In addition, the binary version of the 'regmir' test provided excellent
       error control, albeit with a lower sensitivity."
     ) 
@@ -335,6 +336,12 @@ TPM4,-1.41,1.83e-10,6.86e-08
           of the set), leading to slightly anti-conservative 
           p-values, in practice this test is excellent at 
           identifying the most enriched miRNA."),
+          tags$li(tags$b("woverlap")," (binary signal, set membership):",
+                  tags$br(), "This test is like the above 'siteoverlap' test, 
+          but corrects for UTR length using the Wallenius method, as implemented in
+          the ", tags$a("goseq", target="_blank",
+                        href="https://www.bioconductor.org/packages/devel/bioc/html/goseq.html"),
+          "package. The test performs similarly to the siteoverlap test."),
                     tags$li(tags$b("areamir")," (continuous signal, score or set 
           membership):", tags$br(), 
                             "The areamir test is based on the analytic Rank-based 
@@ -353,12 +360,6 @@ TPM4,-1.41,1.83e-10,6.86e-08
           number of features (i.e. transcripts/genes) among predicted targets 
           vs in the background (and therefore ignoring any site-based 
           information)."),
-            tags$li(tags$b("woverlap")," (binary signal, set membership):",
-                    tags$br(), "This test is like the above 'siteoverlap' test, 
-          but corrects for UTR length using the Wallenius method, as implemented in
-          the ", tags$a("goseq", target="_blank",
-                        href="https://www.bioconductor.org/packages/devel/bioc/html/goseq.html"),
-                    "package. The test performs similarly to the siteoverlap test."),
             tags$li(tags$b("Mann-Whitney (MW)")," (continuous signal, set membership):",
                     tags$br(), "This is the Mann-Whitney (also known as Wilcoxon)
                 non-parametric test comparing targets and non-targets. This
