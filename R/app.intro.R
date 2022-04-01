@@ -108,7 +108,8 @@ Here is a brief description of each type of collection:"),
                tags$a(href="https://www.bioconductor.org/packages/devel/bioc/html/scanMiR.html",
                       "scanMiR", target="_blank"),
                "algorithm. ScanMiR employs a transcript-level affinity prediction method and is 
-               compatible with both gene and transcript IDs."),
+               compatible with both gene and transcript IDs. To ensure fast computing times, we restricted
+               the scanMiR annotation to 7mer and 8mer binding sites in the 3'UTR."),
              tags$li(tags$b("miRTarBase: "),
                      "Experimentally-validated miRNA targets from the ",
                      tags$a(href="https://mirtarbase.cuhk.edu.cn/~miRTarBase/",
