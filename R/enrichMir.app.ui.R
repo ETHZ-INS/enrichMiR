@@ -202,7 +202,7 @@ ENSG00000106462, ENSG00000100811, ...")
               tags$h3("Genes of interest"),
               tabsetPanel(id="GOI",
                 tabPanel(title = "Custom set", value = "GOI_custom",
-                         "Paste a list of expressed genes in the selected format",
+                         "Paste a list of expressed genes as shown in the window below. A minimum number of two genes is required.",
                          br(), br(),
                          textAreaInput(inputId = "genes_of_interest", 
                                        label="Gene List", rows=5, width="100%",
