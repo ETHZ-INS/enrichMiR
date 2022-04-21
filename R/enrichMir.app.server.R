@@ -12,7 +12,7 @@
 #' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs hideElement showElement
 #' @importFrom plotly renderPlotly ggplotly event_data
-#' @importFrom shinyWidgets execute_safely
+#' @importFrom shinyWidgets execute_safely sendSweetAlert
 #' @importFrom DT renderDT datatable
 enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   dtwrapper <- function(d, pageLength=25, hide_cols){
