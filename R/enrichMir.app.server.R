@@ -563,7 +563,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           return(sendSweetAlert(
             session = shiny::getDefaultReactiveDomain(),
             title = "There was an error with your input",
-            text = "The background list doesn't seem to contain any of your genes of input",
+            text = "The background list doesn't seem to contain any of your genes of input.",
             html = TRUE,
             type = "error"
           ))
