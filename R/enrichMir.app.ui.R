@@ -310,7 +310,7 @@ Note that the background should also include the genes of interest!"),
           box(width=12, title="CD Plot", 
               tags$h3(id="cdplot_na", style="font-color: red;", 
                       icon("exclamation-triangle"), 
-                      "Cumulative distribution plots require the use of a DEA input."),
+                      "Cumulative distribution plots require the use of a DEA input, which you can upload at the input page. You may consult the tutorial for further info."),
               tags$div(id="cdplot_outer", style="display: none;",
                 fluidRow(
                   column(8,selectizeInput(inputId="mir_fam", choices=c(),

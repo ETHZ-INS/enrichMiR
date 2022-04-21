@@ -12,6 +12,7 @@
 #' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs hideElement showElement
 #' @importFrom plotly renderPlotly ggplotly event_data
+#' @importFrom shinyWidgets execute_safely
 #' @importFrom DT renderDT datatable
 enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   dtwrapper <- function(d, pageLength=25, hide_cols){
@@ -197,7 +198,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           (input$input_type != "dea" && (
             is.null(Gene_Subset()) || length(Gene_Subset())<2 ||
             is.null(Back()))) )
-        return(tags$span(icon("exclamation-triangle"), "No valid gene/DEA input!",
+        return(tags$span(icon("exclamation-triangle"), "No valid gene set/DEA input! Please navigate to the input page and provide a gene set of interest + 
+                         background or a differential expression analysis (DEA). For further help you may consult the tutorial.",
                          style="font-weight:bold; font-color:red; font-size:120%;"))
       actionButton(inputId="enrich", "Run enrichMir!", icon = icon("search"))
     })
@@ -574,18 +576,18 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         write(paste(Sys.Date(),session$token,"enrich"), logCallsFile,
                    append=TRUE)
       res <- withProgress(message=msg, detail=detail, value=1, max=3, {
-        tryCatch(testEnrichment(sig, EN_Object(), background=bg, 
+        execute_safely(testEnrichment(sig, EN_Object(), background=bg, 
                                 sets.properties=mirexp, tests=tests, 
                                 minSize=input$minsize, th.FDR=input$dea_sig_th),
-                error=function(e){
-                  showModal(modalDialog(
-                    title = "There was an error with your request:",
-                    tags$pre(as.character(e)),
-                    "This typically happens when there is a mismatch between 
-                    your different input data (e.g. wrong species or the first 
-                    column of a DEA does not contain recognized genes IDs)."
-                  ))
-                })
+                       title = "There was an error with your request:",
+                       message = "This typically happens when there is a mismatch between 
+                       your different input data (e.g. the species of the binding site collection
+                       doesn't match the gene set input or the first column of a DEA does not contain recognized gene IDs).
+                       You can either try updating the binding site collection on the 'Species and miRNAs'
+                       page or provide a new gene set input. Please consult the tutorial and help pages 
+                       for further info.",
+                       include_error = FALSE)
+               
       })
       showElement("resultsbox")
       res
