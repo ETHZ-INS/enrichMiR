@@ -91,9 +91,22 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    ## Menu items
    
    output$menu_species <- renderMenu({
+     badgeColor <- "light-blue"
+     btext <- input$species
+     if(!is.null(mirexp <- miRNA_exp())){
+       mirexp <- tryCatch(.filterMatchSets(EN_Object(), mirexp),
+                          error=function(e) c())
+       mirexp <- ifelse(is.null(dim(mirexp)), length(mirexp), nrow(mirexp))
+       if(mirexp==0){
+         badgeColor <- "red"
+         btext <- paste0(btext,": 0 mirs!")
+       }else{
+         btext <- paste0(btext,": ", mirexp,"mirs")
+       }
+     }
      menuItem( "Species and miRNAs", tabName="tab_species", 
                expandedName="menu_species", icon=icon("folder-open"), 
-               badgeLabel=input$species, badgeColor="light-blue")
+               badgeLabel=btext, badgeColor=badgeColor)
    })
    output$menu_input <- renderMenu({
      if(input$input_type=="dea" && !is.null(DEA()))
