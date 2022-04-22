@@ -206,15 +206,27 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                       input$dea_sig_th, ")."))
     })
     
+    isEnrichNotPossible <- reactive({
+      (input$input_type == "dea" && is.null(DEA())) ||
+      (input$input_type != "dea" && (
+        is.null(Gene_Subset()) || length(Gene_Subset())<2 ||
+        is.null(Back())))
+    })
+    
     output$enrichbtn <- renderUI({
-      if( (input$input_type == "dea" && is.null(DEA())) ||
-          (input$input_type != "dea" && (
-            is.null(Gene_Subset()) || length(Gene_Subset())<2 ||
-            is.null(Back()))) )
-        return(tags$span(icon("exclamation-triangle"), "No valid gene set/DEA input! Please navigate to the input page and provide a gene set of interest + 
-                         background or a differential expression analysis (DEA). For further help you may consult the tutorial.",
-                         style="font-weight:bold; font-color:red; font-size:120%;"))
+      if(isEnrichNotPossible()) return(tagList())
       actionButton(inputId="enrich", "Run enrichMir!", icon = icon("search"))
+    })
+    output$enrich_possible <- renderUI({
+      if(isEnrichNotPossible())
+        return(tagList(
+          tags$h3(id="enrich_na", style="font-color: red;", 
+                  icon("exclamation-triangle"), "No valid gene set/DEA input!"),
+          tags$p("Please navigate to the input page and provide a gene set of interest + background,
+                  or a differential expression analysis (DEA).", tags$br(),
+                 "For further help you may consult the tutorial.")
+        ))
+      tagList()
     })
     
     ## Include , and "" gsub

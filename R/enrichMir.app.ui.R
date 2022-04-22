@@ -256,6 +256,7 @@ Note that the background should also include the genes of interest!"),
                   uiOutput("extratestinput")
               )
             ),
+          uiOutput("enrich_possible"),
           tags$div(id="resultsbox", style="display: none; height: 100%;", 
           box(width=12, title="Results", collapsible=TRUE,
             fluidRow(
