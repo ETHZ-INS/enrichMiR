@@ -325,7 +325,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }else{
         if(input$GOI == "GOI_custom"){
           g <- trimInputList(input$genes_of_interest)
-          g <- gsub("\\..*","",g)
+          return(gsub("\\..*","",g))
         }else{
           Sp <- switch(input$species, Human="Hs", Mouse="Mm", Rat="Rn",
                        Fish="Dr", Worm="Ce", Fly="Dm")
@@ -571,12 +571,95 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         standard_tests <- c("siteoverlap","woverlap")
       }
       if(length(sig)==0) return(NULL)
+      
+      #input tests
+      if(is.character(sig)){
+        test <- bg %in% sig
+        names(test) <- bg
+      }else{
+        test <- sig
+      }
+      test <- .applySynonyms(test, EN_Object())
+      sets.test <- NULL
+      
       tests <- c(standard_tests, input$tests2run)
       if(!any(c("sites","score") %in% colnames(EN_Object())))
         tests <- "overlap"
       tests <- intersect(tests, availableTests(sig,EN_Object()))
+      
+      
+      if(input$input_type == "dea"){
+        tryCatch(sets.test <- .filterInput(EN_Object(), test, min.size=input$minsize),
+                 error=function(e){
+                   sendSweetAlert(
+                     session = shiny::getDefaultReactiveDomain(),
+                     title = "There was an error with your input",
+                     text =tagList("This typically happens when there is a mismatch between 
+                       your different input data (e.g. the species of the binding site collection
+                       doesn't match the gene set input or the first column of a DEA does not contain recognized gene IDs. In case only a 
+                       subset of a DEA was provided, ensure that there are enough annotated binding sites for the specified miRNA in 
+                       all DEA genes).", tags$br(), tags$br(), 
+                       "You can either try updating the binding site collection on the 'Species and miRNAs'
+                       page or upload a new DEA. Please consult the tutorial and help pages for further info."),
+                     html = TRUE,
+                     type = "error")
+                   ; NULL 
+                 })
+      }else{
+        tryCatch(sets.test <- .filterInput(EN_Object(), test, min.size=input$minsize),
+                 error=function(e){
+                   sendSweetAlert(
+                     session = shiny::getDefaultReactiveDomain(),
+                     title = "There was an error with your input",
+                     text =tagList("This typically happens when there is a mismatch between 
+                         your different input data (e.g. the species of the binding site collection
+                         doesn't match the gene set input or the background genes contain less binding sites 
+                         for any miRNA family than specified in the 'Advanced enrichment options' under 'Minium number of annotated targets that 
+                         is required to consider the miRNA-family for testing').", tags$br(), tags$br(), 
+                         "You can either try updating the binding site collection on the 'Species and miRNAs'
+                         page or provide a new gene set input. Please consult the tutorial and help pages 
+                         for further info."),
+                     html = TRUE,
+                     type = "error")
+                   ; NULL 
+                 })
+      }
+      if(is.null(sets.test)) return(NULL)
+      if(!is.null(mirexp)){
+        test <- sets.test$signal
+        sets.test <- sets.test$sets
+        mir.test.val <- NULL
+        tryCatch(mir.test.val <- .filterMatchSets(sets.test, mirexp),
+                 error=function(e){
+                   sendSweetAlert(
+                     session = shiny::getDefaultReactiveDomain(),
+                     title = "There was an error with your input",
+                     text = tagList("This typically happens when the expressed miRNAs do not contain any binding site in your
+                                      specified background (or when only wrong miRNA names have been provided).", tags$br(), tags$br(),  
+                                      "Try to remove the 'miRNA expression specification' by deleting all entries of the 'miRNA list' at the 'Species and miRNAs' pages
+                                      under 'Specify expressed miRNAs (optional)' & 'Custom Set' or give a new gene set input. Please consult the tutorial and help pages 
+                                      for further info."),
+                     html = TRUE,
+                     type = "error")
+                   ; NULL 
+                 })
+        if(is.null(mir.test.val)) return(NULL)
+      }
+
       msg <- paste0("Performing enrichment analyses with the following tests: ",
                     paste(tests,collapse=", "))
+      
+      sets.test <- sets.test[sets.test$set %in% row.names(mir.test.val),]
+      if("woverlap" %in% tests && length(unique(sets.test$set))<10){
+        if(length(tests)>1){
+          tests <- setdiff(tests, "woverlap")
+          msg <- c(msg, "(too few sets to run woverlap)")
+        }
+      }
+      
+      
+      
+            
       message(msg)
       detail <- NULL
       if(input$collection == "Targetscan all miRNA BS")
@@ -585,18 +668,23 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         write(paste(Sys.Date(),session$token,"enrich"), logCallsFile,
                    append=TRUE)
       res <- withProgress(message=msg, detail=detail, value=1, max=3, {
-        execute_safely(testEnrichment(sig, EN_Object(), background=bg, 
+        tryCatch(testEnrichment(sig, EN_Object(), background=bg, 
                                 sets.properties=mirexp, tests=tests, 
                                 minSize=input$minsize, th.FDR=input$dea_sig_th),
-                       title = "There was an error with your request:",
-                       message = "This typically happens when there is a mismatch between 
+                 error=function(e){
+                   sendSweetAlert(
+                     session = shiny::getDefaultReactiveDomain(),
+                     title = "There was an error with your request:",
+                     text = tagList("This typically happens when there is a mismatch between 
                        your different input data (e.g. the species of the binding site collection
-                       doesn't match the gene set input or the first column of a DEA does not contain recognized gene IDs).
-                       You can either try updating the binding site collection on the 'Species and miRNAs'
+                       doesn't match the gene set input or the first column of a DEA does not contain recognized gene IDs).", tags$br(), tags$br(),  
+                       "You can either try updating the binding site collection on the 'Species and miRNAs'
                        page or provide a new gene set input. Please consult the tutorial and help pages 
-                       for further info.",
-                       include_error = FALSE)
-               
+                       for further info."),
+                     html = TRUE,
+                     type = "error")
+                   ; NULL 
+                 })
       })
       showElement("resultsbox")
       res

@@ -125,7 +125,7 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
            binary.signatures=binary.signatures, info=list(call=match.call(),
                                                           type = "enrichment"))
   if(any(grep("-miR-|-mir-|-let-",head(row.names(sets.properties)))) && 
-     any(tests %in% c("siteoverlap","overlap","siteoverlap2")) && 
+     any(tests %in% c("siteoverlap","overlap","siteoverlap2","woverlap")) && 
      !is.null(fams <- metadata(sets)$families)){
     o@input <- c(o@input,list(families = fams))
   }
