@@ -489,6 +489,45 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }
       setTheme(p, input$CDplot_theme)
     })
+    
+    CDplot_dl_content <- reactive({
+      plotObj <- CDplot_obj()
+      if(is.null(plotObj)) return(NULL)
+      dea <- DEA()
+      TS <- EN_Object()
+      dea <- .applySynonyms(dea, TS)
+      if(sum(levels(TS$feature) %in% row.names(dea))<10) return(NULL)
+      TS <- TS[TS$set==input$mir_fam & TS$feature %in% row.names(dea),]
+      list(plotOjb, TS, dea)
+    })
+    
+    observeEvent(input$CDplot_dlContent, {
+      if(is.null(CDplot_obj())) return(NULL)
+      cmd <- paste0("enrichMiR::CDplotWrapper(dea, TS, setName='",input$mir_fam,
+                    "')")
+      showModal(modalDialog(easyClose=TRUE,
+        title = "Download plot data for customization in R",
+        tags$p("The RData file will contain three objects:", tags$ul(
+          tags$li(tags$b("TS :"), "The relevant target annotation info"),
+          tags$li(tags$b("dea :"), "The DEA object"),
+          tags$li(tags$b("plotObj :"), "The ggplot object")
+        )),
+        tags$p("You may install the enrichMiR package locally using:",
+               tags$code('BiocManager::install("ETHZ-INS/enrichMiR")'),
+               "(requires the 'remotes' package to be installed)", tags$br(),
+               "and then reproduce the plot using:", tags$code(cmd)),
+        downloadButton("CDplot_dl_content", "Download")
+      ))
+    })
+    
+    output$CDplot_dl_content <- downloadHandler(
+      filename <- function(){ paste0("CDplot_",input$mir_fam,".RData") },
+      content = function(file) {
+        ll <- CDplot_dl_content()
+        attach(ll)
+        save(TS, dea, plotObj, file=file)
+      }
+    )
               
     output$cd_plot <- renderPlot({
       p <- CDplot_obj()
