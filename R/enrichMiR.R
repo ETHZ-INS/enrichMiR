@@ -58,22 +58,25 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
                             minSize=5, maxSize=Inf, gsea.maxSize=3000, 
                             gsea.permutations=4000, testOnlyAnnotated=FALSE, 
                             keepAnnotation=FALSE, field=NULL, BPPARAM=NULL, 
-                            familyRound=NULL, checkSynonyms=TRUE, ...){
-  if(is.character(x)){
-    if(is.null(background)) 
-      stop("If `x` is a character vector, `background` should be given.")
-    x <- background %in% x
-    names(x) <- background
-  }else{
-    if(!is.null(background)) warning("`background` ignored.")
-  }
-  message("Preparing inputs...")
-  if(!is.null(dim(x))) x <- .homogenizeDEA(x)
-  if(checkSynonyms) x <- .applySynonyms(x, sets)
+                            familyRound=NULL, checkSynonyms=TRUE, doCheck=TRUE, 
+                            ...){
+  if(doCheck){
+    if(is.character(x)){
+      if(is.null(background)) 
+        stop("If `x` is a character vector, `background` should be given.")
+      x <- background %in% x
+      names(x) <- background
+    }else{
+      if(!is.null(background)) warning("`background` ignored.")
+    }
+    message("Preparing inputs...")
+    if(!is.null(dim(x))) x <- .homogenizeDEA(x)
+    if(checkSynonyms) x <- .applySynonyms(x, sets)
 
-  sets <- .filterInput(sets, x, min.size=minSize, max.size=maxSize)
-  x <- sets$signal
-  sets <- sets$sets
+    sets <- .filterInput(sets, x, min.size=minSize, max.size=maxSize)
+    x <- sets$signal
+    sets <- sets$sets
+  }
   
   atests <- availableTests(x, sets)
   if(is.null(tests)){
@@ -87,12 +90,10 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
            paste(bad.tests, collapse=", "))
   }
   
-  
-  # setsizes <- setsizes[setsizes>=minSize & setsizes<=maxSize]
-  # sets <- sets[sets$set %in% names(setsizes),]
   sets.properties <- .filterMatchSets(sets, sets.properties)
   # restrict sets according to properties and sizes
   sets <- sets[sets$set %in% row.names(sets.properties),]
+
   setsizes <- table(sets$set)
   sets.properties$set_size <- setsizes[row.names(sets.properties)]
   if(!is.null(sets.properties$members) && 
@@ -103,6 +104,12 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
     })
   setsizes <- setsizes[setsizes>=minSize & setsizes<=maxSize]
   sets <- sets[sets$set %in% names(setsizes),]
+  
+  if("woverlap" %in% tests && length(setsizes)<10){
+    tests <- setdiff(tests, "woverlap")
+    message("Skipping 'woverlap' -- too few sets in target.")
+  }
+  
   if(is.factor(sets$set)) sets$set <- droplevels(sets$set)
   binary.signatures <- list()
   signature <- NULL
