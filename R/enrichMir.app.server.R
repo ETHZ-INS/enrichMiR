@@ -67,6 +67,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$help_collections, showModal(.getHelpModal("collections")))
    observeEvent(input$help_collections2, showModal(.getHelpModal("collections")))
    observeEvent(input$help_enrichplot, showModal(.getHelpModal("enrichplot")))
+   observeEvent(input$help_enrichplotFurther, showModal(.getHelpModal("enrichplot_dl")))
    observeEvent(input$help_cdplot, showModal(.getHelpModal("cdplot")))
    observeEvent(input$help_cdplot2, showModal(.getHelpModal("cdplot")))
    observeEvent(input$help_tests, showModal(.getHelpModal("tests")))
@@ -118,8 +119,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
        return(menuItem("Input genes/DEA", tabName = "tab_input", 
                        badgeLabel=paste0("set(",sum(Gene_Subset()%in%Back()),
                                          "/",length(Back()),")"),
-                       badgeColor="light-blue", icon=icon("file-alt"),
-                       expandedName="menu_input"))
+                       badgeColor=ifelse(sum(Gene_Subset()%in%Back())>1, "light-blue", "red"),
+                       icon=icon("file-alt"), expandedName="menu_input"))
      menuItem("Input genes/DEA", tabName = "tab_input", badgeLabel="none", 
               badgeColor="red", icon=icon("file-alt"), expandedName="menu_input")
    })
@@ -529,8 +530,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     
     observeEvent(input$CDplot_dlContent, {
       if(is.null(CDplot_obj())) return(NULL)
-      cmd <- paste0("enrichMiR::CDplotWrapper(dea, TS, setName='",input$mir_fam,
-                    "')")
+      cmd <- paste0("enrichMiR::CDplotWrapper(dea, TS, setName='",input$mir_fam, "')")
       showModal(modalDialog(easyClose=TRUE,
         title = "Download plot data for customization in R",
         tags$p("The RData file will contain three objects:", tags$ul(
@@ -540,7 +540,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         tags$p("You may install the enrichMiR package locally using:",tags$br(),
                tags$code('BiocManager::install("ETHZ-INS/enrichMiR")'),tags$br(),
                "(requires the 'remotes' package to be installed)", tags$br(),
-               "and then reproduce the plot using:", tags$br(), tags$code(cmd)),
+               "and then reproduce the plot using:", tags$br(), 
+               tags$code("library(enrichMiR)"), tags$br(), tags$code(cmd)),
         downloadButton("CDplot_dl_content", "Download")
       ))
     })
@@ -629,7 +630,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           return(sendSweetAlert(
             session = shiny::getDefaultReactiveDomain(),
             title = "There was an error with your input",
-            text = "The background list doesn't seem to contain any of your genes of interest",
+            text = "The background list doesn't seem to contain any of your genes of interest.
+            Please go back to the input tab and ensure that it does!",
             type = "error"
           ))
         }
@@ -668,9 +670,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                      title = "There was an error with your input",
                      text =tagList("This typically happens when there is a mismatch between 
                        your different input data (e.g. the species of the binding site collection
-                       doesn't match the gene set input or the first column of a DEA does not contain recognized gene IDs. In case only a 
-                       subset of a DEA was provided, ensure that there are enough annotated binding sites for the specified miRNA in 
-                       all DEA genes).", tags$br(), tags$br(), 
+                       doesn't match the gene set input or the first column of a DEA does not contain recognized gene IDs.
+                       In case only a subset of a DEA was provided, there might not be enough annotated binding sites for the specified miRNA(s) and DEA).",
+                       tags$br(), tags$br(), 
                        "You can either try updating the binding site collection on the 'Species and miRNAs'
                        page or upload a new DEA. Please consult the tutorial and help pages for further info."),
                      html = TRUE,
@@ -687,7 +689,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                      text =tagList("This typically happens when there is a mismatch between 
                          your different input data (e.g. the species of the binding site collection
                          doesn't match the gene set input or the background genes contain less binding sites 
-                         for any miRNA family than specified in the 'Advanced enrichment options' under 'Minium number of annotated targets that 
+                         for any miRNA family than the minimum (specified in the 
+                         'Advanced enrichment options' under 'Minium number of annotated targets that 
                          is required to consider the miRNA-family for testing').", tags$br(), tags$br(), 
                          "You can either try updating the binding site collection on the 'Species and miRNAs'
                          page or provide a new gene set input. Please consult the tutorial and help pages 
@@ -708,13 +711,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                    sendSweetAlert(
                      session = shiny::getDefaultReactiveDomain(),
                      title = "There was an error with your input",
-                     text = tagList("This typically happens when the expressed miRNAs do not contain any binding site in your
-                                      specified background (or when only wrong miRNA names have been provided).",
-                              tags$br(), tags$br(),  
-                                "Try to remove the 'miRNA expression specification' by deleting all entries of the 'miRNA list' at the 'Species and miRNAs' pages
-                                under 'Specify expressed miRNAs (optional)' & 'Custom Set' or give a new gene set input. Please consult the tutorial and help pages 
-                                for further info."),
-                     html = TRUE,
+                     text = "The expressed miRNAs you indicated do not match 
+                              the binding site collection you selected.",
                      type = "error")
                    ; NULL 
                  }))) return(NULL)
@@ -732,13 +730,11 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                    sendSweetAlert(
                      session = shiny::getDefaultReactiveDomain(),
                      title = "There was an error with your request:",
-                     text = tagList("This typically happens when there is a mismatch between 
-                       your different input data (e.g. the species of the binding site collection
-                       doesn't match the gene set input or the first column of a DEA does not contain recognized gene IDs).",
-                       tags$br(), tags$br(),  
-                       "You can either try updating the binding site collection on the 'Species and miRNAs'
-                       page or provide a new gene set input. Please consult the tutorial and help pages 
-                       for further info."),
+                     text = tagList(
+                       tags$p("This typically happens when there is a mismatch between 
+                       your different input data (e.g. the species or identifiers of the binding site collection
+                       doesn't match the gene set or DEA input), or when the input is too small to run any test."),
+                       tags$p("Please consult the help regarding the relevant inputs.")),
                      html = TRUE,
                      type = "error")
                    NULL 
@@ -865,21 +861,21 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       return(dtwrapper(rr, hide_cols=columns2hide))
     })
     
-    output$dl_hits <- downloadHandler(
+    output$dl_hits2 <- output$dl_hits <- downloadHandler(
       filename = function() {
         if(is.null(ER())) return(NULL)
         fn <- paste0("EnrichMir_hits_",input$view_test,"_",Sys.Date(),".csv")
         fn
       },
-      content = function(con) {
+      content = function(file) {
         if(is.null(ER())) return(NULL)
         test <- input$view_test
         if(is.null(test) || test=="") test <- NULL
-        h <- getResults(ER(), test=test, flatten=TRUE)
-        write.csv(h, con)
+        h <- as.data.frame(getResults(ER(), test=test, flatten=TRUE))
+        write.csv(h, file)
       }
     )
-      
+
     waiter::waiter_hide()
     if(isTRUE(getOption("shiny.testmode"))) print("END LOADING")
     

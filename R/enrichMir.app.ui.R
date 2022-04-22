@@ -280,7 +280,9 @@ Note that the background should also include the genes of interest!"),
                                    choices=c("pvalue","FDR"), selected="FDR")),
             column(6, selectInput("bubble_theme", "Theme", 
                                   choices=ggplot_themes)),
-            column(6, downloadLink('bubble_plot_dl', label="Download plot"))
+            column(6, downloadButton('bubble_plot_dl', label="Download plot"),
+                      actionButton(inputId="help_enrichplotFurther", 
+                                   label="Further customization?"))
                 )),
               tabPanel(title="Results table", 
                 fluidRow(
@@ -289,7 +291,7 @@ Note that the background should also include the genes of interest!"),
                    label="Select add. columns to be shown:",
                    choices=list("miRNA names"="members",
                                 "predicted target genes"="genes") )),
-                 column(4, downloadLink('dl_hits', label = "Download all"))),
+                 column(4, downloadButton('dl_hits', label = "Download all"))),
                  withSpinner(DTOutput("hits_table")), tags$br()
               )
             )
@@ -326,8 +328,8 @@ Note that the background should also include the genes of interest!"),
                                       value="log(foldchange)")),
                   column(6, selectInput("CDplot_theme", "Theme", 
                                         choices=ggplot_themes)),
-                  column(6, downloadLink('cd_plot_dl', label="Download plot")),
-                  column(6, actionLink('CDplot_dlContent', label="Download plot R data"))
+                  column(6, downloadButton('cd_plot_dl', label="Download plot"),
+                         actionButton('CDplot_dlContent', label="Download plot R data"))
                 )
               )
           )

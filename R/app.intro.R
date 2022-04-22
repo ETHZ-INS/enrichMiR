@@ -273,6 +273,19 @@ TPM4,-1.41,1.83e-10,6.86e-08
             genes which are too lowly-expressed for any differential pattern to
             be detected ought to be removed from the background.")
         ),
+        enrichplot_dl=modalDialog(easyClose=TRUE, title="Further customization",
+          tags$p("For further customization of the plot, simply ",
+                 downloadLink("dl_hits2", "download the results table"),
+                 " and load it in R using:", tags$br(),
+                 tags$code('er <- read.csv("path/to/EnrichMir_hits_XXX.csv", row.names=1)')),
+          tags$p("You may then plot in full freedom with ", tags$code("ggplot2"),
+                 "or use the enrichMiR wrapper. For the latter, first install ",
+                 "it using:", tags$br(),
+                 tags$code('BiocManager::install("ETHZ-INS/enrichMiR")'),tags$br(),
+               "(requires the 'remotes' package to be installed)"),
+          tags$p("and then use:", tags$br(), tags$code("library(enrichMiR)"),
+                 tags$br(), tags$code("enrichPlot(er)"))
+        ),
         modalDialog(title=topic, "No help currently available for this topic.")
   )
 }
@@ -342,7 +355,8 @@ TPM4,-1.41,1.83e-10,6.86e-08
           but corrects for UTR length using the Wallenius method, as implemented in
           the ", tags$a("goseq", target="_blank",
                         href="https://www.bioconductor.org/packages/devel/bioc/html/goseq.html"),
-          "package. The test performs similarly to the siteoverlap test."),
+          "package. The test performs similarly to the siteoverlap test.
+          Note that it requires a certain number of sets with overlaps to be run."),
                     tags$li(tags$b("areamir")," (continuous signal, score or set 
           membership):", tags$br(), 
                             "The areamir test is based on the analytic Rank-based 

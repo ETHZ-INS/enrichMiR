@@ -97,13 +97,13 @@ testEnrichment <- function( x, sets, background=NULL, tests=NULL,
   sets <- sets[sets$set %in% row.names(sets.properties),]
 
   setsizes <- table(sets$set)
-  sets.properties$set_size <- setsizes[row.names(sets.properties)]
+  sets.properties$set_size <- as.integer(setsizes[row.names(sets.properties)])
   if(!is.null(sets.properties$members) && 
      length(w <- is.na(sets.properties$set_size))>0)
     sets.properties$set_size[w] <- 
-    sapply(strsplit(sets.properties$members[w], ";"), FUN=function(x){
-      sum(setsizes[x],na.rm=TRUE)
-    })
+    unlist(lapply(strsplit(sets.properties$members[w], ";"), FUN=function(x){
+      sum(as.integer(setsizes[x]),na.rm=TRUE)
+    }))
   setsizes <- setsizes[setsizes>=minSize & setsizes<=maxSize]
   sets <- sets[sets$set %in% names(setsizes),]
   
