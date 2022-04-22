@@ -535,8 +535,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         title = "Download plot data for customization in R",
         tags$p("The RData file will contain three objects:", tags$ul(
           tags$li(tags$b("TS :"), "The relevant target annotation info"),
-          tags$li(tags$b("dea :"), "The DEA object"),
-          tags$li(tags$b("plotObj :"), "The ggplot object")
+          tags$li(tags$b("dea :"), "The DEA object")
         )),
         tags$p("You may install the enrichMiR package locally using:",tags$br(),
                tags$code('BiocManager::install("ETHZ-INS/enrichMiR")'),tags$br(),
