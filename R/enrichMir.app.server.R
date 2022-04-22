@@ -490,15 +490,14 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       setTheme(p, input$CDplot_theme)
     })
     
-    CDplot_dl_content <- reactive({
-      plotObj <- CDplot_obj()
-      if(is.null(plotObj)) return(NULL)
+    CDplot_content <- reactive({
+      if(is.null(CDplot_obj())) return(NULL)
       dea <- DEA()
       TS <- EN_Object()
       dea <- .applySynonyms(dea, TS)
       if(sum(levels(TS$feature) %in% row.names(dea))<10) return(NULL)
-      TS <- TS[TS$set==input$mir_fam & TS$feature %in% row.names(dea),]
-      list(plotOjb, TS, dea)
+      TS <- TS[which(TS$set==input$mir_fam & TS$feature %in% row.names(dea)),]
+      list(TS=as.data.frame(TS), dea=dea)
     })
     
     observeEvent(input$CDplot_dlContent, {
@@ -512,20 +511,22 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           tags$li(tags$b("dea :"), "The DEA object"),
           tags$li(tags$b("plotObj :"), "The ggplot object")
         )),
-        tags$p("You may install the enrichMiR package locally using:",
-               tags$code('BiocManager::install("ETHZ-INS/enrichMiR")'),
+        tags$p("You may install the enrichMiR package locally using:",tags$br(),
+               tags$code('BiocManager::install("ETHZ-INS/enrichMiR")'),tags$br(),
                "(requires the 'remotes' package to be installed)", tags$br(),
-               "and then reproduce the plot using:", tags$code(cmd)),
+               "and then reproduce the plot using:", tags$br(), tags$code(cmd)),
         downloadButton("CDplot_dl_content", "Download")
       ))
     })
     
     output$CDplot_dl_content <- downloadHandler(
-      filename <- function(){ paste0("CDplot_",input$mir_fam,".RData") },
+      filename = function(){
+        paste0("CDplot_",make.names(input$mir_fam),".RData")
+      },
       content = function(file) {
-        ll <- CDplot_dl_content()
+        ll <- CDplot_content()
         attach(ll)
-        save(TS, dea, plotObj, file=file)
+        save(TS, dea, file=file)
       }
     )
               

@@ -336,7 +336,7 @@ Note that the background should also include the genes of interest!"),
                   column(6, selectInput("CDplot_theme", "Theme", 
                                         choices=ggplot_themes)),
                   column(6, downloadLink('cd_plot_dl', label="Download plot")),
-                  column(6, downloadLink('CDplot_dlContent', label="Download plot R data"))
+                  column(6, actionLink('CDplot_dlContent', label="Download plot R data"))
                 )
               )
           )
