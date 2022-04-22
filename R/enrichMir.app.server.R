@@ -12,7 +12,7 @@
 #' @importFrom shinyjqui jqui_resizable
 #' @importFrom shinyjs hideElement showElement
 #' @importFrom plotly renderPlotly ggplotly event_data
-#' @importFrom shinyWidgets execute_safely
+#' @importFrom shinyWidgets execute_safely sendSweetAlert
 #' @importFrom DT renderDT datatable
 enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
   dtwrapper <- function(d, pageLength=25, hide_cols){
@@ -103,7 +103,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
      if(input$input_type!="dea" && length(Gene_Subset())>1 && 
         length(Back())>1)
        return(menuItem("Input genes/DEA", tabName = "tab_input", 
-                       badgeLabel=paste0("set(",length(Gene_Subset()),
+                       badgeLabel=paste0("set(",sum(Gene_Subset()%in%Back()),
                                          "/",length(Back()),")"),
                        badgeColor="light-blue", icon=icon("file-alt"),
                        expandedName="menu_input"))
@@ -598,6 +598,15 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         if(is.null(Gene_Subset()) || is.null(Back())) return(NULL)
         sig <- Gene_Subset()
         bg <- Back()
+        if(!any(sig %in% bg)){
+          return(sendSweetAlert(
+            session = shiny::getDefaultReactiveDomain(),
+            title = "There was an error with your input",
+            text = "The background list doesn't seem to contain any of your genes of input.",
+            html = TRUE,
+            type = "error"
+          ))
+        }
         standard_tests <- c("siteoverlap","woverlap")
       }
       if(length(sig)==0) return(NULL)
