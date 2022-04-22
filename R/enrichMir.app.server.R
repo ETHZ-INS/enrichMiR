@@ -647,15 +647,15 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       tests <- intersect(tests, availableTests(sig,EN_Object()))
       
       msg <- tags$p("Performing enrichment analyses with the following tests: ",
-                    tags$br(), paste(tests,collapse=", "))
+                    tags$br(), tags$code(paste(tests,collapse=", ")))
       
       showModal(modalDialog(title="Performing enrichment analyses", 
                             footer=NULL, easyClose=FALSE,
-                            tagList(msg, waiter::spin_1(),
-            tags$p("(The 'woverlap' test might be skipped if there are to few 
-                   miRNAs overlapping the target.)"),
-            tags$p(ifelse(grepl("all|scanMiR",input$collection,ignore.case=TRUE),
-                         "This will take a while...", "") ))
+                            tagList(msg, tags$p(ifelse(
+                        grepl("all|scanMiR",input$collection,ignore.case=TRUE),
+                         "This will take a while...", "") ),
+                        tags$p("(The 'woverlap' test might be skipped if there are to few 
+                   miRNAs overlapping the target.)"))
         ))
       
       sig <- .applySynonyms(sig, EN_Object())

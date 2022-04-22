@@ -22,6 +22,7 @@ testEnrichment(
   BPPARAM = NULL,
   familyRound = NULL,
   checkSynonyms = TRUE,
+  doCheck = TRUE,
   ...
 )
 }
@@ -83,6 +84,9 @@ not a data.frame.}
 
 \item{BPPARAM}{\link{BiocParallel} multithreading parameters. Used to
 multithread tests, and also within the `gsea` test.}
+
+\item{doCheck}{Whether to check the inputs. This argument is for internal use
+and should not be disabled!}
 }
 \value{
 an enrich.results object.

@@ -46,6 +46,8 @@
 #' not a data.frame.
 #' @param BPPARAM \link{BiocParallel} multithreading parameters. Used to
 #' multithread tests, and also within the `gsea` test.
+#' @param doCheck Whether to check the inputs. This argument is for internal use
+#' and should not be disabled!
 #'
 #' @return an enrich.results object.
 #'

@@ -1,7 +1,7 @@
 Package: enrichMiR
 Type: Package
 Title: enrichMiR: miRNA target enrichment analysis
-Version: 0.99.21
+Version: 0.99.23
 Date: 2022-03-23
 Authors@R: c(
     person("Pierre-Luc", "Germain", email="pierre-luc.germain@hest.ethz.ch", 

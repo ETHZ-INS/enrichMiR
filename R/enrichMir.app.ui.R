@@ -54,16 +54,6 @@ ENSG00000106462, ENSG00000100811, ...")
     
     ## Body Content
     dashboardBody(
-#       tags$head(tags$style(HTML("
-# #sel_test_div label {
-#   display: table-cell;
-#   text-align: center;
-#   vertical-align: middle;
-# }
-# #sel_test_div .form-group {
-#   display: table-row;
-# }
-# "))),
       useShinyjs(), introjsUI(), use_waiter(),
       
       waiter_show_on_load(html=tagList(
