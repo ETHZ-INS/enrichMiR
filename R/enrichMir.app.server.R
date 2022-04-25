@@ -847,6 +847,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       test <- input$view_test
       if(is.null(test) || test=="") test <- NULL
       rr <- getResults(ER(), test=test, flatten=TRUE)
+      if(is.null(rr$pvalue) && !is.null(rr$over.pvalue))
+        rr$pvalue <- rr$over.pvalue
       show_standard <- c("enrichment","coefficient","combined.coef",
                          "combined.pvalue","pvalue","FDR","expression")
       if(is.null(input$columns2show)){

@@ -311,8 +311,9 @@ TPM4,-1.41,1.83e-10,6.86e-08
        therefore not be used. By default, the 'siteoverlap', 'woverlap' and 
       'areamir' tests are enabled (provided they are compatible with the 
       collection used), as these are the tests that gave the best performance.
-      In addition, the binary version of the 'regmir' test provided excellent
-      error control, albeit with a lower sensitivity."
+      When larger annotations are used (e.g. scanMiR or TargetScan-all), we 
+      instead recommend using the 'lmadd' test, which showed the best performance
+      in this context."
     ) 
   )
 }
