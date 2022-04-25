@@ -347,8 +347,8 @@ Note that the background should also include the genes of interest!"),
                      experiment, the signal was additionally scrambled to create 
                      further, more difficult 'pseudo-experiments', which are 
                      averaged in the results below. The benchmark was performed 
-                     using TargetScan-predicted sites, and was then used to 
-                     guide the choice of default tests in the enrichMiR app."),
+                     using TargetScan (conserved)-predicted sites, and was then 
+                     used to guide the choice of default tests in the enrichMiR app."),
               tags$img(src="benchmark1.png"),
               tags$p("Panel A shows the rank of the true miRNA according to 
                      the different tests (lower=better, i.e. a rank of 1 
@@ -358,11 +358,12 @@ Note that the background should also include the genes of interest!"),
                      nominal q-value threshold of 0.05. One can observe that
                      while most tests manage to rank the true hypothesis as 
                      first, most fail to accurately control error."),
-              tags$p("In light of these results, the siteoverlap test was 
-                     selected as the default for binary signals, and the areamir
-                     test for continuous signals. For use with larger annotations
-                     (e.g. scanMiR), we however recommend the more conservative
-                     lmadd test (see publication for details)."),
+              tags$p("In light of these results, the siteoverlap and woverlap 
+                     tests were selected as the default for binary signals, and 
+                     the areamir test for continuous signals. ", tags$em("For 
+                     use with larger annotations (e.g. scanMiR), we however 
+                     recommend the more conservative lmadd test"), "(see 
+                     publication for details)."),
               tags$p("Note that restricting the enrichment analysis to the 
                      miRNAs expressed in your system systematically decreases
                      FDR. You can do so in the 'Species and miRNAs' tab, either
