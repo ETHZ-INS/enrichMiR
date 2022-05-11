@@ -711,8 +711,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                    sendSweetAlert(
                      session = shiny::getDefaultReactiveDomain(),
                      title = "There was an error with your input",
-                     text = "The expressed miRNAs you indicated do not match 
-                              the binding site collection you selected.",
+                     text = tagList("This typically happens when the expressed miRNAs do not contain any binding site in your
+                                      specified background (or when only wrong miRNA names have been provided).",
+                                    tags$br(), tags$br(),  
+                                    "Try to remove the 'miRNA expression specification' by deleting all entries of the 'miRNA list' at the 'Species and miRNAs' pages
+                                under 'Specify expressed miRNAs (optional)' & 'Custom Set' or give a new gene set input. Please consult the tutorial and help pages 
+                                for further info."),
                      type = "error")
                    ; NULL 
                  }))) return(NULL)
