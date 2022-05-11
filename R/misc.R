@@ -140,6 +140,7 @@ recapitalizeMiRs <- function(x){
     message("Using ",f[1])
     x[["logFC"]] <- x[[f[1]]]
   }
+  x <- x[!is.na(x$logFC) & !is.na(x$FDR),]
   x
 }
 
