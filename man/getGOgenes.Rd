@@ -15,9 +15,6 @@ getGOgenes(go_ids, species = "Mm", translate.ids = TRUE, ensembl_ids = FALSE)
 
 \item{ensembl_ids}{Logical; whether to translate Gene Symbols into Ensembl IDs}
 }
-\value{
-
-}
 \description{
 getGOgenes
 }

@@ -50,7 +50,7 @@ appropriate tests).}
 character vector.}
 
 \item{tests}{Character vector of the tests to perform. See 
-\link{\code{enrichMiR::availableTests}} for the options.}
+\code{\link{enrichMiR::availableTests}} for the options.}
 
 \item{sets.properties}{Any further information about the sets; this can 
 either be a data.frame (or DataFrame), with row.names corresponding to names

@@ -22,7 +22,7 @@
 #' @param background A character vector of background; ignored if `x` is not a
 #' character vector.
 #' @param tests Character vector of the tests to perform. See 
-#' \link{\code{enrichMiR::availableTests}} for the options.
+#' \code{\link{enrichMiR::availableTests}} for the options.
 #' @param sets.properties Any further information about the sets; this can 
 #' either be a data.frame (or DataFrame), with row.names corresponding to names
 #' of `sets` (or to alternative names), or a named vector (e.g. miRNA expression
