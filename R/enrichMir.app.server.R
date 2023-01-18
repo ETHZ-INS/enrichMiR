@@ -508,6 +508,16 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
             labs(x=input$CDplot_xlabel, colour=legname)
         },
         error=function(e){ e })
+      if(is(p,"error")){
+        if(input$CD_type=="sites"){
+          p <- tryCatch({
+            CDplotWrapper(dea, TS, setName=set_Name, addN=TRUE,
+                          by="auto", k=input$CD_k) + 
+              labs(x=input$CDplot_xlabel, colour=legname)
+          },
+          error=function(e){ e })
+        }
+      }
       if(is(p,"error")) return(FALSE)
       if(input$CDplot_xaxis==0){
         q <- quantile(dea$logFC, c(0.01, 0.99))
