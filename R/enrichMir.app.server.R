@@ -775,7 +775,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
                       sig.field=input$sig.field, col.field=col.field, 
                       label.enr.thres=input$label.enr.thres, 
-                      maxLabels=input$label_n )
+                      maxLabels=input$label_n ) + labs(x="log2(enrichment)")
         p <- setTheme(p, input$bubble_theme)
         forTooltip <- intersect(c("set","label","overlap","enrichment",
                                   "set_size","pvalue","FDR"), colnames(er))
@@ -864,6 +864,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           }
         columns2hide <- setdiff(colnames(rr),show)
       }
+      colnames(rr) <- gsub("^enrichment$", "log2(enrichment)", colnames(rr))
       return(dtwrapper(rr, hide_cols=columns2hide))
     })
     
