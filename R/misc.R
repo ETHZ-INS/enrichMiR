@@ -123,7 +123,7 @@ recapitalizeMiRs <- function(x){
   abf <- colnames(df)[which(colnames(df) %in% c("meanExpr", "AveExpr", 
                                                 "baseMean", "logCPM"))]
   if (length(abf) == 1) {
-    x$meanExpr <- df[, abf]
+    x$meanExpr <- x[, abf]
     if (abf == "baseMean") 
       x$meanExpr <- log(x$meanExpr + 1)
   }else if(all(c("value_1","value_2") %in% colnames(x))){ # cufflinks
