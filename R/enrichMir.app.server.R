@@ -608,10 +608,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(length(tt <- setdiff(nn, unlist(choices)))>0)
         choices$Continuous <- tt
       choices <- lapply(choices, FUN=function(x) setNames(x,x))
-      if(length(nn)>1) choices[["All tests"]] <- c(""="merged")
+      if(length(nn)>1) choices[["All tests"]] <- c("merged"="")
       if(!is.null(choices$Continuous$aggregated)){
-        choices[["All tests"]] <- c(choices[["All tests"]],
-                                    aggregated="aggregated (beta)")
+        choices[["All tests"]] <- c("merged"="",
+                                    "aggregated (beta)"="aggregated")
         choices$Continuous$aggregated <- NULL
       }
       choices
