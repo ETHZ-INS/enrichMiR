@@ -10,7 +10,7 @@
 #' @return A results dataframe
 #' @export
 aggregateTests <- function(er, niter=20000, discordantFactor=5){
-  stopifnot(is(res,"enrich.results"))
+  stopifnot(is(er,"enrich.results"))
   tests <- names(er@res)
   res <- getResults(er)
   tcon <- tests[grep("up|down",tests,inver=TRUE)]
