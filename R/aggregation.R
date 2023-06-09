@@ -13,6 +13,8 @@ aggregateTests <- function(er, niter=20000, discordantFactor=5){
   stopifnot(is(er,"enrich.results"))
   tests <- names(er@res)
   res <- getResults(er)
+  if(!is.null(res$areamir.enrichment))
+    res$areamir.enrichment <- -res$areamir.enrichment
   tcon <- tests[grep("up|down",tests,inver=TRUE)]
   tbin <- tests[grep("up|down",tests)]
   tbin <- unique(gsub("\\.up|\\.down","",tbin))
