@@ -1,11 +1,11 @@
 #' CDplot
 #'
-#' Creates a cumulative distribution plot, eventually handling division of 
+#' Creates a cumulative distribution plot, eventually handling division of
 #' values into bins according to another variable.
 #'
 #' @param ll A named list of numeric values, or a vector of values to be divided
-#' @param by If `ll` is a list, `by` is ignored. If `ll` is a vector of values, 
-#' `by` should be a numeric/logical/factor vector of the same length according 
+#' @param by If `ll` is a list, `by` is ignored. If `ll` is a vector of values,
+#' `by` should be a numeric/logical/factor vector of the same length according
 #' to which the values should be divided.
 #' @param k The number of divisions (ignored if `ll` is a list, or if `by` is
 #' logical or a factor).
@@ -24,9 +24,9 @@
 #' @import ggplot2
 #' @importFrom dplyr bind_rows
 #' @importFrom stats quantile ks.test
-#' 
+#'
 #' @export
-CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE, 
+CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
                    dig.lab=NULL, minN=10, pvals=FALSE, ...){
   factorLevels <- NULL
   if(!is.list(ll)){
@@ -46,7 +46,7 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
         breaks <- unique(quantile(by, prob=seq(from=0, to=1, length.out=k),
                                   na.rm=TRUE))
         if(length(breaks)<k)
-          breaks <- unique(quantile(c(0,by[by!=0]), 
+          breaks <- unique(quantile(c(0,by[by!=0]),
                                     prob=seq(from=0, to=1, length.out=k),
                                     na.rm=TRUE))
         if(length(breaks)<k){
@@ -81,8 +81,8 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
   }
   if(addN) levels(d$Sets) <- paste0(levels(d$Sets), " (n=",
                                     as.numeric(table(d$Sets)), ")")
-  p <- ggplot(d, aes(x,y,colour=Sets)) + 
-    geom_vline(xintercept=0, linetype="dashed") + geom_line(...) 
+  p <- ggplot(d, aes(x,y,colour=Sets)) +
+    geom_vline(xintercept=0, linetype="dashed") + geom_line(...)
   if(pvals) p$stat <- stat_df
   p + ylab("Cumulative proportion")
 }
@@ -116,8 +116,8 @@ CDplot <- function(ll, by=NULL, k=3, breaks=NULL, sameFreq=FALSE, addN=FALSE,
 #' @return A ggplot.
 #' @export
 CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
-                          by=c("auto","sites","score","best_stype","type"), 
-                          sameFreq=NULL, line.size=1.2, point.size=0.8, 
+                          by=c("auto","sites","score","best_stype","type"),
+                          sameFreq=NULL, line.size=1.2, point.size=0.8,
                           checkSynonyms=TRUE, pvals=FALSE, ...){
   message("Preparing inputs...")
   dea <- .homogenizeDEA(dea)
@@ -130,7 +130,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
     sets <- .addBestType(sets)
   if(by=="auto")
     by <- head(intersect(c("best_stype", "score", "sites"), colnames(sets)),1)
-  if(by != "type" && !(by %in% colnames(sets))) 
+  if(by != "type" && !(by %in% colnames(sets)))
     stop("`by` not available in `sets`.")
   if(nrow(sets)==0) stop("setName not found in `sets`.")
   if(is.null(dim(dea))){
@@ -144,7 +144,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
     stop("There seems to be no overlap between the rows of `dea` and the ",
          "features of `sets`.")
   if(is.null(sameFreq)) sameFreq <- by=="score"
-  
+
   if(by=="best_stype" | by == "type"){
     if(by == "best_stype"){
       by <- as.character(sets[["best_stype"]])
@@ -159,7 +159,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
       sets <- sets[sets$value != 0,]
       sets$type <- gsub("Sites_","",sets$variable)
       sets$type <- gsub("_","-",sets$type)
-      #filter for those in dea 
+      #filter for those in dea
       by <- as.character(sets[["type"]])
       names(by) <- sets[["feature"]]
       by <- by[names(by) %in% names(dea)]
@@ -174,10 +174,10 @@ CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
       by2 <- factor(by2, intersect(names(defcols), bylvls))
     }
     if(addN)
-      bylvls <- levels(by2) <- paste0(levels(by2), 
+      bylvls <- levels(by2) <- paste0(levels(by2),
                                       " (n=", as.integer(table(by2)),")")
-    
-    p <- CDplot(dea, by=by2, k=length(bylvls), 
+
+    p <- CDplot(dea, by=by2, k=length(bylvls),
                 sameFreq=sameFreq, size=line.size, pvals = pvals, ...)
     if(all(bylvls %in% names(defcols))){
       p <- p + scale_colour_manual(values=defcols[levels(by2)])
@@ -198,7 +198,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
       p <- CDplot(ll, size=line.size, pvals = pvals, ...)
       p <- p + scale_colour_manual(values=c("#000004FF","#E65D2FFF"))
     }else{
-      p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size, 
+      p <- CDplot(dea, by=by2, k=k, sameFreq=sameFreq, size=line.size,
                   pvals=pvals, ...)
       if(k==3){
        p <- p + scale_color_manual(values=c("#F5DB4BFF","#A92E5EFF","#000004FF"))
@@ -207,7 +207,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
   }
   if(point.size>0) p <- p + geom_point(size=point.size)
   p + xlab("logFC") + ggtitle(setName)
-  
+
 }
 
 
@@ -234,7 +234,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
     names(ll[[w]]) <- lmf(names(ll)[sort(c(w,w2))])
     ll[[w2]] <- NULL
   }
-  ll   
+  ll
 }
 
 
@@ -245,7 +245,7 @@ CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
 #'
 #' Plots the results of an miRNA enrichment analysis
 #'
-#' @param res The results of an enrichment analysis, as obtained by the 
+#' @param res The results of an enrichment analysis, as obtained by the
 #' `getResults` function.
 #' @param enr.field The column determining the x axis.
 #' @param size.field The column determining the size of the circles.
@@ -256,37 +256,37 @@ CDplotWrapper <- function(dea, sets, setName, k=3, addN=FALSE,
 #' @param min.enr.thres The minumum (absolute) fold-enrichment above which to plot.
 #' @param label.sig.thres The FDR threshold above which to plot the names of the
 #'  enriched sets (default 0.05).
-#' @param label.enr.thres The (absolute) enrichment threshold above which to 
+#' @param label.enr.thres The (absolute) enrichment threshold above which to
 #' plot the names of the enriched sets.
 #' @param label.field The field to use as labels (defaults to row.names)
 #' @param maxLabels The maximum number of labels to plot (default 10).
 #' @param opacity The opacity of the bubbles, ranging from 0 to 1 (default 0.5).
-#' @param repel Logical; whether to plot labels with `ggrepel`. This is the 
+#' @param repel Logical; whether to plot labels with `ggrepel`. This is the
 #' default behaviour, but should be turned off if you plan to pass the result
-#' to `ggplotly`. 
+#' to `ggplotly`.
 #'
 #' @export
-#' @import ggplot2 
+#' @import ggplot2
 #' @importFrom ggrepel geom_text_repel
 enrichPlot <- function( res,
                         enr.field=c("enrichment","normalizedEnrichment","beta",
                                     "coefficient","combined.coef"),
                         size.field=c("overlap", "set_size"),
                         col.field=NULL,
-                        sig.field="FDR", 
-                        max.sig.thres=100, 
-                        min.enr.thres=NULL, 
-                        label.sig.thres=0.05, 
-                        label.enr.thres=0, 
-                        label.field=NULL, 
-                        maxLabels=10, 
-                        opacity=0.5,  
+                        sig.field="FDR",
+                        max.sig.thres=100,
+                        min.enr.thres=NULL,
+                        label.sig.thres=0.05,
+                        label.enr.thres=0,
+                        label.field=NULL,
+                        maxLabels=10,
+                        opacity=0.5,
                         repel=TRUE ){
   if(is(res,"enrich.results")){
     if(length(names(res))==1){
       res <- getResults(res)
     }else{
-      stop("Use `getResults` to select one of the multiple enrichment analyses 
+      stop("Use `getResults` to select one of the multiple enrichment analyses
            contained in the object.")
     }
   }
@@ -296,10 +296,10 @@ enrichPlot <- function( res,
   }
   if(length(sig.field <- head(intersect(sig.field,colnames(res)),n=1))==0)
     stop("`sig.field` not found.")
-  if(!is.null(size.field) && 
+  if(!is.null(size.field) &&
      length(size.field <- head(intersect(size.field,colnames(res)),n=1))==0)
     stop("`size.field` not found.")
-  if(!is.null(col.field) && 
+  if(!is.null(col.field) &&
      length(col.field <- head(intersect(col.field,colnames(res)),n=1))==0)
     stop("`col.field` not found.")
   if(is.null(label.field)){
@@ -311,7 +311,7 @@ enrichPlot <- function( res,
   }
   if(!is.null(res[["overlap"]])) res[["overlap"]] <- as.numeric(res[["overlap"]])
   if(!is.null(res[["set_size"]])) res[["set_size"]] <- as.numeric(res[["set_size"]])
-  
+
   if(!is.null(min.enr.thres)) res <- res[res[[enr.field]]>=min.enr.thres,]
   res <- res[order(res[[sig.field]]),]
   if(max.sig.thres>1){
@@ -320,7 +320,7 @@ enrichPlot <- function( res,
     res <- res[which(res[[sig.field]] <= max.sig.thres),]
   }
   if(nrow(res)<=2) stop("Not enough data to plot using the given thresholds...")
-  w <- which(abs(res[[enr.field]])>=label.enr.thres & 
+  w <- which(abs(res[[enr.field]])>=label.enr.thres &
                res[[sig.field]]<label.sig.thres)
   w <- head(w,n=maxLabels)
   sig.field2 <- sig.field
@@ -329,6 +329,8 @@ enrichPlot <- function( res,
   if(!is.null(col.field)) ll$colour <- col.field
   for(f in setdiff(colnames(res), unlist(ll))) ll[[f]] <- f
   res <- as.data.frame(res)
+  # for plotting purpose, replace 0 significance with a very small p
+  res[[sig.field]][which(res[[sig.field]]==0)] <- min(res[[sig.field]][res[[sig.field]]>0])/10
   p <- ggplot(res, do.call(aes_string, ll)) + geom_point(alpha=opacity) +
     scale_y_continuous(trans=.reverselog_trans(10))
   if(!is.null(col.field)) p <- p + scale_colour_viridis_c(direction = -1)
@@ -344,8 +346,8 @@ enrichPlot <- function( res,
 .reverselog_trans <- function(base=10){
   trans <- function(x) -log(x, base)
   inv <- function(x) base^(-x)
-  scales::trans_new(paste0("reverselog-", format(base)), trans, inv, 
-            log_breaks(base = base), 
+  scales::trans_new(paste0("reverselog-", format(base)), trans, inv,
+            log_breaks(base = base),
             domain = c(1e-100, Inf))
 }
 
@@ -354,20 +356,20 @@ enrichPlot <- function( res,
 #' Breaks each (long) component of a character vector into two lines.
 #'
 #' @param x A character vector.
-#' @param minSizeForBreak The minimum number of characters for a string to be 
+#' @param minSizeForBreak The minimum number of characters for a string to be
 #' broken onto two lines (default 20).
 #' @param lb The linebreak character to use (default \\n).
 #'
 #' @export
 breakStrings <- function (x, minSizeForBreak = 20, lb = "\n") {
-    sapply(x, minSizeForBreak = minSizeForBreak, lb = lb, FUN = function(x, 
+    sapply(x, minSizeForBreak = minSizeForBreak, lb = lb, FUN = function(x,
         minSizeForBreak, lb) {
-        if (nchar(x) <= minSizeForBreak) 
+        if (nchar(x) <= minSizeForBreak)
             return(x)
         g <- gregexpr(" ", x)[[1]]
-        if (length(g) == 0) 
+        if (length(g) == 0)
             return(x)
-        if (length(g) == 1 & all(g == -1)) 
+        if (length(g) == 1 & all(g == -1))
             return(x)
         mid <- nchar(x)/2
         mid <- g[order(abs(g - mid))[1]]
@@ -380,8 +382,8 @@ breakStrings <- function (x, minSizeForBreak = 20, lb = "\n") {
 .siteTypeColors <- function(){
   c(`no site` = "#000004FF",
     `6mer` = "#3A0963FF",
-    `7mer-1a` = "#A92E5EFF", 
-    `7mer-a1` = "#A92E5EFF", 
+    `7mer-1a` = "#A92E5EFF",
+    `7mer-a1` = "#A92E5EFF",
     `7mer` = "#A92E5EFF",
     `7mer-m8` = "#E65D2FFF",
     `8mer` = "#F5DB4BFF")
