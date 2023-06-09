@@ -1,5 +1,5 @@
 #' enrichMiR.server
-#' 
+#'
 #' @param bData A named, nested list, the first level being species, the second
 #' different binding annotations (see vignette for format details)
 #' @param logCallsFile Optional path to a file when the date of enrichment calls
@@ -20,11 +20,11 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                options=list(pageLength=pageLength, dom = "fltBip", rownames=FALSE,
                             colReorder=TRUE,
                             columnDefs=list(
-                              list(visible=FALSE, 
+                              list(visible=FALSE,
                                    targets=na.omit(match(hide_cols, colnames(d))))),
                             buttons=c('copy', 'csv', 'excel') ) )
   }
-  
+
   trimInputList <- function(x){
     x <- unlist(strsplit(gsub(",|;|\\t|\\r|\\s","\n",x),"\n"))
     x <- unique(x[x!=""])
@@ -32,7 +32,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     if(length(x)==0) return(NULL)
     x
   }
-  
+
   setTheme <- function(p, theme=NULL){
     if(is.null(theme)) return(p)
     tryCatch({
@@ -49,17 +49,17 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
 
    bDataLoaded <- lapply(bData, as.list)
    updateSelectInput(session, "species", choices=names(bData))
-   
+
    ##############################
    ## Introduction & help
    ## See app.intro.R for the actual content
-   
+
    startIntro <- function(session){
      introjs(session, options=list(steps=.getAppIntro(), "nextLabel"="Next",
                                    "prevLabel"="Previous"),
              events=list(onbeforechange=readCallback("switchTabs")))
    }
-   
+
    observeEvent(input$helpLink, startIntro(session))
    observeEvent(input$helpBtn, startIntro(session))
 
@@ -76,10 +76,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
    observeEvent(input$help_testsadvanced, showModal(.getHelpModal("testsadvanced")))
    observeEvent(input$help_deaformat, showModal(.getHelpModal("deaformat")))
    observeEvent(input$help_background, showModal(.getHelpModal("background")))
-   
+
    output$testsummary <- renderTable(.getTestsTable())
    output$browsercomp <- renderTable(.getBrowserCompTable())
-   
+
    runjs("
    $('.box').on('click', '.box-header h3', function() {
      $(this).closest('.box')
@@ -87,10 +87,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
      .click();
    });
    ")
-   
+
    ##############################
    ## Menu items
-   
+
    output$menu_species <- renderMenu({
      badgeColor <- "light-blue"
      btext <- input$species
@@ -105,8 +105,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
          btext <- paste0(btext,": ", mirexp,"mirs")
        }
      }
-     menuItem( "Species and miRNAs", tabName="tab_species", 
-               expandedName="menu_species", icon=icon("folder-open"), 
+     menuItem( "Species and miRNAs", tabName="tab_species",
+               expandedName="menu_species", icon=icon("folder-open"),
                badgeLabel=btext, badgeColor=badgeColor)
    })
    output$menu_input <- renderMenu({
@@ -114,20 +114,20 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
        return(menuItem("Input genes/DEA", tabName="tab_input", badgeLabel="DEA",
                        badgeColor="light-blue", icon=icon("file-alt"),
                        expandedName="menu_input"))
-     if(input$input_type!="dea" && length(Gene_Subset())>1 && 
+     if(input$input_type!="dea" && length(Gene_Subset())>1 &&
         length(Back())>1)
-       return(menuItem("Input genes/DEA", tabName = "tab_input", 
+       return(menuItem("Input genes/DEA", tabName = "tab_input",
                        badgeLabel=paste0("set(",sum(Gene_Subset()%in%Back()),
                                          "/",length(Back()),")"),
                        badgeColor=ifelse(sum(Gene_Subset()%in%Back())>1, "light-blue", "red"),
                        icon=icon("file-alt"), expandedName="menu_input"))
-     menuItem("Input genes/DEA", tabName = "tab_input", badgeLabel="none", 
+     menuItem("Input genes/DEA", tabName = "tab_input", badgeLabel="none",
               badgeColor="red", icon=icon("file-alt"), expandedName="menu_input")
    })
    output$menu_enrich <- renderMenu({
      if((input$input_type=="dea" && !is.null(DEA())) ||
         (input$input_type!="dea" && length(Gene_Subset())>1 && length(Back())>1))
-       return(menuItem("Enrichment analysis", tabName = "tab_enrich", 
+       return(menuItem("Enrichment analysis", tabName = "tab_enrich",
                        icon=icon("rocket"), expandedName="menu_enrich"))
      menuItem("Enrichment analysis", tabName="tab_enrich", badgeLabel="(no input!)",
               badgeColor="red", icon=icon("times-circle"), expandedName="menu_enrich")
@@ -140,7 +140,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
      menuItem("CD Plot", tabName="tab_cdplot", icon=icon("poll"),
               expandedName="menu_cdplot")
    })
-   
+
    observe({
      if(!is.null(input$species))
        updateSelectInput(session, "collection", choices=names(bData[[input$species]]))
@@ -157,12 +157,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
        hideElement("resultsbox")
      }
    })
-   
+
     ##############################
     ## initialize expression info
-  
+
     DEA <- reactiveVal(NULL)
-   
+
     observeEvent(input$dea_input, {
       upFile <- input$dea_input
       if (is.null(upFile)) return(NULL)
@@ -174,8 +174,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           tags$pre(as.character(e)),
           tags$p("Be sure to format your DEA table correctly:"),
           tags$p("Provide ENSEMBL_ID or Gene Symbol as identifier in the ",
-                 tags$b("first")," column, as well as logFC-values and 
-                 FDR-values. The output formats of most RNAseq DEA packages 
+                 tags$b("first")," column, as well as logFC-values and
+                 FDR-values. The output formats of most RNAseq DEA packages
                  should be automatically recognized.")
         ))
         NULL
@@ -194,26 +194,26 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       hideElement("resultsbox")
       DEA(exampleDEA)
     })
-    
+
     output$dea_res <- renderUI({
       if(is.null(DEA()))
         return(tags$span(icon("exclamation-triangle"), "No valid file uploaded",
                          style="font-weight: bold; font-color: red;"))
       tagList( tags$span(icon("check-circle"), "Valid file",
                          style="font-weight: bold; font-color: forestgreen;"),
-               tags$p(nrow(DEA())," features, of which ", 
+               tags$p(nrow(DEA())," features, of which ",
                       sum(DEA()$FDR<=input$dea_sig_th), " have a significance
                       below or equal to the selected FDR threshold (",
                       input$dea_sig_th, ")."))
     })
-    
+
     isEnrichNotPossible <- reactive({
       (input$input_type == "dea" && is.null(DEA())) ||
       (input$input_type != "dea" && (
         is.null(Gene_Subset()) || length(Gene_Subset())<2 ||
         is.null(Back())))
     })
-    
+
     output$enrichbtn <- renderUI({
       if(isEnrichNotPossible()) return(tagList())
       actionButton(inputId="enrich", "Run enrichMir!", icon = icon("search"))
@@ -221,7 +221,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     output$enrich_possible <- renderUI({
       if(isEnrichNotPossible())
         return(tagList(
-          tags$h3(id="enrich_na", style="font-color: red;", 
+          tags$h3(id="enrich_na", style="font-color: red;",
                   icon("exclamation-triangle"), "No valid gene set/DEA input!"),
           tags$p("Please navigate to the input page and provide a gene set of interest + background,
                   or a differential expression analysis (DEA).", tags$br(),
@@ -229,7 +229,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         ))
       tagList()
     })
-    
+
     ## Include , and "" gsub
     Back <- reactive({ #initalize the background
       hideElement("resultsbox")
@@ -241,17 +241,17 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         return(gsub("\\..*","",b))
       }
     })
-    
+
     output$mirexp_preset <- renderUI({
       if(tolower(input$species) == "human"){
         return(tagList(
           tags$h4("From the human microRNAome package"),
-          selectizeInput("mirexp_human", "Select tissue/celltype:", 
+          selectizeInput("mirexp_human", "Select tissue/celltype:",
                          choices=getHumanMirExp()),
-          tags$p("Source: ", 
+          tags$p("Source: ",
                  tags$a(href="http://genome.cshlp.org/content/27/10/1769",
                         "McCall et al., NAR 2017")),
-          
+
         ))
       }else if(tolower(input$species) == "mouse"){
         return(tagList(
@@ -267,11 +267,11 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                  "counts-per-million reads"),
           tags$p("Note that this quantification is not hairpin-specific,",
                  " but at the precursor level.")))
-          
+
       }
       tags$p("Preset miRNA expression profiles are only available for human and mouse.")
     })
-        
+
     miRNA_exp <- reactive({
       if(isTRUE(getOption("shiny.testmode"))) print("miRNA_exp")
       if(is.null(input$expressed_mirna_box)) return(NULL)
@@ -282,10 +282,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(input$expressed_mirna_box=="Use preset expression profile"){
         cutoff <- input$mir_cut_off2
         if(tolower(input$species) == "human"){
-          if(is.null(input$mirexp_human) || 
+          if(is.null(input$mirexp_human) ||
              is.null(x <- getHumanMirExp(input$mirexp_human))) return(NULL)
         }else if(tolower(input$species) == "mouse"){
-          if(is.null(input$mirexp_mouse) || 
+          if(is.null(input$mirexp_mouse) ||
              is.null(x <- getMouseMirExp(input$mirexp_mouse))) return(NULL)
         }else{
           return(NULL)
@@ -303,27 +303,27 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }
       x <- matchMirExpr(x, EN_Object())
       x <- x[x$expression>0,,drop=FALSE]
-      return(x[head(order(-x$expression), 
+      return(x[head(order(-x$expression),
                     round((cutoff/100)*nrow(x))),,drop=FALSE])
     })
-    
-    
+
+
     ##############################
     ## initialize reactive inputs
-  
+
     # Add GO Terms to input list
     GO_all <- as.data.frame(GO.db::GOTERM)
     GO_all_vec <- GO_all$go_id
     names(GO_all_vec) <- paste0(GO_all$go_id," (",GO_all$Term,")")
     GO_all_vec <- GO_all_vec[!duplicated(GO_all_vec)]
     updateSelectizeInput(session, "go_term", choices=GO_all_vec, server=TRUE)
-    
+
     output$GOI_nb <- renderText({
       genes <- Gene_Subset()
       if(is.null(genes)) return(NULL)
       paste(length(genes), " gene(s)")
     })
-    
+
     observeEvent(input$example_GOI, {
       if(!(tolower(input$species) %in% c("human","rat","mouse")))
         return(showModal(.getHelpModal("noExample")))
@@ -337,10 +337,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       updateTextAreaInput(session, "genes_of_interest", value=goi)
       updateSelectInput(session, "genes_format", "GS")
     })
-    
+
     ##############################
     ## Initialize Genes of Interest
-    
+
     Gene_Subset <- reactive({
       if(isTRUE(getOption("shiny.testmode"))) print("Gene_Subset")
       if(is.null(input$input_type) || is.null(EN_Object())) return(NULL)
@@ -356,14 +356,14 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           Sp <- switch(input$species, Human="Hs", Mouse="Mm", Rat="Rn",
                        Fish="Dr", Worm="Ce", Fly="Dm")
           ens <- switch(input$genes_format, "Ens"=TRUE, "GS"=FALSE)
-          return(as.character(unlist(getGOgenes(go_ids=input$go_term, 
+          return(as.character(unlist(getGOgenes(go_ids=input$go_term,
                                                 species=Sp,ensembl_ids=ens))))
         }
       }
     })
-    
 
-  
+
+
     ##############################
     ## Initialize target predictions
 
@@ -372,7 +372,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(is.null(input$collection) || is.null(input$species) ||
          is.null(bDataLoaded[[input$species]][[input$collection]])) return(NULL)
       if(is.character(bDataLoaded[[input$species]][[input$collection]])){
-        showModal(modalDialog(title="Loading target collection", 
+        showModal(modalDialog(title="Loading target collection",
                               footer=NULL, easyClose=FALSE,
                               tags$p("Depending on the size of the collection,
                                      this might take a moment.")))
@@ -382,15 +382,15 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }
       bDataLoaded[[input$species]][[input$collection]]
     })
-    
+
     output$collection_details <- renderText({
       if(is.null(EN_Object())) return(NULL)
-      
+
       paste(nrow(EN_Object()), "bindings of ", length(unique(EN_Object()$set)),
-            "families on ", length(unique(EN_Object()$feature)), 
+            "families on ", length(unique(EN_Object()$feature)),
             "transcripts/genes")
     })
-    
+
     output$extratestinput <- renderUI({
       options <- c(
         "overlap" = "overlap",
@@ -412,12 +412,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                          choices=options,
                          selected=NULL, inline=FALSE, width=NULL)
     })
-   
+
     ##############################
     ## CD plot
 
     flags <- reactiveValues(CDplotOn=FALSE, enrichPlotOn=FALSE)
-    
+
     observe({
       if( input$input_type!="dea" || is.null(DEA()) ){
         hideElement("cdplot_outer")
@@ -442,13 +442,13 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       CN <- colnames(EN_Object())
       if(!any(c("sites","score","best_stype") %in% CN))
         return(c(Automatic="auto"))
-      options <- c( Automatic="auto", "Best site type"="best_stype", 
+      options <- c( Automatic="auto", "Best site type"="best_stype",
                     Score="score", "Number of sites"="sites")
       if(!("best_stype" %in% CN) && sum(grepl("[6-8]mer",CN))>1)
         CN <- unique(c(CN,"best_stype", "type"))
       options[options %in% c("auto",CN)]
     })
-    
+
     mirfamChoices <- reactive({
       if(is.null(EN_Object())) return(c())
       names(lvl) <- lvl <- levels(as.factor(EN_Object()$set))
@@ -458,7 +458,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
           w <- names(lvl)[w]
         if(isTRUE(getOption("shiny.testmode"))) print("mir_fam1")
         x <- sapply(split(names(m), m)[w], FUN=function(x){
-          gsub("/(mir|let)", "/", gsub("/(hsa-|rno-|mmu-)", "/", 
+          gsub("/(mir|let)", "/", gsub("/(hsa-|rno-|mmu-)", "/",
                                        paste(x, collapse="/")), ignore.case=TRUE)
         })
         x <- setNames(names(x),as.character(x))
@@ -467,7 +467,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }
       lvl
     })
-    
+
     observe({
       if(!is.null(EN_Object())){
         updateSelectInput(session, "CD_type", choices=CDtypeOptions())
@@ -475,7 +475,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                              server=TRUE)
       }
     })
-    
+
     observe({
       if(!is.null(CDplot_obj())){
         if(input$CD_type %in% c("auto","best_stype","type")){
@@ -504,7 +504,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(isTRUE(getOption("shiny.testmode"))) print(set_Name)
       p <- tryCatch({
           CDplotWrapper(dea, TS, setName=set_Name, addN=TRUE,
-                        by=input$CD_type, k=input$CD_k) + 
+                        by=input$CD_type, k=input$CD_k) +
             labs(x=input$CDplot_xlabel, colour=legname)
         },
         error=function(e){ e })
@@ -512,7 +512,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         if(input$CD_type=="sites"){
           p <- tryCatch({
             CDplotWrapper(dea, TS, setName=set_Name, addN=TRUE,
-                          by="auto", k=input$CD_k) + 
+                          by="auto", k=input$CD_k) +
               labs(x=input$CDplot_xlabel, colour=legname)
           },
           error=function(e){ e })
@@ -527,7 +527,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }
       setTheme(p, input$CDplot_theme)
     })
-    
+
     CDplot_content <- reactive({
       if(is.null(CDplot_obj())) return(NULL)
       dea <- DEA()
@@ -537,7 +537,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       TS <- TS[which(TS$set==input$mir_fam & TS$feature %in% row.names(dea)),]
       list(TS=as.data.frame(TS), dea=dea)
     })
-    
+
     observeEvent(input$CDplot_dlContent, {
       if(is.null(CDplot_obj())) return(NULL)
       cmd <- paste0("enrichMiR::CDplotWrapper(dea, TS, setName='",input$mir_fam, "')")
@@ -550,12 +550,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         tags$p("You may install the enrichMiR package locally using:",tags$br(),
                tags$code('BiocManager::install("ETHZ-INS/enrichMiR")'),tags$br(),
                "(requires the 'remotes' package to be installed)", tags$br(),
-               "and then reproduce the plot using:", tags$br(), 
+               "and then reproduce the plot using:", tags$br(),
                tags$code("library(enrichMiR)"), tags$br(), tags$code(cmd)),
         downloadButton("CDplot_dl_content", "Download")
       ))
     })
-    
+
     output$CDplot_dl_content <- downloadHandler(
       filename = function(){
         paste0("CDplot_",make.names(input$mir_fam),".RData")
@@ -566,19 +566,19 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         save(TS, dea, file=file)
       }
     )
-              
+
     output$cd_plot <- renderPlot({
       p <- CDplot_obj()
       validate( need(!isFALSE(p),
              "This miRNA has an insufficient number of targets in the collection.
-             (This could be because the species of the collection does not 
+             (This could be because the species of the collection does not
              match that of the input).") )
       if(!is.null(logCallsFile))
         write(paste(Sys.Date(),session$token,"CDplot"), logCallsFile,
                    append=TRUE)
       p
     })
-    
+
     output$cd_plot_dl <- downloadHandler(
       filename={
         if(is.null(CDplot_obj()) || isFALSE(CDplot_obj())) return(NULL)
@@ -591,10 +591,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         file.copy(pf, con)
       }
     )
-    
+
     ##############################
     ## Enrichment analysis
-    
+
     testsAvailable <- reactive({
       if(is.null(ER())) return(c())
       nn <- setdiff(names(ER()), "regmir.bb3")
@@ -602,7 +602,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(any(grepl("\\.up$|\\.down$",nn)))
         choices <- list("Downregulated genes"=grep("\\.down$",nn,value=TRUE),
                         "Upregulated genes"=grep("\\.up$",nn,value=TRUE))
-      if(length(tt <- setdiff(grep("overlap|regmir\\.bb", nn, value=TRUE), 
+      if(length(tt <- setdiff(grep("overlap|regmir\\.bb", nn, value=TRUE),
                               unlist(choices)))>0)
         choices$Binary <- tt
       if(length(tt <- setdiff(nn, unlist(choices)))>0)
@@ -611,12 +611,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(length(nn)>1) choices[["All tests"]] <- c("merged"="")
       choices
     })
-    
+
     # Get user-friendly choices just for siteoverlap
     observe({
       updateSelectInput(session, "view_test", choices=testsAvailable())
     })
-    
+
     ER <- eventReactive(input$enrich, {
       hideElement("resultsbox")
       if(is.null(input$input_type) || is.null(EN_Object())) return(NULL)
@@ -648,29 +648,29 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         standard_tests <- c("siteoverlap","woverlap")
       }
       if(length(sig)==0) return(NULL)
-      
+
       #input tests
       if(is.character(sig)) sig <- setNames(bg %in% sig, bg)
-      
+
       tests <- c(standard_tests, input$tests2run)
       if(!any(c("sites","score") %in% colnames(EN_Object())))
         tests <- "overlap"
       tests <- intersect(tests, availableTests(sig,EN_Object()))
-      
+
       msg <- tags$p("Performing enrichment analyses with the following tests: ",
                     tags$br(), tags$code(paste(tests,collapse=", ")))
-      
-      showModal(modalDialog(title="Performing enrichment analyses", 
+
+      showModal(modalDialog(title="Performing enrichment analyses",
                             footer=NULL, easyClose=FALSE,
                             tagList(msg, tags$p(ifelse(
                         grepl("all|scanMiR",input$collection,ignore.case=TRUE),
                          "This will take a while...", "") ),
-                        tags$p("(The 'woverlap' test might be skipped if there are to few 
+                        tags$p("(The 'woverlap' test might be skipped if there are to few
                    miRNAs overlapping the target.)"))
         ))
-      
+
       sig <- .applySynonyms(sig, EN_Object())
-      
+
       if(input$input_type == "dea"){
         sets <- tryCatch(.filterInput(EN_Object(), sig, min.size=input$minsize),
                  error=function(e){
@@ -678,16 +678,16 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                    sendSweetAlert(
                      session = shiny::getDefaultReactiveDomain(),
                      title = "There was an error with your input",
-                     text =tagList("This typically happens when there is a mismatch between 
+                     text =tagList("This typically happens when there is a mismatch between
                        your different input data (e.g. the species of the binding site collection
                        doesn't match the gene set input or the first column of a DEA does not contain recognized gene IDs.
                        In case only a subset of a DEA was provided, there might not be enough annotated binding sites for the specified miRNA(s) and DEA).",
-                       tags$br(), tags$br(), 
+                       tags$br(), tags$br(),
                        "You can either try updating the binding site collection on the 'Species and miRNAs'
                        page or upload a new DEA. Please consult the tutorial and help pages for further info."),
                      html = TRUE,
                      type = "error")
-                   ; NULL 
+                   ; NULL
                  })
       }else{
         sets <- tryCatch(.filterInput(EN_Object(), sig, min.size=input$minsize),
@@ -696,24 +696,24 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                    sendSweetAlert(
                      session = shiny::getDefaultReactiveDomain(),
                      title = "There was an error with your input",
-                     text =tagList("This typically happens when there is a mismatch between 
+                     text =tagList("This typically happens when there is a mismatch between
                          your different input data (e.g. the species of the binding site collection
-                         doesn't match the gene set input or the background genes contain less binding sites 
-                         for any miRNA family than the minimum (specified in the 
-                         'Advanced enrichment options' under 'Minium number of annotated targets that 
-                         is required to consider the miRNA-family for testing').", tags$br(), tags$br(), 
+                         doesn't match the gene set input or the background genes contain less binding sites
+                         for any miRNA family than the minimum (specified in the
+                         'Advanced enrichment options' under 'Minium number of annotated targets that
+                         is required to consider the miRNA-family for testing').", tags$br(), tags$br(),
                          "You can either try updating the binding site collection on the 'Species and miRNAs'
-                         page or provide a new gene set input. Please consult the tutorial and help pages 
+                         page or provide a new gene set input. Please consult the tutorial and help pages
                          for further info."),
                      html = TRUE,
                      type = "error")
-                   ; NULL 
+                   ; NULL
                  })
       }
       if(is.null(sets)) return(NULL)
       sig <- sets$signal
       sets <- sets$sets
-      
+
       if(!is.null(mirexp)){
         if(is.null(tryCatch(.filterMatchSets(sets, mirexp),
                  error=function(e){
@@ -723,12 +723,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                      title = "There was an error with your input",
                      text = tagList("This typically happens when the expressed miRNAs do not contain any binding site in your
                                       specified background (or when only wrong miRNA names have been provided).",
-                                    tags$br(), tags$br(),  
+                                    tags$br(), tags$br(),
                                     "Try to remove the 'miRNA expression specification' by deleting all entries of the 'miRNA list' at the 'Species and miRNAs' pages
-                                under 'Specify expressed miRNAs (optional)' & 'Custom Set' or give a new gene set input. Please consult the tutorial and help pages 
+                                under 'Specify expressed miRNAs (optional)' & 'Custom Set' or give a new gene set input. Please consult the tutorial and help pages
                                 for further info."),
                      type = "error")
-                   ; NULL 
+                   ; NULL
                  }))) return(NULL)
       }
 
@@ -737,7 +737,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                    append=TRUE)
 
       res <- tryCatch(testEnrichment(sig, sets, background=bg, doCheck=FALSE,
-                                sets.properties=mirexp, tests=tests, 
+                                sets.properties=mirexp, tests=tests,
                                 minSize=input$minsize, th.FDR=input$dea_sig_th),
                  error=function(e){
                    removeModal()
@@ -745,22 +745,22 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                      session = shiny::getDefaultReactiveDomain(),
                      title = "There was an error with your request:",
                      text = tagList(
-                       tags$p("This typically happens when there is a mismatch between 
+                       tags$p("This typically happens when there is a mismatch between
                        your different input data (e.g. the species or identifiers of the binding site collection
                        doesn't match the gene set or DEA input), or when the input is too small to run any test."),
                        tags$p("Please consult the help regarding the relevant inputs.")),
                      html = TRUE,
                      type = "error")
-                   NULL 
+                   NULL
                  })
       showElement("resultsbox")
       removeModal()
       res
     })
-    
+
     #adapt plot_size
     jqui_resizable(ui="#bubble_plot")
-    
+
     erRes <- reactive({
       if(is.null(ER())) return(NULL)
       if(is.null(test <- input$view_test) || test==""){
@@ -771,9 +771,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       }else{
         er <- getResults(ER(), test=test, getFeatures=FALSE, flatten=TRUE)
       }
-      er      
+      er
     })
-    
+
     output$bubble_plot <- renderPlotly({
       if(is.null(er <- erRes())) return(NULL)
       if(isTRUE(getOption("shiny.testmode"))) print("bubble_plot")
@@ -783,9 +783,11 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       flags$enrichPlotOn <- TRUE
       p <- tryCatch({
         p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
-                      sig.field=input$sig.field, col.field=col.field, 
-                      label.enr.thres=input$label.enr.thres, 
-                      maxLabels=input$label_n ) + labs(x="log2(enrichment)")
+                      sig.field=input$sig.field, col.field=col.field,
+                      label.enr.thres=input$label.enr.thres,
+                      maxLabels=input$label_n ) +
+          xlab(ifelse(input$view_test %in% c("modsites","ebayes","lmadd","modscore"),
+                       "coefficient", "log2(enrichment)"))
         p <- setTheme(p, input$bubble_theme)
         forTooltip <- intersect(c("set","label","overlap","enrichment",
                                   "set_size","pvalue","FDR"), colnames(er))
@@ -798,7 +800,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         that there is too little to plot. See the results table.") )
       p
     })
-    
+
     plotlyObs <- observeEvent(event_data("plotly_click", "enrichplot",
                                           priority="event"), suspended=TRUE, {
       if(is.null(er <- erRes()) || !flags$CDplotOn || is.null(input$mir_fam))
@@ -812,10 +814,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         fam <- strsplit(er[rid,"members"],";")[[1]][[1]]
       if(!(fam %in% mirfamChoices())) return(NULL)
       updateTabItems(session, "main_tabs", "tab_cdplot")
-      updateSelectizeInput(session, "mir_fam", choices=mirfamChoices(), 
+      updateSelectizeInput(session, "mir_fam", choices=mirfamChoices(),
                            server=TRUE, selected=fam)
     })
-    
+
     output$bubble_plot_dl <- downloadHandler(
       filename={
         if(is.null(erRes())) return(NULL)
@@ -826,10 +828,10 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         col.field <- "expression"
         if(is.null(er$expression)) col.field <- NULL
         er$set <- row.names(er)
-        
+
         p <- enrichPlot(er, repel=TRUE, label.sig.thres=input$label.sig.thres,
-                        sig.field=input$sig.field, col.field=col.field, 
-                        label.enr.thres=input$label.enr.thres, 
+                        sig.field=input$sig.field, col.field=col.field,
+                        label.enr.thres=input$label.enr.thres,
                         maxLabels=input$label_n )
         p <- setTheme(p, input$bubble_theme)
         pf <- paste0(tempfile(),".pdf")
@@ -837,7 +839,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         file.copy(pf, con)
       }
     )
-    
+
     output$hoverinfo <- renderUI({
       id <- suppressWarnings(tryCatch(
                         event_data(event="plotly_hover", source="enrichplot"),
@@ -850,8 +852,8 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(is.null(rr$members)) return(tags$p(row.names(rr)))
       tags$p(tags$b("Members: "), gsub(";", "; ", rr$members))
     })
-    
-    
+
+
     output$hits_table <- renderDT({ # prints the current hits
       if(is.null(ER())) return(NULL)
       test <- input$view_test
@@ -877,7 +879,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       colnames(rr) <- gsub("^enrichment$", "log2(enrichment)", colnames(rr))
       return(dtwrapper(rr, hide_cols=columns2hide))
     })
-    
+
     output$dl_hits2 <- output$dl_hits <- downloadHandler(
       filename = function() {
         if(is.null(ER())) return(NULL)
@@ -895,6 +897,6 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
 
     waiter::waiter_hide()
     if(isTRUE(getOption("shiny.testmode"))) print("END LOADING")
-    
+
   }
 }
