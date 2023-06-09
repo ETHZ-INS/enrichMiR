@@ -608,7 +608,12 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(length(tt <- setdiff(nn, unlist(choices)))>0)
         choices$Continuous <- tt
       choices <- lapply(choices, FUN=function(x) setNames(x,x))
-      if(length(nn)>1) choices[["All tests"]] <- c("merged"="")
+      if(length(nn)>1) choices[["All tests"]] <- c(""="merged")
+      if(!is.null(choices$Continuous$aggregated)){
+        choices[["All tests"]] <- c(choices[["All tests"]],
+                                    aggregated="aggregated (beta)")
+        choices$Continuous$aggregated <- NULL
+      }
       choices
     })
 
@@ -753,7 +758,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                      type = "error")
                    NULL
                  })
-      res@res[["aggregated (beta)"]] <- tryCatch(aggregateTests(res), error=function(e) NULL)
+      res@res[["aggregated"]] <- tryCatch(aggregateTests(res), error=function(e) NULL)
       showElement("resultsbox")
       removeModal()
       res
