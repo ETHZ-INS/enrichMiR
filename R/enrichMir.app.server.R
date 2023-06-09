@@ -608,9 +608,9 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(length(tt <- setdiff(nn, unlist(choices)))>0)
         choices$Continuous <- setdiff(tt,"aggregated")
       choices <- lapply(choices, FUN=function(x) setNames(x,x))
-      if(length(nn)>1) choices[["All tests"]] <- c("merged"="")
+      if(length(nn)>1) choices[["All tests"]] <- c("merged tables"=" ")
       if("aggregated" %in% nn)
-        choices[["All tests"]] <- c("merged"="",
+        choices[["All tests"]] <- c("merged tables"=" ",
                                     "aggregated (beta)"="aggregated")
       choices
     })
@@ -771,7 +771,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
 
     erRes <- reactive({
       if(is.null(ER())) return(NULL)
-      if(is.null(test <- input$view_test) || test==""){
+      if(is.null(test <- input$view_test) || test=="" || test==" "){
         er <- getResults(ER(), getFeatures=FALSE, flatten=TRUE)
         er$FDR <- er$FDR.geomean
         er$enrichment <- rowMeans(er[,grep("nrichment|beta|coefficient",
