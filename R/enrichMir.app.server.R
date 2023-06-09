@@ -753,7 +753,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                      type = "error")
                    NULL
                  })
-      res@res$aggregated <- tryCatch(aggregateTests(res), error=function(e) NULL)
+      res@res[["aggregated (beta)"]] <- tryCatch(aggregateTests(res), error=function(e) NULL)
       showElement("resultsbox")
       removeModal()
       res
@@ -884,7 +884,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     output$dl_hits2 <- output$dl_hits <- downloadHandler(
       filename = function() {
         if(is.null(ER())) return(NULL)
-        fn <- paste0("EnrichMir_hits_",input$view_test,"_",Sys.Date(),".csv")
+        fn <- paste0("EnrichMir_hits_",make.names(input$view_test),"_",Sys.Date(),".csv")
         fn
       },
       content = function(file) {
