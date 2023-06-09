@@ -756,7 +756,11 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                      type = "error")
                    NULL
                  })
-      res@res[["aggregated"]] <- tryCatch(aggregateTests(res), error=function(e) NULL)
+      res@res[["aggregated"]] <- tryCatch({
+        a <- aggregateTests(res)
+        a$members <- a$set_size <- NULL
+        return(as.data.frame(a))
+      }, error=function(e) NULL)
       showElement("resultsbox")
       removeModal()
       res
