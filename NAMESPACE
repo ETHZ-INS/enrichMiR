@@ -2,6 +2,7 @@
 
 export(CDplot)
 export(CDplotWrapper)
+export(aggregateTests)
 export(areamir)
 export(availableTests)
 export(breakStrings)

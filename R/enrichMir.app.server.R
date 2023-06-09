@@ -753,6 +753,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
                      type = "error")
                    NULL
                  })
+      res@res$aggregated <- tryCatch(aggregateTests(res), error=function(e) NULL)
       showElement("resultsbox")
       removeModal()
       res
@@ -892,6 +893,17 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         if(is.null(test) || test=="") test <- NULL
         h <- as.data.frame(getResults(ER(), test=test, flatten=TRUE))
         write.csv(h, file)
+      }
+    )
+
+    output$dl_er <- downloadHandler(
+      filename = function() {
+        if(is.null(ER())) return(NULL)
+        "EnrichRes.rds"
+      },
+      content = function(file) {
+        if(is.null(ER())) return(NULL)
+        saveRDS(ER(), file)
       }
     )
 
