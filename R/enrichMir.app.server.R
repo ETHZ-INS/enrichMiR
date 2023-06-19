@@ -771,11 +771,15 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
 
     erRes <- reactive({
       if(is.null(ER())) return(NULL)
-      if(is.null(test <- input$view_test) || test=="" || test==" "){
+      if(is.null(test <- input$view_test) || test %in% c(""," ","merged")){
         er <- getResults(ER(), getFeatures=FALSE, flatten=TRUE)
+        for(f in c("areamir.enrichment", "ebayes.coefficient", "modscore.coefficient",
+                   grep("down\\.enrichment",colnames(er),value=TRUE))){
+          if(!is.null(res[[f]])) res[[f]] <- -res[[f]]
+        }
         er$FDR <- er$FDR.geomean
-        er$enrichment <- rowMeans(er[,grep("nrichment|beta|coefficient",
-                                           colnames(er)),drop=FALSE],na.rm=TRUE)
+        er$enrichment <- rowMeans(as.matrix(er[,grep("nrichment|beta|coefficient",
+                                           colnames(er)),drop=FALSE]),na.rm=TRUE)
       }else{
         er <- getResults(ER(), test=test, getFeatures=FALSE, flatten=TRUE)
       }
@@ -789,13 +793,14 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(is.null(er$expression)) col.field <- NULL
       er$set <- row.names(er)
       flags$enrichPlotOn <- TRUE
+      xlab <- ifelse(input$view_test %in% c("modsites","ebayes","lmadd","modscore"),
+                     "coefficient", "log2(enrichment)")
+      if(input$view_test %in% c(" ","")) xlab <- "mean absolute enrichment"
       p <- tryCatch({
         p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
                       sig.field=input$sig.field, col.field=col.field,
                       label.enr.thres=input$label.enr.thres,
-                      maxLabels=input$label_n ) +
-          xlab(ifelse(input$view_test %in% c("modsites","ebayes","lmadd","modscore"),
-                       "coefficient", "log2(enrichment)"))
+                      maxLabels=input$label_n ) + xlab(xlab)
         p <- setTheme(p, input$bubble_theme)
         forTooltip <- intersect(c("set","label","overlap","enrichment",
                                   "set_size","pvalue","FDR"), colnames(er))
@@ -865,7 +870,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
     output$hits_table <- renderDT({ # prints the current hits
       if(is.null(ER())) return(NULL)
       test <- input$view_test
-      if(is.null(test) || test=="") test <- NULL
+      if(is.null(test) || test %in% c(""," ")) test <- NULL
       rr <- getResults(ER(), test=test, flatten=TRUE)
       if(is.null(rr$pvalue) && !is.null(rr$over.pvalue))
         rr$pvalue <- rr$over.pvalue
