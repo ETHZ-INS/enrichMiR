@@ -775,7 +775,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
         er <- getResults(ER(), getFeatures=FALSE, flatten=TRUE)
         for(f in c("areamir.enrichment", "ebayes.coefficient", "modscore.coefficient",
                    grep("down\\.enrichment",colnames(er),value=TRUE))){
-          if(!is.null(res[[f]])) res[[f]] <- -res[[f]]
+          if(!is.null(er[[f]])) er[[f]] <- -er[[f]]
         }
         er$FDR <- er$FDR.geomean
         er$enrichment <- rowMeans(as.matrix(er[,grep("nrichment|beta|coefficient",
@@ -875,7 +875,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       if(is.null(rr$pvalue) && !is.null(rr$over.pvalue))
         rr$pvalue <- rr$over.pvalue
       show_standard <- c("enrichment","coefficient","combined.coef",
-                         "combined.pvalue","pvalue","FDR","expression")
+                         "combined.pvalue","pvalue","FDR","expression","FDR.mean","FDR.geomean")
       if(is.null(input$columns2show)){
         columns2hide <- setdiff(colnames(rr),show_standard)
       }else{
