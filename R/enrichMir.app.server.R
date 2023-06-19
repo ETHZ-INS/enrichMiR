@@ -795,7 +795,7 @@ enrichMiR.server <- function(bData=NULL, logCallsFile=NULL){
       flags$enrichPlotOn <- TRUE
       xlab <- ifelse(input$view_test %in% c("modsites","ebayes","lmadd","modscore"),
                      "coefficient", "log2(enrichment)")
-      if(input$view_test %in% c(" ","")) xlab <- "mean absolute enrichment"
+      if(input$view_test %in% c(" ","")) xlab <- "mean enrichment"
       p <- tryCatch({
         p <- enrichPlot(er, repel=FALSE, label.sig.thres=input$label.sig.thres,
                       sig.field=input$sig.field, col.field=col.field,
