@@ -146,10 +146,6 @@ TPM4,-1.41,1.83e-10,6.86e-08
            automatically recognized. With most target annotations, both Ensembl 
            IDs and gene symbols will be recognized, and the scanMiR annotation 
            additionally supports transcript-level DEAs with Ensembl transcript IDs."),
-           tags$p("The character delimiter needs not be commas, and should be
-           automatically recognized. With most target annotations, both Ensembl 
-           IDs and gene symbols will be recognized, and the scanMiR annotation 
-           additionally supports transcript-level DEAs with Ensembl transcript IDs."),
            tags$p("Because the accuracy of the fold-change estimates increases
              with the genes' read count, we recommend filtering the DEA table
              to include only highly expressed genes (e.g. the top 5000) before
